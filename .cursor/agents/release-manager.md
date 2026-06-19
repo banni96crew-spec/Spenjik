@@ -110,8 +110,6 @@ resolved before proceeding.
   obligations.
 - **PC storefronts**: Verify DRM configuration, cloud save compatibility,
   achievement integration, and controller support declarations.
-- **Mobile stores**: Validate permissions declarations, privacy policy links,
-  data safety disclosures, and content rating questionnaires.
 
 ### Version Numbering
 

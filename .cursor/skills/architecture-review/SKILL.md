@@ -120,7 +120,7 @@ Categories to extract:
 | **Cross-system communication** | "Damage system notifies UI and audio simultaneously" → event/signal architecture ADR |
 | **State persistence** | "Player progress persists between sessions" → save system ADR |
 | **Threading/timing** | "AI decisions happen off the main thread" → concurrency ADR |
-| **Platform requirements** | "Supports keyboard, gamepad, touch" → input system ADR |
+| **Platform requirements** | "Supports keyboard and gamepad on desktop" → input system ADR |
 
 For each GDD, produce a structured list:
 
@@ -139,27 +139,29 @@ architecture must cover.
 
 ## Phase 3: Build the Traceability Matrix
 
-For each technical requirement extracted in Phase 2, search the ADRs:
+For each technical requirement extracted in Phase 2, search accepted owner PRDs,
+resolved `FIX-*` entries, technical preferences, and then ADRs:
 
-1. Read every ADR's "GDD Requirements Addressed" section
-2. Check if it explicitly references the requirement or its GDD
-3. Check if the ADR's decision text implicitly covers the requirement
-4. Mark coverage status:
+1. Check whether an accepted owner PRD already defines the requirement.
+2. Check whether a resolved `FIX-*` entry or technical preference defines it.
+3. For genuinely new decisions, read every ADR's "GDD Requirements Addressed" section.
+4. Check if an ADR explicitly or implicitly covers the remaining requirement.
+5. Mark coverage status:
 
 | Status | Meaning |
 |--------|---------|
-| ✅ **Covered** | An ADR explicitly addresses this requirement |
-| ⚠️ **Partial** | An ADR partially covers this, or coverage is ambiguous |
-| ❌ **Gap** | No ADR addresses this requirement |
+| ✅ **Covered** | An accepted owner PRD, resolved fix, preference, or ADR explicitly addresses this requirement |
+| ⚠️ **Partial** | Existing PRD/ADR coverage is incomplete or ambiguous |
+| ❌ **Gap** | Neither an accepted owner PRD nor an ADR addresses this requirement |
 
 Build the full matrix:
 
 ```
 ## Traceability Matrix
 
-| Requirement ID | GDD | System | Requirement | ADR Coverage | Status |
-|---------------|-----|--------|-------------|--------------|--------|
-| TR-combat-001 | combat.md | Combat | Hitbox detection < 1 frame | ADR-0003 | ✅ |
+| Requirement ID | GDD | System | Requirement | PRD / ADR Coverage | Status |
+|---------------|-----|--------|-------------|--------------------|--------|
+| TR-combat-001 | combat.md | Combat | Hitbox detection < 1 frame | owner PRD or ADR-0003 | ✅ |
 | TR-combat-002 | combat.md | Combat | Combo window timing | — | ❌ GAP |
 | TR-inventory-001 | inventory.md | Inventory | Persistent item storage | ADR-0005 | ✅ |
 ```
@@ -332,7 +334,7 @@ After completing the engine audit above, spawn the **primary engine specialist**
 - If no engine is configured, skip this consultation
 - Spawn `role: [primary specialist]` with: all ADRs that contain engine-specific decisions or `Post-Cutoff APIs Used` fields, the engine reference docs, and the Phase 5 audit findings. Ask them to:
   1. Confirm or challenge each audit finding — specialists may know of engine nuances not captured in the reference docs
-  2. Identify engine-specific anti-patterns in the ADRs that the audit may have missed (e.g., using the wrong Godot node type, Unity component coupling, Unreal subsystem misuse)
+  2. Identify Godot-specific anti-patterns in the ADRs that the audit may have missed (for example, using the wrong node type or bypassing approved scene/state boundaries)
   3. Flag ADRs that make assumptions about engine behaviour that differ from the actual pinned version
 
 Incorporate additional findings under `### Engine Specialist Findings` in the Phase 5 output. These feed into the final verdict — specialist-identified issues carry the same weight as audit-identified issues.
@@ -416,10 +418,11 @@ Total requirements: [N]
 ⚠️ Partial: [Y]
 ❌ Gaps: [Z]
 
-### Coverage Gaps (no ADR exists)
+### Coverage Gaps (no accepted PRD or ADR exists)
 For each gap:
   ❌ TR-[id]: [GDD] → [system] → [requirement]
-     Suggested ADR: "/architecture-decision [suggested title]"
+     Suggested ADR: "/architecture-decision [suggested title]" only if the
+     decision is genuinely new and not owned by an accepted PRD
      Domain: [Physics/Rendering/etc]
      Engine Risk: [LOW/MEDIUM/HIGH]
 
@@ -506,7 +509,7 @@ RTM file format:
 | COVERED — full chain complete | [N] | [%] |
 | MISSING test — story exists, no test | [N] | [%] |
 | NO STORY — ADR exists, not yet implemented | [N] | [%] |
-| NO ADR — architectural gap | [N] | [%] |
+| NO PRD/ADR — architectural gap | [N] | [%] |
 | **Total requirements** | **[N]** | **100%** |
 
 ## Uncovered Requirements (Priority Fix List)
@@ -609,8 +612,10 @@ Engine: [name + version]
 
 After completing the review and writing approved files, present:
 
-1. **Immediate actions**: List the top 3 ADRs to create (highest-impact gaps first,
-   Foundation layer before Feature layer)
+1. **Immediate actions**: List up to 3 genuinely new ADRs to create, but only
+   for gaps not already owned by an accepted project PRD, resolved `FIX-*`
+   entry, or technical preference. If no such gaps exist, explicitly state
+   that no ADR is required.
 2. **Pre-gate checklist**: Check whether these exist via Glob and mark each ✅ or ❌:
    - `tests/unit/` and `tests/integration/` directories — if ❌: run `/test-setup`
    - `.github/workflows/tests.yml` — if ❌: run `/test-setup`
@@ -618,8 +623,8 @@ After completing the review and writing approved files, present:
    - `design/ux/interaction-patterns.md` — if ❌: run `/ux-design`
    Present ❌ items as required steps before gate-check. Do not offer `/gate-check`
    as an option if any item is ❌ — offer the missing skill to run instead.
-3. **Rerun trigger**: "Re-run `/architecture-review` after each new ADR is written
-   to verify coverage improves"
+3. **Rerun trigger**: "Re-run `/architecture-review` after each genuinely
+   required ADR is written, or after an owner PRD changes, to verify coverage."
 
 Then close by asking the user tailored to the pre-gate checklist state:
 - If ADR gaps remain or any pre-gate item is ❌:

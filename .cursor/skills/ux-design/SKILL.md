@@ -103,15 +103,14 @@ Read `.cursor/docs/technical-preferences.md` and extract the `## Input & Platfor
 section. Store these values for use throughout the skill — they drive the
 Interaction Map and inform accessibility requirements:
 
-- **Input Methods** — e.g., Keyboard/Mouse, Gamepad, Touch, Mixed
+- **Input Methods** — Keyboard/Mouse, Gamepad, or both
 - **Primary Input** — the dominant input for this game
 - **Gamepad Support** — Full / Partial / None
-- **Touch Support** — Full / Partial / None
 - **Target Platforms** — for safe zone and aspect ratio decisions
 
 If the section is unconfigured (`[TO BE CONFIGURED]`), ask once:
 > "Input methods aren't configured yet. What does this game target?"
-> Options: "Keyboard/Mouse only", "Gamepad only", "Both (PC + Console)", "Touch (mobile)", "All of the above"
+> Options: "Keyboard/Mouse only", "Gamepad only", "Both"
 >
 > (Run `/setup-engine` to save this permanently so you won't be asked again.)
 
@@ -781,7 +780,7 @@ guidance for D (States/Variants), E (Interactions), and G (Accessibility).
 
 For the HUD specifically, emphasize:
 - Dynamic Behaviors: what causes the HUD to change density mid-gameplay?
-- Platform Variants: does mobile/console require different element sizes or positions?
+- Platform Variants: do approved desktop resolutions or console targets require different element sizes or positions?
 
 ---
 

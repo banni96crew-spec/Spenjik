@@ -569,9 +569,8 @@ Targeting weakest dimension:
 ```
 Scores: Goal=0.9, Constraints=0.4, Criteria=0.7
 Next question targets Constraints (lowest at 0.4):
-"You mentioned this should 'work on mobile'. Does that mean a native app,
-a responsive web app, or a PWA? And are there specific devices or OS versions
-you need to support?"
+"You mentioned desktop support. Which Windows and Linux versions, GPU classes,
+display resolutions, and input devices are required?"
 ```
 Why good: Identifies weakest dimension, explains why it is now the bottleneck, asks a specific question to improve it, and doesn't batch multiple topics.
 </Good>

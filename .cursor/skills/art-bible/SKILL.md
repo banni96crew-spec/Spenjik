@@ -175,7 +175,10 @@ Write the approved section to file.
 - **`art-director`**: File format preferences, naming convention direction, texture resolution tiers, LOD level expectations, export settings philosophy
 - **`technical-artist`**: Engine-specific hard constraints — poly count budgets per asset category, texture memory limits, material slot counts, importer constraints, anything from the performance budgets in `.cursor/docs/technical-preferences.md`
 
-If any art preference conflicts with a technical constraint (e.g., art-director wants 4K textures but performance budget requires 2K for mobile), resolve the conflict explicitly — note both the ideal and the constrained standard, and explain the tradeoff. Ambiguity in asset standards is where production costs are born.
+If any art preference conflicts with a technical constraint (for example, the
+art director wants 4K textures but the desktop GPU memory budget permits 2K),
+resolve the conflict explicitly: record both the ideal and constrained standard
+and explain the trade-off.
 
 Write the approved section to file.
 

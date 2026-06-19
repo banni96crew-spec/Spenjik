@@ -248,21 +248,25 @@ For each ADR:
 
 ### Traceability Coverage Check
 
-Map every requirement from the Technical Requirements Baseline to existing ADRs.
-For each requirement, check if any ADR's "GDD Requirements Addressed" section
-or decision text covers it:
+Map every requirement from the Technical Requirements Baseline first to accepted
+owner PRDs and resolved `FIX-*` entries, then to existing ADRs. For each
+requirement, check whether a PRD already owns the decision. Only requirements
+not owned by the PRD need ADR coverage:
 
-| Req ID | Requirement | ADR Coverage | Status |
-|--------|-------------|--------------|--------|
-| TR-combat-001 | Hitbox detection per-frame | ADR-0003 | ✅ |
+| Req ID | Requirement | PRD / ADR Coverage | Status |
+|--------|-------------|--------------------|--------|
+| TR-combat-001 | Hitbox detection per-frame | owner PRD or ADR-0003 | ✅ |
 | TR-combat-002 | Combo state machine | — | ❌ GAP |
 
-Count: X covered, Y gaps. For each gap, it becomes a **Required New ADR**.
+Count: X covered, Y gaps. A gap becomes a **Required New ADR** only when no
+accepted owner PRD, technical preference, or resolved `FIX-*` entry already
+defines the decision.
 
 ### Required New ADRs
 
-List all decisions made during this architecture session (Phases 1-4) that do
-not yet have a corresponding ADR, PLUS all uncovered Technical Requirements.
+List all genuinely new decisions made during this architecture session
+(Phases 1-4) that are not already owned by an accepted PRD, PLUS uncovered
+Technical Requirements. Do not create ADRs that merely restate PRD rules.
 Group by layer — Foundation first:
 
 **Foundation Layer (must create before any coding):**
@@ -464,9 +468,9 @@ unsure, present 2-4 options with pros/cons before asking them to decide.
 
 ## Recommended Next Steps
 
-- Run `/architecture-decision [title]` for each required ADR listed in Phase 6 — Foundation layer ADRs first
-- Run `/architecture-review` — bootstraps the Requirements Traceability Matrix and TR registry from the ADRs just written. Required before the Pre-Production gate.
+- If Phase 6 contains genuinely new uncovered decisions, run `/architecture-decision [title]` for each required ADR — Foundation layer first. If it contains none, skip ADR creation.
+- Run `/architecture-review` when ADRs exist or when a traceability audit is needed; accepted PRD coverage must count as valid coverage.
 - Run `/test-setup` to scaffold `tests/unit/`, `tests/integration/`, CI workflow, and an example test (required for gate-check)
 - Run `/ux-design` to initialize `design/ux/interaction-patterns.md` and `design/accessibility-requirements.md` (required for gate-check)
-- Run `/create-control-manifest` once the required ADRs are written to produce the layer rules manifest
-- Run `/gate-check pre-production` when all required ADRs, `/test-setup`, and `/ux-design` are complete
+- Run `/create-control-manifest` from accepted ADRs plus project-owned PRD/preferences; zero ADRs is valid when the PRD already owns all decisions.
+- Run `/gate-check pre-production` when every genuinely required ADR, `/test-setup`, and `/ux-design` are complete.

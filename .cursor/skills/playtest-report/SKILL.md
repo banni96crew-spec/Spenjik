@@ -40,8 +40,8 @@ Generate this template and output it to the user:
 - **Build**: [Version/Commit]
 - **Duration**: [Time played]
 - **Tester**: [Name/ID]
-- **Platform**: [PC/Console/Mobile]
-- **Input Method**: [KB+M / Gamepad / Touch]
+- **Platform**: [Windows / Linux / approved console target]
+- **Input Method**: [Keyboard+Mouse / Gamepad]
 - **Session Type**: [First time / Returning / Targeted test]
 
 ## Test Focus

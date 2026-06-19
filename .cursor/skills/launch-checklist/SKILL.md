@@ -121,7 +121,6 @@ Generated: [Date]
 ### Platform Certification
 - [ ] PC: Steam/Epic/GOG SDK requirements met
 - [ ] Console: TRC/TCR/Lotcheck submission prepared
-- [ ] Mobile: App Store/Play Store guidelines compliant
 - [ ] Accessibility: minimum standards met (remapping, text scaling, colorblind)
 - [ ] Age ratings obtained (ESRB, PEGI, regional)
 

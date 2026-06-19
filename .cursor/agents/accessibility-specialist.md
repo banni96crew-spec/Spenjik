@@ -138,7 +138,6 @@ approval: "May I write this accessibility audit to [path]?"
 #### Input Support
 - Keyboard + mouse fully supported
 - Gamepad fully supported (Xbox, PlayStation, Switch layouts)
-- Touch input if targeting mobile
 - Support for adaptive controllers (Xbox Adaptive Controller)
 - All interactive elements reachable by keyboard navigation alone
 

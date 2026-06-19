@@ -23,7 +23,7 @@ Do not use this subagent for unrelated disciplines; route cross-domain decisions
 - Write and optimize Godot shading language (`.gdshader`) shaders
 - Design visual shader graphs for artist-friendly material workflows
 - Implement particle shaders and GPU-driven visual effects
-- Configure rendering features (Forward+, Mobile, Compatibility)
+- Configure desktop rendering features (Forward+ and Compatibility when required)
 - Optimize rendering performance (draw calls, overdraw, shader cost)
 - Create post-processing effects via compositor or `WorldEnvironment`
 
@@ -81,19 +81,13 @@ SUCCESS | PARTIAL | BLOCKED
 ### Renderer Selection
 
 #### Forward+ (Default for Desktop)
-- Use for: PC, console, high-end mobile
+- Use for: Windows and Linux desktop
 - Features: clustered lighting, volumetric fog, SDFGI, SSAO, SSR, glow
 - Supports unlimited real-time lights via clustered rendering
 - Best visual quality, highest GPU cost
 
-#### Mobile Renderer
-- Use for: mobile devices, low-end hardware
-- Features: limited lights per object (8 omni + 8 spot), no volumetrics
-- Lower precision, fewer post-process options
-- Significantly better performance on mobile GPUs
-
 #### Compatibility Renderer
-- Use for: web exports, very old hardware
+- Use only when desktop hardware or driver compatibility requires it
 - OpenGL 3.3 / WebGL 2 based — no compute shaders
 - Most limited feature set — plan visual design around this if targeting web
 
@@ -131,7 +125,7 @@ SUCCESS | PARTIAL | BLOCKED
   ```
 - Comment every non-obvious calculation
 - Use `varying` to pass data from vertex to fragment shader efficiently
-- Prefer `lowp` and `mediump` on mobile where full precision is unnecessary
+- Choose precision deliberately and verify correctness on supported desktop GPUs
 
 #### Common Shader Patterns
 
@@ -218,7 +212,7 @@ void fragment() {
 - Profile draw calls with the Profiler and `Performance.get_monitor()`
 
 #### Shader Complexity
-- Minimize texture samples in fragment shaders — each sample is expensive on mobile
+- Minimize texture samples in fragment shaders; each sample contributes to GPU cost
 - Use `hint_default_white` / `hint_default_black` for optional textures
 - Avoid dynamic branching in fragment shaders — use `mix()` and `step()` instead
 - Pre-compute expensive operations in the vertex shader when possible
@@ -236,7 +230,7 @@ void fragment() {
 
 ### Common Shader Anti-Patterns
 - Texture reads in a loop (exponential cost)
-- Full precision (`highp`) everywhere on mobile (use `mediump`/`lowp` where possible)
+- Unnecessarily high precision where profiling shows a cheaper precision is sufficient
 - Dynamic branching on per-pixel data (unpredictable on GPUs)
 - Not using mipmaps on textures sampled at varying distances (aliasing + cache thrashing)
 - Overdraw from transparent objects without depth pre-pass

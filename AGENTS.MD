@@ -24,23 +24,24 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 Фактически существующая структура:
 
 - `.cursor/agents/` — определения специализированных Cursor-агентов и общие принципы их работы.
+- `.cursor/rules/`, `.cursor/skills/`, `.cursor/hooks/` — проектные правила, вспомогательные workflows и локальные проверки Cursor.
 - `docs/prd/` — главный источник истины по продукту, игровым системам, архитектуре, API, тестам и правилам для LLM.
 - `docs/engine-reference/godot/` — закреплённая справка по Godot 4.6, изменениям API и актуальным практикам.
 - `docs/templates/` — шаблоны проектной, архитектурной, UX-, QA- и production-документации.
 - `docs/examples/`, `docs/references/`, `docs/hooks-reference/` — примеры workflow, справочные материалы и примеры проверок.
 - `ROADMAP/` — контекст и задания для milestone M0–M17; порядок реализации задаётся также `docs/prd/19_IMPLEMENTATION_ORDER.md`.
-- `PRD 2.4.txt` — исходный монолитный PRD; при реализации использовать актуальные модульные документы из `docs/prd/`.
 - `Godot_v4.6.2-stable_win64.exe/` — локальные исполняемые файлы Godot 4.6.2 для Windows.
-- `00-rule-creator.md` и архив со старыми skills — вспомогательные материалы, не источник игровых правил.
+- `README.md` — краткий обзор статуса, стека, источников истины и порядка разработки.
+- `.git/` — локальный Git-репозиторий для сохранения контрольных точек разработки.
 
 В текущем состоянии не обнаружены:
 
 - `project.godot`;
 - исходные `.gd`, сцены `.tscn` и ресурсы `.tres`;
-- каталоги `autoload/`, `logic/`, `data/`, `resources/`, `scenes/`, `tests/`;
+- каталоги `autoload/`, `logic/`, `data/`, `scenes/`, `tests/`;
+- подключённый `addons/gut/`;
+- CI-конфигурация;
 - `package.json`;
-- корневой `README`;
-- Git-репозиторий в текущем корне.
 
 Предписанная будущая структура Godot-проекта определена в `docs/prd/15_GODOT_ARCHITECTURE.md`:
 
@@ -50,7 +51,7 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 - `logic/economy/`, `logic/combat/`, `logic/roles/`, `logic/contracts/`, `logic/street_deals/`, `logic/contacts/`, `logic/turf_levels/`, `logic/ai/` — модули игровых правил.
 - `logic/catalog/` — доступ и валидация статических Resource-каталогов.
 - `data/ids/` — стабильные ID, фазы, режимы атак и коды ошибок.
-- `resources/` — схемы и `.tres`-экземпляры статических данных.
+- `data/resources/` — схемы и `.tres`-экземпляры статических данных.
 - `scenes/main/`, `scenes/game/`, `scenes/ui/screens/`, `scenes/ui/panels/`, `scenes/ui/widgets/` — сцены и тонкие UI-скрипты.
 - `tests/unit/`, `tests/integration/`, `tests/replay/`, `tests/static/`, `tests/fixtures/` — GUT-тесты и fixtures.
 
@@ -219,6 +220,6 @@ godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -
 - `docs/coding-standards.md` синхронизирован с Godot 4.6.2, GDScript и GUT 9.6.0. Универсальные Unity/Unreal и GdUnit4-команды к проекту не применяются.
 - MVP не включает multiplayer, backend, аккаунты, campaign persistence, обязательный web export, мобильную адаптацию, C#-версию и card editor.
 - `SaveManager.gd` не нужен. Допустим только необязательный `DebugSnapshotManager.gd`, который не участвует в gameplay loop.
-- Реализация идёт в порядке: constants → deterministic random → Resources/catalogs → state factory/validator → owner logic + tests → facade → integration/replay → UI.
+- Реализация идёт в порядке milestone из `19_IMPLEMENTATION_ORDER.md`: constants → Resources/catalogs → deterministic random → state factory/validator → owner logic + tests → facade → integration/replay → UI.
 - UI до зелёных logic-тестов допускается только как placeholder без gameplay-правил.
 - Пользователь принимает творческие и стратегические решения. Агент должен показывать варианты и компромиссы, когда требования действительно не определены, но не запрашивать повторное разрешение на уже явно поручённое изменение.

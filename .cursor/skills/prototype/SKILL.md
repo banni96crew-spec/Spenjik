@@ -183,15 +183,10 @@ Reframe the hypothesis and simplify aggressively, or switch to Paper path.
 
 **Output:** A minimal runnable engine project in `prototypes/[name]-concept/`.
 
-**Lighter alternative — Love2D (Lua):** If the project engine (Godot, Unity, Unreal)
-feels too heavy to stand up for a throwaway build, consider Love2D — a minimal 2D
-framework that installs in minutes, requires no project scaffolding, and renders
-natively with no browser latency. Used by many indie devs for rapid 2D action and
-platformer prototypes (Balatro prototyped in Love2D; Nuclear Throne's early builds
-used it). It sits between HTML overhead and full engine overhead: heavier than
-opening a browser, lighter than setting up a full engine project. Best for 2D
-action/platformer feel validation when the project engine is 3D-first or takes
-significant time to configure.
+**Lighter alternative — paper or data prototype:** When a runnable Godot build
+would not answer the question efficiently, use a spreadsheet, state table, or
+paper prototype. Runnable software prototypes remain Godot projects so findings
+transfer directly into production.
 
 ---
 
@@ -220,8 +215,8 @@ cannot tell you whether jumping feels right or whether explosions feel satisfyin
 **Narrative tools for this path:** For dialogue-heavy and story-driven games, skip the
 generic rules doc — use a dedicated narrative scripting tool instead:
 - **Twine** — zero-code hypertext fiction; ideal for branching structure experiments and choice-impact testing
-- **Ink** (Inkle) — plain-text scripting language used in *80 Days*, *Heaven's Vault*, and *Overboard*; exports directly to Unity and Godot
-- **Yarn Spinner** — dialogue scripting used in *A Short Hike*, *DREDGE*, and *Night in the Woods*; integrates natively with Unity and Godot
+- **Ink** (Inkle) — plain-text branching narrative format that can be integrated with Godot through an approved adapter
+- **Yarn Spinner** — dialogue scripting format that can be integrated with Godot through an approved adapter
 
 All three let you write and playtest branching dialogue in minutes. Key metric for
 narrative prototypes: **time to first emotional beat** — how many exchanges before

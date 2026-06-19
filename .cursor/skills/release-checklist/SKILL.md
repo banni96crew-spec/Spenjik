@@ -9,14 +9,16 @@ description: >-
 
 ## Inputs
 
-- Treat user-provided arguments as: `[platform: pc|console|mobile|all]`.
+- Treat user-provided arguments as: `[platform: pc|console|all]`.
 
 
 > **Explicit invocation only**: This skill should only run when the user explicitly requests it with `/release-checklist`. Do not auto-invoke based on context matching.
 
 ## Phase 1: Parse Arguments
 
-Read the argument for the target platform (`pc`, `console`, `mobile`, or `all`). If no platform is specified, default to `all`.
+Read the argument for the target platform (`pc`, `console`, or `all`). If no
+platform is specified, default to the platforms declared in
+`.cursor/docs/technical-preferences.md`.
 
 ---
 
@@ -109,21 +111,6 @@ Add platform-specific sections based on the argument:
 - [ ] Parental controls respected
 - [ ] Platform-specific achievement/trophy integration tested
 - [ ] First-party certification submission prepared
-```
-
-**For `mobile`:**
-```markdown
-### Platform Requirements: Mobile
-- [ ] App store guidelines compliance verified
-- [ ] All required device permissions justified and documented
-- [ ] Privacy policy linked and accurate
-- [ ] Data safety/nutrition labels completed
-- [ ] Touch controls tested on multiple screen sizes
-- [ ] Battery usage within acceptable range
-- [ ] Background behavior correct (pause, resume, terminate)
-- [ ] Push notification permissions handled correctly
-- [ ] In-app purchase flow tested (if applicable)
-- [ ] App size within store limits
 ```
 
 **Store and launch sections (all platforms):**

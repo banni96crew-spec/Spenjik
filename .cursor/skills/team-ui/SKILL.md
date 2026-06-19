@@ -53,7 +53,7 @@ Use the specialist review pass to spawn each team member as a SPECIALIST REVIEW 
 - `role: ux-designer` — User flows, wireframes, accessibility, input handling
 - `role: ui-programmer` — UI framework, screens, widgets, data binding
 - `role: art-director` — Visual style, layout polish, art bible consistency
-- `role: [UI engine specialist]` — Engine-specific UI pattern validation (e.g., unity-ui-specialist, ue-umg-specialist, godot-specialist)
+- `role: godot-specialist` — Godot `Control`, `Container`, `Theme`, focus, and scene-pattern validation
 - `role: accessibility-specialist` — Accessibility compliance audit
 
 Always provide full context in each agent's prompt (feature requirements, existing UI patterns, platform targets). Run independent specialist passes in parallel where the pipeline allows it (e.g., Phase 4 review agents can run simultaneously).
@@ -111,7 +111,7 @@ Delegate to **art-director**:
 ### Phase 3: Implementation
 
 Before implementation begins, spawn the **engine UI specialist** (from `.cursor/docs/technical-preferences.md` Engine Specialists → UI Specialist) to review the UX spec and visual design spec for engine-specific implementation guidance:
-- Which engine UI framework should be used for this screen? (e.g., UI Toolkit vs UGUI in Unity, Control nodes vs CanvasLayer in Godot, UMG vs CommonUI in Unreal)
+- Which Godot `Control`/`Container` structure and, where justified, `CanvasLayer` boundary should be used for this screen?
 - Any engine-specific gotchas for the proposed layout or interaction patterns?
 - Recommended widget/node structure for the engine?
 - Output: engine UI implementation notes to hand off to ui-programmer before they begin
