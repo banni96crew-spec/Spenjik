@@ -1,0 +1,157 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и три локальных AI управляют районами, зданиями,
+ресурсами, картами и эффектами.
+
+Текущий этап: Milestone M13 — AI System.
+Он выполняется строго после завершённых M0–M12.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: AI выбирает действия, но не владеет их правилами.
+- Data-driven: поведение задаётся `AIProfileDefinition` Resources.
+- AI покупает только через MarketLogic/PriceLogic.
+- AI атакует только через CombatEngine.
+- UI является только view/input layer.
+- Validation и previews выполняются до mutation.
+- Failed candidates не изменяют state.
+- Gameplay RNG проходит только через M3 APIs.
+- Random потребляется в строго определённых точках.
+- Resources никогда не мутируют во время run.
+- AI не продвигает phase напрямую.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/ai/`
+- `res://logic/random/`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/turf_levels/`
+- `res://logic/game_state/`
+- `res://data/ids/`
+- `res://data/resources/ai_profiles/`
+- `res://tests/unit/`
+- `res://tests/integration/`
+- `res://tests/replay/`
+
+Источники истины:
+
+- `docs/prd/13_AI_SYSTEM.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/07_COMBAT_SYSTEM.md`
+- `docs/prd/12_TURF_LEVELS.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0–M2:
+
+- созданы project structure, IDs, AI profile schema/resources и catalog.
+
+M3 — Deterministic Random:
+
+- доступны `SeededRandom` и `SeededPicker`;
+- previews не consume RNG;
+- tie-break RNG используется только при реальной ничьей.
+
+M4 — Game State Schema:
+
+- определены AI players, `ai_bosses`, strong flag и random state;
+- доступны factory, validator, serializer и fixtures.
+
+M5 — Core Loop and Phases:
+
+- реализованы Market/Action lifecycle и phase-safe completion;
+- AI не выставляет readiness/action flags в обход phase owner.
+
+M6 — Economy and Market:
+
+- доступны purchase validation, price preview и purchase resolution;
+- AI получает те же цены, limits и placement rules.
+
+M7 — Combat System:
+
+- доступны validation, preview, selectors, resolve и discard;
+- AI не дублирует combat effects.
+
+M8–M11:
+
+- AI не получает human roles, contracts или contacts;
+- AI не выбирает Street Deals;
+- explicit Street Deal side effects могут затрагивать AI.
+
+M12 — Turf Levels:
+
+- доступны Level 6 AI War discount
+  и Level 9 War weight multiplier helpers;
+- setup modifiers применяются после strong AI assignment.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M12.
+
+## Что сейчас делаю
+
+Реализую M13 — AI System:
+
+- `res://logic/ai/AIBotController.gd`;
+- `res://logic/ai/AIPurchaseLogic.gd`;
+- `res://logic/ai/AITargetLogic.gd`;
+- `res://logic/ai/AIFallbackLogic.gd`;
+- `res://logic/ai/AIActionLogic.gd`;
+- deterministic setup;
+- multi-purchase Market loop;
+- target/attack scoring;
+- multi-card Action loop;
+- fallbacks;
+- GUT integration/replay/static tests.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Ровно три AI: `ai_1`, `ai_2`, `ai_3`.
+- Ровно один strong AI.
+- Три unique profiles назначаются в stable player order.
+- Setup RNG order: strong AI, затем profiles.
+- AI может покупать несколько cards за Market.
+- AI может сыграть несколько War cards после одного passed roll.
+- Probability roll выполняется один раз за AI Action.
+- Purchase/target/action ties используют SeededPicker только при tie.
+- Reserve не меняет price и не bypass-ит validation.
+- Blocked attacks избегаются при наличии unblocked alternatives.
+- Insider используется только с Thug против Cops.
+- Saboteur engine priority фиксирован и не использует RNG.
+- AI profile Resources не мутируют.
+- Resolved fixes `FIX-014`–`FIX-021` обязательны.
+- Нерешённый вопрос фиксируй как `OQ-*`.
+- Ориентиры объёма промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Изменение AI profile values.
+- Новые profiles, scores, probabilities, reserves или fallbacks.
+- Card, market, combat или Turf rule changes.
+- Human roles/contracts/Street Deal choices для AI.
+- GameStateManager facade из M14.
+- Save/load и replay harness orchestration из M15.
+- AI/UI animations из M16.
+- Network, backend или machine-learning AI.
+- Forbidden Godot RNG.
+- React, TypeScript, Tailwind, Zustand, Docker и routing.

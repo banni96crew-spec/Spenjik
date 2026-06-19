@@ -1,0 +1,156 @@
+---
+description: Critical static data, Resource schema, catalog loading, canonical ID, and Resource validation rules.
+globs:
+globs:
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "logic/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Data, Resources, Catalogs and IDs
+
+## Applies when
+
+Apply when creating, reviewing, or modifying ID constants, Resource schema scripts, `.tres` static definitions, catalogs, or catalog/resource validation tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/03_IDS_AND_CONSTANTS.md` owns canonical IDs, constant files, ID naming rules, validation errors, uniqueness requirements, and ID validation.
+- `docs/prd/04_GAME_STATE_SCHEMA.md` owns the boundary between static Resources and runtime Dictionary state.
+- `docs/prd/05_CARDS_DATABASE.md` owns CardDefinition schema, exact card membership, card prices, card types, destinations, and card Resource files.
+- System owner PRDs own their Resource schemas and membership: roles, contracts, Street Deals, contacts, Turf Levels, and AI profiles.
+- `docs/prd/15_GODOT_ARCHITECTURE.md` owns Resource catalog architecture, folder placement, catalog access patterns, and catalog tests.
+
+## Static Resource Rule
+
+- Store all static gameplay definitions as `.tres` Resources using their documented Resource schema.
+- Keep `.tres` Resources immutable during gameplay.
+- Resources define what exists; runtime Dictionary state stores what happened.
+- Runtime state must store Resource IDs, counters, booleans, flags, and progress, not Resource instances.
+- Resource schema scripts must extend `Resource`, use the documented `class_name`, and expose only PRD-owned fields.
+- Do not add exported fields to a Resource schema unless the owner PRD is updated first.
+- Do not create new `.tres` files, remove required `.tres` files, rename IDs, or change balance values unless the owner PRD explicitly changes the catalog membership or schema.
+
+## Required Resource Schemas
+
+Use the exact PRD-owned schema for each static definition type:
+
+| Resource schema | Required location | ID owner |
+| --- | --- | --- |
+| `CardDefinition.gd` | `res://data/resources/cards/` | `GameIds.CARD_IDS` |
+| `RoleDefinition.gd` | `res://data/resources/roles/` | `RoleIds.ALL` |
+| `ContractDefinition.gd` | `res://data/resources/contracts/` | `ContractIds.ALL` |
+| `ContactDefinition.gd` | `res://data/resources/contacts/` | `ContactIds.ALL` |
+| `StreetDealDefinition.gd` | `res://data/resources/street_deals/` | `StreetDealIds.ALL` |
+| `AIProfileDefinition.gd` | `res://data/resources/ai_profiles/` | `AIProfileIds.ALL` |
+| `TurfLevelDefinition.gd` | `res://data/resources/turf_levels/` | `TurfLevelIds.ALL` |
+
+- Every Resource ID must exactly match the corresponding constant value.
+- Every Resource set must have exact catalog membership: no missing required definitions, no extra unowned definitions, no duplicate IDs.
+- `TurfLevelDefinition.level` uses integers `0..10`; string Turf IDs are forbidden.
+- AI profile ID `merchant` is valid only as an AI profile ID; `merchant_ai.tres` may have `id == "merchant"` as documented.
+- Card Resources must preserve the exact 16-card MVP database, base prices, types, destinations, limits, and required files from `05_CARDS_DATABASE.md`.
+
+## Catalog Access Rule
+
+- Gameplay logic must access static Resources only through catalogs.
+- Catalogs may preload or load known Resource files, validate IDs, return definitions by ID, return all definitions, and return all IDs.
+- Required catalogs:
+
+```text
+res://logic/catalog/CardCatalog.gd
+res://logic/catalog/RoleCatalog.gd
+res://logic/catalog/ContractCatalog.gd
+res://logic/catalog/ContactCatalog.gd
+res://logic/catalog/StreetDealCatalog.gd
+res://logic/catalog/AIProfileCatalog.gd
+res://logic/catalog/TurfLevelCatalog.gd
+```
+
+- Catalogs must not own runtime state.
+- Catalogs must not mutate Resources.
+- Catalogs must fail safely for invalid IDs: return a documented null/safe failure or structured error without mutating runtime state.
+- Missing required Resources, duplicate IDs, or invalid fields must fail catalog/resource tests instead of using runtime fallbacks.
+- Logic modules outside `logic/catalog/` must not scatter-load `.tres` files with ad-hoc `load()`, `preload()`, `ResourceLoader.load()`, hardcoded paths, or directory scans.
+
+## ID and Constants Rule
+
+- Stable IDs and validation errors live in `res://data/ids/`.
+- IDs must be lowercase `snake_case`, stable, untranslated, and free of spaces or hyphens.
+- Use constants from the owner ID class instead of repeated raw gameplay strings.
+- Each `ALL` array must contain every declared value in its domain exactly once.
+- Do not create aliases, duplicate constants with different names for the same value, compatibility IDs, display-name IDs, translated IDs, or local duplicated ID lists.
+- Do not rename IDs after Resources or tests exist.
+- If a system needs a new ID, update the owner PRD and constants first, then Resources, catalogs, logic, tests, and UI selectors.
+
+## Display Text Rule
+
+- `title`, `description`, `effect_summary`, `limitation_summary`, option labels, and option descriptions are display text only.
+- Gameplay logic must resolve behavior by canonical IDs and owner logic rules, not by parsing human-readable Resource text.
+- UI may display summaries but must not parse summaries into gameplay behavior.
+
+## Runtime State Boundary
+
+- Do not store runtime state in Resources, `.tres`, catalogs, or Resource schema scripts.
+- Do not store player ownership, market state, cooldowns, contract progress, debts, random state, combat logs, phase state, or gameplay flags in Resources.
+- Runtime state must remain JSON-compatible Dictionary snapshots as defined by `04_GAME_STATE_SCHEMA.md`.
+- Resource data may be read by logic and then expressed in runtime state only as IDs, counters, booleans, strings, arrays, or dictionaries.
+
+## Forbidden behavior
+
+- Do not mutate `.tres` Resources at runtime.
+- Do not place runtime gameplay state in Resource instances.
+- Do not add Resource schema fields without an owner PRD schema update.
+- Do not add or remove catalog members without updating the owner PRD, constants, Resources, and tests together.
+- Do not parse `description`, `effect_summary`, `limitation_summary`, labels, filenames, or display text as gameplay logic.
+- Do not implement ad-hoc Resource loading from domain logic.
+- Do not hardcode repeated gameplay IDs when a constant owns the value.
+- Do not create aliases or fallback IDs for invalid, legacy, translated, or display-name values.
+- Do not silently ignore missing required Resources, duplicate Resource IDs, wrong types, wrong prices, or missing required fields.
+- Do not let catalogs depend on UI, scene nodes, runtime state managers, random helpers, or debug snapshots.
+- Do not modify Resource instances returned by catalogs.
+- Do not derive gameplay IDs from filenames, folder names, display names, or translated text.
+
+## Required tests
+
+Catalog and Resource tests must verify:
+
+- every required Resource schema script exists;
+- every required `.tres` file exists;
+- every Resource loads successfully through its catalog;
+- every Resource ID exists in the correct constants `ALL` array;
+- every constants `ALL` array has no duplicates and exact expected membership;
+- every Resource set has no duplicate IDs;
+- every required exported field is present and valid;
+- card base prices, types, destinations, and exact 16-card membership match `05_CARDS_DATABASE.md`;
+- roles, contracts, contacts, Street Deals, AI profiles, and Turf Levels match their owner PRDs;
+- invalid IDs return safe catalog behavior;
+- catalogs do not mutate Resources;
+- runtime state contains IDs and Dictionary data, not Resource instances.
+
+## Output requirements
+
+For data, Resource, or catalog changes, report:
+
+- Owner PRD:
+- Resource schema:
+- Resource files changed:
+- Constants touched:
+- Catalog touched:
+- Exact membership impact:
+- Safe invalid-ID behavior:
+- Resource/catalog tests:
+
+## Verification checklist
+
+- Static definitions are `.tres` Resources using documented schemas.
+- Resource IDs match constants exactly.
+- Constants and Resource membership are complete and unique.
+- Resources stay immutable and contain no runtime state.
+- Logic accesses Resources only through catalogs.
+- Invalid IDs fail safely.
+- No gameplay behavior is parsed from display text.
+- No aliases, fallback IDs, duplicate ID lists, or schema fields were introduced.
+- Required-field, uniqueness, catalog membership, and safe invalid-ID tests exist or were updated.

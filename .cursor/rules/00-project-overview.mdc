@@ -1,0 +1,211 @@
+---
+description: Global always-apply engineering rules, Definition of Done, stack, architecture, testing, security, and LLM workflow for The Turf.
+alwaysApply: true
+---
+
+# Генеральные правила проекта The Turf
+
+## 1. Область действия и приоритет
+
+Применяй это правило к каждой задаче в репозитории.
+
+Маркировка:
+
+- `[U]` — универсальный инженерный принцип.
+- `[S]` — правило стека Godot 4.6.2, GDScript, `.tres` и GUT 9.6.0.
+- `[P]` — обязательное правило проекта The Turf.
+
+При конфликте соблюдай приоритет:
+
+1. `[P]` hard invariants и owner PRD.
+2. `[S]` ограничения стека и архитектуры.
+3. `[U]` инженерные стандарты.
+4. Остальные рекомендации.
+
+Жёсткий запрет выше удобства реализации. SRP выше локального стиля. Не выдумывай компромисс при конфликте: остановись и укажи точные конфликтующие требования.
+
+## 2. Source of truth и границы проекта
+
+- `[P]` Проект называется **The Turf**: локальная desktop-игра для 1 человека и 3 локальных AI-соперников, ровно на 15 раундов.
+- `[P]` `docs/prd/00_INDEX.md` определяет владельца каждого требования. Точный source of truth — соответствующий owner-файл в `docs/prd/`.
+- `[P]` `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` содержит принятые решения, исправления и открытые вопросы.
+- `[P]` `docs/prd/19_IMPLEMENTATION_ORDER.md` определяет milestone, зависимости и gates.
+- `[P]` `docs/prd/20_LLM_AGENT_RULES.md` определяет поведение coding agent.
+- `[P]` Не используй `PRD 2.4.txt`, ROADMAP, старые skills, промты или существующий код как более высокий источник истины, чем модульные owner PRD.
+- `[P]` Не меняй баланс, IDs, core loop, число участников, длину матча, карты, роли, контракты, контакты, Street Deals, долги, Turf Levels, AI profiles и deterministic-random contract без явного изменения owner PRD.
+- `[P]` Если требования отсутствуют, противоречат друг другу или требуют нового gameplay/API/state решения, не угадывай. Останови затронутую часть и создай либо укажи `OQ-*`.
+- `[P]` Не загружай весь PRD без необходимости. Для задачи используй owner PRD, прямые зависимости, `20_LLM_AGENT_RULES.md`, тест-план и открытые вопросы. Если нужно более 5–7 PRD-файлов, раздели задачу.
+
+## 3. Definition of Done
+
+- `[U]` Код готов только после цепочки `written -> tested -> working`.
+- `[U]` Не считай задачу выполненной, пока реализация не написана, не протестирована и не проверена в рабочем состоянии.
+- `[U]` Не называй код готовым, если он не импортируется/не запускается, не проходит обязательные проверки или не имеет требуемых тестов.
+- `[U]` Любая завершённая задача включает рабочую реализацию и фактическую проверку результата.
+- `[P]` Для The Turf обязательны релевантные GUT-тесты, static scans и, когда затронута replay-sensitive логика, replay tests.
+- `[P]` Для high-risk или milestone-gate проверки выполняй Godot import, canonical smoke test и полный GUT suite в порядке из `docs/prd/18_TEST_PLAN.md`.
+- `[U]` Не утверждай, что непроведённая проверка прошла. Указывай `pass`, `fail` или `not run` с конкретной причиной.
+- `[U]` Не коммить и не передавай как готовый код с падающими обязательными тестами.
+
+## 4. Универсальные правила разработки
+
+- `[U]` Перед добавлением логики найди существующие реализации, helpers, constants, fixtures и owner modules.
+- `[U]` Не дублируй поведение. Повторяемую логику выноси в подходящий shared helper только при реальном повторении и без нарушения ownership.
+- `[U]` Не добавляй mock/fake/placeholder data в production или dev runtime.
+- `[U]` Test doubles, fixtures и stubs допустимы только в тестах либо как явно разрешённый milestone-safe stub; stub не должен изображать готовый gameplay.
+- `[U]` Не пиши очевидные комментарии. Комментируй причины нетривиальных решений, invariants и сложную business/gameplay logic.
+- `[U]` Если выполняются коммиты, один commit должен содержать один логический change. Не создавай commit без прямого запроса пользователя.
+- `[U]` Разделяй runtime, test, editor/debug и export/CI конфигурации. Не делай gameplay зависимым от test/editor/CI окружения.
+- `[U]` Не выполняй unrelated cleanup, массовое форматирование, переименование или рефакторинг вне текущей задачи.
+- `[U]` Сохраняй пользовательские и параллельные изменения; не откатывай то, что не создавал в текущей задаче.
+
+## 5. Стек и запрещённые технологии
+
+- `[S]` Используй только Godot `4.6.2 stable` и совместимый GDScript.
+- `[S]` UI строится на Godot `Control`, `Container`, scenes и `Theme`.
+- `[S]` Статические игровые данные хранятся в immutable `.tres` Resources и доступны через catalogs.
+- `[S]` Runtime state хранится в `Dictionary` snapshots; активным состоянием владеет `GameStateManager.gd`.
+- `[S]` Тестовый framework — GUT `9.6.0`.
+- `[P]` MVP targets: Windows и Linux.
+- `[P]` React, TypeScript, JavaScript gameplay runtime, Tailwind, Zustand, Next.js, FastAPI, Node backend, WebSockets, Docker, C#, обязательный web/mobile export и browser-first architecture запрещены.
+- `[P]` Backend, accounts, telemetry, analytics, cloud sync, multiplayer и сетевые сервисы вне MVP.
+- `[P]` SQLite, другие БД, JSON/text persistence и in-memory stores как долговременное хранилище запрещены: gameplay persistence отсутствует в MVP. Допустим только owner-approved debug snapshot, не влияющий на gameplay.
+
+## 6. Архитектура и SRP
+
+- `[U]` Модуль, класс и функция должны иметь одну причину для изменения.
+- `[U]` Если ответственность описывается как “делает X и Y”, раздели её, если X и Y меняются независимо.
+- `[P]` Каждый `.gd` source file должен быть короче 250 строк. При приближении к лимиту разделяй validator, resolver, selector, builder, catalog, facade и fixture responsibilities.
+- `[U]` Если функция приближается к 50 строкам или смешивает уровни абстракции, вынеси независимые блоки в focused private helpers или отдельный owner module.
+- `[U]` Не импортируй зависимости, не относящиеся к ответственности файла.
+- `[U]` Не смешивай несвязанные уровни логики в одном файле и не создавай god objects/god scenes.
+- `[P]` Разрешённое направление production-зависимостей:
+
+```text
+UI -> GameStateManager -> logic modules -> catalogs/resources/constants
+```
+
+- `[P]` UI отображает state/views, собирает input payloads и вызывает только public API `GameStateManager`.
+- `[P]` `GameStateManager.gd` — тонкий facade: владеет active state, создаёт working copy, делегирует logic, валидирует и commit-ит только успешный результат.
+- `[P]` Logic modules не знают о UI, scene tree и singleton state; получают явные inputs/working state и возвращают structured result.
+- `[P]` Catalogs только загружают/валидируют/выдают Resources. Resources содержат static data и никогда не хранят runtime state.
+- `[P]` UI не рассчитывает цены, не валидирует gameplay, не решает combat, не запускает AI, не меняет Nal/VP/cards/contracts/contacts/debts и не потребляет gameplay random.
+- `[P]` AI использует те же owner validators/resolvers, что человек, и не обходит MarketLogic, CombatEngine, phase flow или facade commit policy.
+- `[P]` Соблюдай каноническую структуру `res://` из `docs/prd/15_GODOT_ARCHITECTURE.md`; не создавай альтернативные managers, stores или competing source-of-truth modules.
+
+## 7. GDScript и type safety
+
+- `[S]` Используй static typing wherever practical для параметров, return types, variables, arrays и dictionaries.
+- `[S]` Избегай неограниченного `Variant`; используй его только когда Godot API или действительно полиморфная форма этого требуют.
+- `[S]` Используй `snake_case` для функций, переменных, Dictionary keys и string IDs; `PascalCase` для `class_name`; `UPPER_SNAKE_CASE` для constants.
+- `[P]` Stable IDs и errors бери только из `res://data/ids/`; не создавай magic strings и локальные копии ID-списков.
+- `[P]` Соблюдай exact result shapes, payloads и public signatures owner PRD и `docs/prd/16_GAME_STATE_MANAGER_API.md`.
+- `[P]` Failed validation не мутирует active/working state, не меняет random step и не добавляет gameplay events.
+- `[P]` Selectors, previews и validators read-only; они не мутируют state, не пишут logs, не меняют phase и не потребляют active gameplay random.
+- `[P]` Public mutator сначала валидирует, затем меняет deep working copy и commit-ит её только при `ok == true`.
+
+## 8. Determinism, async и I/O
+
+- `[P]` Gameplay random разрешён только через `res://logic/random/SeededRandom.gd` и `SeededPicker.gd`.
+- `[P]` `randf()`, `randi()`, `randomize()`, `RandomNumberGenerator`, system time, OS random и локальные random streams запрещены в gameplay.
+- `[P]` Изменение порядка random calls требует owner-PRD основания и replay tests с проверкой exact random step.
+- `[S]` Core gameplay logic должна быть синхронной, чистой и детерминированной; не используй `await`, timers или frame order для вычисления правил.
+- `[S]` `await` допустим только для UI/presentation flow или явно разрешённого Godot signal flow, который не влияет на deterministic result.
+- `[P]` Network I/O и внешние сервисы запрещены в MVP.
+- `[P]` Runtime filesystem I/O запрещён, кроме optional `DebugSnapshotManager` по PRD. Ошибка debug snapshot не должна менять gameplay, replay, logs или test result.
+- `[U]` Если будущий PRD явно разрешит blocking I/O, изолируй его от gameplay loop и используй неблокирующий/worker-thread API; не блокируй main thread.
+- `[U]` Не переписывай синхронную библиотеку в псевдо-async API. Изолируй blocking boundary и сохраняй простой deterministic core.
+
+## 9. Тестирование
+
+- `[U]` Новое или изменённое поведение требует новых либо обновлённых тестов.
+- `[S]` GUT test files называются `test_<module>.gd`; test functions — `test_<expected_behavior>()`.
+- `[P]` Тесты располагаются в `res://tests/unit`, `integration`, `replay`, `static` и используют helpers из `res://tests/fixtures`.
+- `[U]` Тест “не упало” недостаточен как единственная проверка. Проверяй конкретные outputs, errors, state changes и side effects.
+- `[U]` Для каждого изменённого behavior group покрой happy path, edge case и error/failed-validation case.
+- `[P]` Каждый public mutator должен иметь mutation-safety test; selector/preview — no-mutation и no-random-step test.
+- `[P]` Random consumers должны проверять одинаковый результат при одинаковых seed/state и exact изменение random step.
+- `[P]` Используй fixed seeds и полные валидные fixtures. Не используй current time, OS random, test order или неполные hand-written states.
+- `[P]` При изменении random, setup, phases, AI, market, combat, contracts, contacts, Street Deals, logs, commits или winner resolution запускай replay tests.
+- `[P]` Static scans должны контролировать forbidden random APIs, UI mutation, logic-to-UI dependencies, banned stack, Resource integrity, ambiguity markers и лимит 250 строк.
+- `[U]` Не ослабляй, не удаляй и не пропускай валидный тест ради зелёного результата.
+- `[P]` Не вводи процентный coverage threshold: PRD требует behavioral coverage, GUT suites и static/replay checks, а не произвольные проценты.
+
+## 10. Error handling и logging
+
+- `[U]` Не используй `print()` и аналоги как application output, gameplay history или обработку ошибок.
+- `[P]` Gameplay events записываются только в canonical append-only `state["combat_log"]` через `LogEventTypes` и exact event envelope из owner PRD.
+- `[P]` Validation failures возвращаются через canonical `ValidationErrors`; ad-hoc error strings, generic fallback errors и silent defaults запрещены.
+- `[S]` В GDScript нет exception-based recovery contract проекта: ожидаемые ошибки выражай structured results, а не скрытыми side effects.
+- `[U]` Любой failure path должен: вернуть/передать ошибку выше, записать диагностику с контекстом либо выполнить документированное recovery action.
+- `[U]` Silent failure и эквивалент `catch/pass` запрещены.
+- `[U]` Используй минимально необходимую область обработки ошибки; broad boundary допустим только там, где процесс/loop не должен падать, и обязан сохранить полный контекст.
+- `[S]` Для engine/tooling diagnostics используй `push_warning()` и `push_error()` только на подходящих boundaries; не дублируй ими canonical gameplay log.
+- `[U]` Severity semantics: debug — tracing internal state; info — normal operational event; warning — recoverable issue; error — failure, влияющий на результат.
+- `[U]` Warning/error diagnostics должны содержать воспроизводимый context: module, operation, player/card/deal ID, `res://` path, seed/step или input value без secrets.
+- `[P]` Не изобретай отдельный logging framework без явной необходимости и approval.
+
+## 11. Security, secrets и external state
+
+- `[U]` Не хардкодь credentials, API keys, tokens, private URLs, signing data, passwords и environment-specific machine paths.
+- `[U]` Secrets, если owner-approved CI/release процесс когда-либо их потребует, передаются только через environment variables/secret storage.
+- `[P]` Не добавляй `.env`, credentials files, signing profiles или service-account files в репозиторий.
+- `[U]` Если будущий approved local workflow потребует `.env`, сначала добавь его в `.gitignore`, никогда не коммить его и предоставь `.env.example` только с placeholders/comments.
+- `[U]` Попадание secret в git — security incident: останови публикацию, сообщи пользователю и потребуй rotate/revoke; удаления строки из последнего commit недостаточно.
+- `[P]` Gameplay не должен зависеть от environment variables, network, OS account, CI files или machine-specific absolute paths.
+- `[P]` Не добавляй telemetry, analytics, crash uploads, remote config, auth, cloud saves или network calls.
+
+## 12. Dependency management
+
+- `[U]` Перед новой dependency проверь Godot built-ins, GDScript и уже установленный stack.
+- `[U]` Добавляй dependency только при явном техническом обосновании и отсутствии достаточного решения в текущем stack.
+- `[U]` Если сомневаешься, используй возможности стандартного стека и не расширяй supply chain.
+- `[S]` Godot фиксирован на `4.6.2 stable`, GUT — на `9.6.0`.
+- `[S]` Любой новый Godot addon/plugin требует approval, точной версии или commit, проверенного source/license и теста совместимости с Godot 4.6.2.
+- `[P]` Не модифицируй `addons/gut/` internals, если задача явно не касается установки/обновления GUT.
+- `[P]` Не добавляй package managers и manifests запрещённого web/backend stack.
+
+## 13. UI/UX
+
+- `[S]` UI создаётся только средствами Godot Control/Containers/Theme; core actions обязаны иметь button-based desktop flow.
+- `[P]` Baseline: landscape desktop, mouse input, minimum 1280x720, target 1920x1080, readable text at 1080p.
+- `[P]` Палитра, dark/light theme, fonts, icons, audio и art direction не определены PRD. Не навязывай slate-тему, pure black ban или иной визуальный стиль без user-approved specification/assets.
+- `[P]` Theme и assets — presentation only; они не содержат gameplay values, IDs, validation или parsing contracts.
+- `[P]` UI получает safe views/previews, показывает stable disabled reasons и после mutator result полностью refresh-ится из current state.
+- `[P]` Сложные panels разделяй на screens/panels/widgets/helpers; helpers форматируют view data, но не принимают gameplay decisions.
+- `[P]` Не добавляй drag-and-drop как единственный способ core action и не делай mobile-first assumptions.
+
+## 14. Workflow coding assistant
+
+- `[U]` Перед новой feature сначала проверь repository state, milestone, owner/dependency PRDs, существующие modules и пересечения логики.
+- `[U]` До генерации кода дай краткий план: изменяемые файлы, ownership, state/API/architecture impact и planned tests.
+- `[P]` Для новой feature после плана дождись явного approval пользователя до изменения production/test файлов.
+- `[U]` Если новая логика дублирует существующую или смешивает ownership, остановись и предложи reuse, helper или разделение module/component.
+- `[U]` Не продолжай дублирующую реализацию, пока архитектурное решение не подтверждено owner PRD или пользователем в допустимых границах.
+- `[P]` Работай только в scope текущего milestone и не обходи unmet gates.
+- `[U]` После реализации запусти релевантные tests/checks и проверь запуск, архитектуру, отсутствие регрессий и Definition of Done.
+- `[U]` Для bug fix сначала воспроизведи проблему тестом, когда это практически возможно, затем добавь regression coverage.
+- `[U]` Не меняй production behavior только ради ошибочного теста; сверяй expected behavior с owner PRD.
+- `[P]` Не создавай hidden gameplay rules. Если нужен новый state field, API, error code или mechanic, сначала обновляется owner PRD/OQ по установленному процессу.
+
+## 15. Обязательный отчёт
+
+Перед реализацией укажи:
+
+- target milestone;
+- owner и dependency PRDs;
+- allowed files;
+- affected state, APIs, errors и random;
+- plan и required tests;
+- blockers/assumptions;
+- для новой feature — статус approval.
+
+После реализации укажи:
+
+- созданные/изменённые файлы и их responsibility;
+- реализованное behavior;
+- tests/static/replay checks и exact result `pass|fail|not run`;
+- сохранённые пользовательские изменения;
+- оставшиеся failures, blockers, OQ и limitations.
+
+Финальное правило: coding assistant реализует и проверяет спецификацию, но не становится автором скрытых игровых правил.

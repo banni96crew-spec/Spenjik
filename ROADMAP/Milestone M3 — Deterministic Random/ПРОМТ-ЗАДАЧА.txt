@@ -1,0 +1,247 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Реализуй только `M3 — Deterministic Random`. Не переходи к M4 и последующим модулям.
+
+КОНТЕКСТ ПРОЕКТА:
+
+M3 выполняется только после успешных M0, M1 и M2.
+
+До изменений изучи:
+
+- `res://docs/prd/14_DETERMINISTIC_RANDOM.md` — owner PRD;
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`;
+- `res://docs/prd/04_GAME_STATE_SCHEMA.md`, только RandomState;
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`;
+- `res://docs/prd/18_TEST_PLAN.md`;
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`;
+- `res://docs/prd/20_LLM_AGENT_RULES.md`;
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`.
+
+Используй PRD как source of truth. Не пересказывай их вместо выполнения задачи.
+
+Required algorithm:
+
+- seed hash: `cyrb53`;
+- PRNG: `mulberry32`.
+
+`SeededRandom.gd` и `SeededPicker.gd` находятся под hard stub ban: алгоритм, output и step behavior должны быть реальными и зафиксированными тестами.
+
+ЗАДАЧА:
+
+1. Проверь repository state и сохрани пользовательские изменения.
+2. Фактически проверь M0, M1 и M2 gates.
+3. Проверь `ValidationErrors.OK` и `ValidationErrors.REQUIREMENT_NOT_MET`.
+4. Реализуй `SeededRandom.gd` и `SeededPicker.gd`.
+5. Добавь focused GUT tests и deterministic sample vectors.
+6. Добавь forbidden random API static scan.
+7. Запусти M3 tests, prerequisite regressions и static scans.
+8. Проверь отсутствие изменений вне scope M3.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ:
+
+- `res://logic/random/SeededRandom.gd`
+- `res://logic/random/SeededPicker.gd`
+- `res://tests/unit/test_seeded_random.gd`
+- `res://tests/unit/test_seeded_picker.gd`
+- random static scan в существующем unit/static test layout.
+
+REQUIRED API:
+
+```gdscript
+class_name SeededRandom
+
+static func seeded_random(seed: String, step: int) -> float
+static func create_random_state(seed: String, history_enabled: bool = false) -> Dictionary
+static func next(random_state: Dictionary, tag: String = "") -> Dictionary
+static func roll_d6_pair(random_state: Dictionary, tag: String = "") -> Dictionary
+```
+
+```gdscript
+class_name SeededPicker
+
+static func pick_one(random_state: Dictionary, items: Array, tag: String = "") -> Dictionary
+static func pick_unique(random_state: Dictionary, items: Array, count: int, tag: String = "") -> Dictionary
+static func pick_weighted(random_state: Dictionary, weighted_items: Array[Dictionary], tag: String = "") -> Dictionary
+static func pick_best_tie(random_state: Dictionary, tied_items: Array, tag: String = "") -> Dictionary
+```
+
+КРИТИЧЕСКИЕ INVARIANTS:
+
+- `seeded_random` использует `cyrb53` + `mulberry32`.
+- Same seed + same step всегда дают same value.
+- Value находится в диапазоне `0.0 <= value < 1.0`.
+- `seeded_random` не мутирует state.
+- `create_random_state` начинает с `step == 0`.
+- `next` потребляет ровно 1 step, сохраняет seed и обновляет tag.
+- Tag не участвует в hash и не влияет на value.
+- History пишется только при `random_history_enabled == true`.
+- Gameplay не зависит от history.
+- `roll_d6_pair` потребляет ровно 2 steps и возвращает dice 1–6.
+- Integer index: `floor(value * count)` с defensive clamp.
+- Picker использует только `SeededRandom.next`.
+- Failed validation потребляет 0 steps и возвращает исходный random state.
+- Input arrays не мутируются.
+
+PICKER CONTRACT:
+
+`pick_one`:
+- empty input → failure, 0 steps;
+- valid input → selected item, 1 step.
+
+`pick_unique`:
+- `count <= 0` → success с empty selection, 0 steps;
+- выбирает до `count` unique items;
+- count больше pool → выбирает весь pool;
+- потребляет 1 step на выбранный item;
+- работает с копией pool.
+
+`pick_weighted`:
+- игнорирует `weight <= 0`;
+- нет positive weights → failure, 0 steps;
+- valid selection → 1 step;
+- threshold равен `value * total_positive_weight`;
+- stable input order определяет boundaries;
+- input не сортируется.
+
+`pick_best_tie`:
+- empty list → failure, 0 steps;
+- один item → success, 0 steps;
+- несколько items → `pick_one`, 1 step.
+
+Picker result shape содержит:
+
+- `ok`, `error`;
+- `selected`, `selected_items`;
+- `steps_used`, `random`.
+
+Используй только `ValidationErrors.OK` и `ValidationErrors.REQUIREMENT_NOT_MET`.
+
+МИНИМАЛЬНЫЕ ТЕСТЫ:
+
+SeededRandom:
+
+- reproducibility для same seed/step;
+- range `[0.0, 1.0)`;
+- representative different seed/step samples;
+- locked sample vectors;
+- корректная initial RandomState shape;
+- exact step и tag behavior;
+- tag не влияет на value;
+- history disabled/enabled.
+
+Dice:
+
+- два dice 1–6;
+- корректные `sum` и `is_double`;
+- ровно 2 steps;
+- reproducibility из одинакового starting state.
+
+SeededPicker:
+
+- success, failure и exact steps всех методов;
+- отсутствие duplicates;
+- count 0 и count больше pool;
+- non-positive weights;
+- single-item и real tie;
+- input arrays не мутируются;
+- failure сохраняет random state.
+
+Static scan:
+
+- обнаруживает `randf(`, `randi(`, `randomize(` и `RandomNumberGenerator`;
+- сканирует gameplay paths;
+- исключает PRD и собственные test patterns без ослабления gameplay ban.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинай M3 при проваленном prerequisite gate.
+- Не заменяй required algorithms.
+- Не используй встроенный Godot RNG, system time или OS random.
+- Не включай tag в seed.
+- Не создавай отдельные streams/counters и не сбрасывай step.
+- Не мутируй state при failure и input arrays при выборе.
+- Не создавай fallback selection для invalid input.
+- Не используй ad-hoc error strings.
+- Не меняй constants, Resources или catalogs без требования PRD.
+- Не реализуй GameStateFactory, GameStateValidator или полный GameState.
+- Не реализуй IncomeLogic, MarketLogic, ContractLogic, StreetDealLogic, ContactLogic или AI.
+- Не создавай consumer integration tests и full-game replay раньше их milestone.
+- Не реализуй WinnerResolver, GameStateManager или gameplay UI.
+- Не добавляй web-stack artifacts.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Не ослабляй tests и не меняй sample vectors ради pass.
+- Не откатывай несвязанные пользовательские изменения.
+- Не заявляй о прохождении незапущенных tests.
+- Не оставляй ambiguity markers без `OQ-*`.
+
+Если PRD недостаточен или противоречив:
+
+1. Проверь существующие `OQ-*` и `FIX-*`.
+2. Останови только затронутую часть.
+3. Добавь `OQ-*`, если решения нет.
+4. Не подменяй required algorithm приблизительным аналогом.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь prerequisites, repository state и open questions.
+2. Составь таблицу: API → validation → steps → mutation → tests.
+3. Кратко опиши корректную числовую реализацию `cyrb53` и `mulberry32` в GDScript.
+4. Дай план без кода и дождись моего `ок`.
+5. После `ок` сначала добавь focused tests.
+6. Реализуй и проверь `SeededRandom.gd`.
+7. Зафиксируй verified sample vectors.
+8. Реализуй и проверь `SeededPicker.gd`.
+9. Добавь и проверь random static scan.
+10. Запусти полный M3 test group.
+11. Запусти M0–M2 regressions и доступные static scans.
+12. Проверь file length, scope и итоговый diff.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Не изменяй файлы до моего `ок`.
+3. После `ок` работай непосредственно в репозитории.
+4. Указывай пути в формате `res://...`.
+5. Не скрывай failed или not-run проверки.
+6. Не отмечай M3 завершённым при непрошедшем gate.
+
+Финальный отчёт:
+
+```text
+Prerequisites:
+- M0/M1/M2: PASS/FAIL/NOT RUN
+
+Implemented:
+- ...
+
+Changed files:
+- res://...
+
+Tests and static scans:
+- command
+- passed/failed
+
+Open questions:
+- none / OQ-*
+
+M3 gate:
+- PASS/FAIL/NOT RUN
+```
+
+M3 GATE CHECKLIST:
+
+- [ ] M0–M2 gates проходят.
+- [ ] Оба production files существуют.
+- [ ] Используются `cyrb53` и `mulberry32`.
+- [ ] Reproducibility и range tests проходят.
+- [ ] `next` использует 1 step; dice используют 2.
+- [ ] Все picker contracts и failure paths проходят.
+- [ ] Input arrays не мутируются.
+- [ ] Sample vectors зафиксированы.
+- [ ] Forbidden random API scan проходит.
+- [ ] Regression и static scans проходят.
+- [ ] Все `.gd` файлы меньше 250 строк.
+- [ ] M4+ consumers и web stack не добавлены.
+- [ ] Пользовательские изменения сохранены.

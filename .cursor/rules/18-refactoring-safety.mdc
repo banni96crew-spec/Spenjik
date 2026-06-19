@@ -1,0 +1,93 @@
+---
+description: Manual @refactoring-safety rule for behavior-preserving refactors with baseline tests, stable contracts, replay evidence, and no balance changes.
+alwaysApply: false
+---
+
+# Refactoring Safety
+
+## Applies when
+
+Apply only when the user or agent explicitly invokes `@refactoring-safety`, or when a task is primarily a refactor, cleanup, split, rename, extraction, migration, or architecture-preserving reorganization. Priority: High.
+
+## Source of truth
+
+- `docs/prd/20_LLM_AGENT_RULES.md` owns agent refactor flow, scope discipline, behavior preservation, stable public APIs, result shapes, random step counts, error codes, tests, and reporting.
+- `docs/prd/18_TEST_PLAN.md` owns affected tests, regression tests, replay tests, mutation-safety tests, exact random-step assertions, static scans, and honest test status.
+- Domain owner PRDs own the behavior being preserved.
+
+This rule is a manual guardrail for refactoring only. It must not override owner PRDs or convert cleanup work into balance, design, or feature changes. If the refactor requires behavior change, stop and split it into a separate owner-approved implementation task.
+
+## Preflight
+
+Before editing:
+
+- Identify the owner PRD and direct dependency PRDs for the touched module.
+- Identify the exact refactor scope and files allowed to change.
+- Identify public APIs, result shapes, IDs, validation errors, event payloads, event order, random consumers, random step counts, signals, selectors, and tests that must remain stable.
+- Check `21_OPEN_QUESTIONS_AND_FIXES.md` for relevant accepted `FIX-*` and open `OQ-*`.
+- Run or record the intended baseline tests before refactoring when tooling is available.
+- If baseline tests fail, either fix the pre-existing failure in a separate bug-fix task or document the failure as pre-existing before changing refactor code.
+
+## Behavior-preserving contract
+
+Refactors must preserve:
+
+- Public API names, arguments, return/result shapes, and error fields.
+- Canonical IDs, constants, Resource IDs, catalog membership, and `.tres` schemas.
+- Validation errors and error precedence.
+- Event types, event payload shapes, and event order.
+- Signal behavior and signal-visible state.
+- Deterministic random call order, step counts, tags, and tie-break behavior.
+- Phase transition order, commit atomicity, rollback behavior, and mutation-safety guarantees.
+- Selector/previews no-mutation behavior and no active random consumption.
+- Replay output for the same seed and scripted decisions.
+- Existing gameplay behavior, balance values, prices, effects, roles, contracts, contacts, Turf Levels, AI profile values, and winner rules.
+
+## Scope control
+
+- Keep the refactor to the smallest coherent slice.
+- Prefer extraction, splitting, renaming, or local simplification that follows existing PRD architecture.
+- Do not move modules across PRD ownership boundaries unless the owner PRD explicitly defines the new path.
+- Do not mass-move files, rename public classes, or change canonical paths without PRD authority.
+- Do not combine refactoring with new features, balance changes, schema changes, UI redesign, platform changes, or test-policy changes.
+- If a needed public API or path is undefined, stop and request clarification instead of inventing it.
+
+## Tests and evidence
+
+For refactors, run as relevant:
+
+- Baseline affected unit tests before the refactor.
+- Affected unit tests after the refactor.
+- Affected integration tests after the refactor.
+- Static scans if architecture, random, UI, file length, Resources, or forbidden APIs are touched.
+- Regression tests when the refactor is prompted by a bug or previously fragile behavior.
+- Replay tests if random, AI, phase, market, combat, setup, logs, commits, or deterministic order could be affected.
+
+Evidence of no behavior change should include:
+
+- Before/after test command names and exit statuses.
+- Files changed and why each change is refactor-only.
+- Public APIs/result shapes reviewed.
+- IDs/errors/events/random steps reviewed.
+- Replay/static/mutation-safety checks run or explicitly `not run` with reason.
+
+## Forbidden behavior
+
+- Do not change gameplay behavior under the label of refactoring.
+- Do not combine refactoring with balance changes, price/effect changes, role changes, card changes, AI score changes, or random behavior changes.
+- Do not change deterministic order, random step counts, event order, validation order, or selector mutation behavior for readability.
+- Do not weaken tests, loosen assertions, delete regression coverage, or mark failing tests as acceptable.
+- Do not change public APIs, result shapes, error codes, event payloads, or stable paths without owner PRD authority.
+- Do not mass-move modules or create a new architecture without PRD authority.
+- Do not claim behavior preservation unless tests/checks were run or limitations are clearly reported.
+
+## Output requirements
+
+When completing a refactor, report:
+
+- Refactor scope and owner PRD.
+- Files changed.
+- Baseline tests run and exit status.
+- Post-refactor tests run and exit status.
+- Regression/replay/static/mutation-safety checks run, or explicit `not run` reasons.
+- Evidence list for no behavior change: public APIs, result shapes, IDs, errors, event order, random step counts, and replay-sensitive behavior.

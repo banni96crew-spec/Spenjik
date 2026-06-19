@@ -1,0 +1,218 @@
+﻿РОЛЬ:
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Работай с переданным отдельно `ПРОМТ-КОНТЕКСТ.txt`.
+Сначала изучи репозиторий и M0–M8. До моего «ок» не изменяй файлы.
+
+ЗАДАЧА:
+Реализовать Milestone M9 — Contracts:
+- `ContractLogic.gd`;
+- deterministic offers и setup selection;
+- progress hooks, completion и deadline failure;
+- manual claim;
+- unit/integration tests и static scan.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+- `res://logic/contracts/ContractLogic.gd`
+- `res://tests/unit/test_contract_logic.gd`
+- `res://tests/integration/test_contract_hooks.gd`
+
+Проверь и точечно обнови при необходимости:
+- `res://data/ids/ContractIds.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/resources/contracts/ContractDefinition.gd`
+- семь contract `.tres` и `ContractCatalog.gd`;
+- GameState factory, validator, serializer и fixtures;
+- `GamePhaseController.gd`, `MarketLogic.gd`, `IncomeLogic.gd`, `CombatEngine.gd`.
+
+Не пересоздавай корректные artifacts M1/M2.
+Если `ContractLogic.gd` приближается к 250 строкам, раздели offers, conditions, rewards или logs.
+
+CONTRACT IDS:
+- `silent_expansion`
+- `bloody_turf_war`
+- `gray_capital`
+- `iron_roof`
+- `district_under_control`
+- `proxy_war`
+- `big_cashbox`
+
+Не меняй IDs, conditions, deadlines и rewards.
+Gameplay не должен парсить Resource description.
+Используй contract-specific `ValidationErrors`; предусмотренный PRD fallback — `REQUIREMENT_NOT_MET`.
+
+RUNTIME:
+Runtime содержит:
+- `contract_id`, `progress`, `completed`, `failed`, `claimed`;
+- `deadline`, `failed_reason`, `completed_round`, `claimed_round`.
+
+Human имеет 0 contracts до selection и ровно 1 после неё.
+AI contracts остаются пустыми.
+
+ОБЯЗАТЕЛЬНЫЙ API:
+- `create_contract_runtime(contract_id, deadline)`
+- `generate_contract_offers(state)`
+- `validate_contract_selection(state, player_id, contract_id)`
+- `select_contract(state, player_id, contract_id)`
+- `get_player_contract(player, contract_id = "")`
+- `on_card_purchased(state, event)`
+- `on_income_resolved(state, event)`
+- `on_attack_resolved(state, event)`
+- `on_state_changed(state, event)`
+- `check_contract_completion(state, player_id)`
+- `process_deadlines(state)`
+- `claim_contract(state, player_id, contract_id)`
+
+Сохрани existing signatures/result conventions, обеспечив это поведение.
+
+OFFER GENERATION:
+- Вызови `SeededPicker.pick_unique(state["random"], ContractIds.ALL, 3, "contract_offers_setup")`.
+- Верни ровно 3 unique valid IDs в deterministic order.
+- Запиши returned random и offers в resulting state/setup draft.
+- Успешная генерация расходует ровно 3 RNG steps.
+- Same seed и starting random state дают те же offers.
+- Не создавай отдельный seed или random stream.
+- Failed generation не мутирует input state.
+
+SELECTION:
+- Выбирать может только `GameIds.PLAYER_HUMAN`.
+- ID должен существовать и входить в offers.
+- Повторный выбор запрещён.
+- Success создаёт runtime, записывает `selected_contract_id` и не меняет AI.
+- Failed selection не мутирует state или RNG.
+
+УСЛОВИЯ КОНТРАКТОВ:
+1. Silent Expansion: deadline 8, +1 VP.
+- Две successful human Status purchases: Stash, Workshop или District Control.
+- Любая valid human War attack до completion проваливает контракт, включая blocked.
+- Invalid attack, War purchase и discard не проваливают контракт.
+
+2. Bloody Turf War: deadline 12, +6 Nal.
+- Два successful unblocked уничтожения AI Status buildings.
+- Учитываются Bruiser/Stash, Cleaner/Workshop, Federal Raid/District.
+- Blocked attack, human target и engine destruction не учитываются.
+
+3. Gray Capital: deadline 10, +1 VP.
+- Human Nal >= 30; progress = `min(nal, 30)`.
+- Проверять после любого изменения Nal.
+
+4. Iron Roof: deadline 9, +4 Nal.
+- Одновременно active Cops, active Cartel и active Judge.
+- Progress 0..3; depleted/inactive defense не учитывается.
+
+5. District Under Control: deadline 12, +1 VP.
+- District Control > 0 и минимум одна active protection.
+- Protection: Cops, Cartel или Judge; progress 0..2.
+
+6. Proxy War: deadline 11, +5 Nal.
+- Только successful unblocked human Saboteur.
+- Blocked, invalid, discarded или купленный Saboteur не учитывается.
+
+7. Big Cashbox: deadline 13, +1 VP.
+- Одновременно 2 Laundries, 1 Accountant и 20 Nal.
+- Progress равен числу выполненных subconditions, 0..3.
+
+Completed current-state contract остаётся completed после потери условия.
+
+HOOKS:
+- Market hook вызывается после successful card placement.
+- Income hook вызывается после income и Cops upkeep.
+- Combat hook вызывается после valid resolved attack.
+- Round-start owner вызывает `process_deadlines`.
+- `on_state_changed` повторно проверяет current-state conditions.
+
+Combat event должен различать valid, blocked, success, attacker/target,
+target AI, card/mode и destroyed Status/Engine IDs.
+Silent Expansion реагирует на valid attack даже при block.
+Bloody Turf War и Proxy War требуют success без block.
+Failed attack и discard не вызывают attack-resolved hook.
+
+Не создавай M10 `StreetDealLogic`; подготовь только безопасный future hook.
+ContractLogic не повторяет purchase, income или combat resolution.
+
+COMPLETION И DEADLINES:
+- Completion допустим при `round <= deadline`.
+- Completion выставляет `completed` и `completed_round`, но не reward.
+- На deadline round контракт ещё можно завершить.
+- Incomplete contract fails только при `round > deadline`.
+- Completed, claimed или already failed runtime не изменяется.
+- Failed contract не может complete или claim.
+- Completion, failure и claim создают structured logs.
+
+MANUAL CLAIM:
+- Claim доступен только human для selected contract.
+- Требуется completed, not failed, not claimed.
+- Success применяет Resource reward, выставляет claimed/claimed_round.
+- VP/Nal reward применяется ровно один раз.
+- Completed-on-time contract можно claim после deadline.
+- Claim before completion, after failure или twice не мутирует state.
+- Auto-claim запрещён.
+
+MUTATION И RESULTS:
+- Public mutators работают с deep copy.
+- Failed validation не меняет Nal, VP, contracts, offers, selected ID, random и logs.
+- Hooks без selected contract безопасны и не мутируют state.
+- Selectors не мутируют state и не расходуют RNG.
+- Result содержит ok/error, contract/player IDs, progress before/after,
+  completed/failed flags, reward data, state и log entries.
+
+TESTS:
+Добавь targeted GUT tests для:
+- всех IDs/Resources и runtime schema;
+- 3 unique deterministic offers и RNG step +3;
+- selection, second selection, outside-offer и AI rejection;
+- каждого условия всех семи contracts;
+- Silent Expansion valid-blocked против invalid attack;
+- irreversible completion;
+- deadline inclusive и failure после deadline;
+- completed contract claim после deadline;
+- VP/Nal reward once и failed claim immutability;
+- Market, Income, Combat и round hooks;
+- hook без selected contract;
+- отсутствия auto-claim, UI и forbidden RNG.
+
+Запусти unit, integration, random и static suites.
+
+STATIC SCAN:
+Запрети в contract implementation:
+- `randf(`, `randi(`, `randomize(`, `RandomNumberGenerator`;
+- UI/scene access и parsing descriptions;
+- hardcoded prices, purchase placement и combat resolution;
+- direct phase advancement и AI contract assignment;
+- auto-claim и web stack.
+
+ОГРАНИЧЕНИЯ:
+- Не реализуй M10–M17 заранее.
+- Не дублируй M5–M8 owner logic.
+- Не добавляй random calls вне offer generation.
+- Не выполняй unrelated refactor.
+- Каждый `.gd` файл меньше 250 строк.
+- При неразрешённом вопросе создай `OQ-*`, не изобретай правило.
+
+ПОРЯДОК РАБОТЫ:
+1. Изучи M9 PRD, state/RNG contracts, tests и fixes.
+2. Проинспектируй M0–M8 и hook boundaries.
+3. Сопоставь Resources, schema, errors и integration points.
+4. Дай план без кода и дождись моего «ок».
+5. После «ок» реализуй offers, selection, conditions, hooks, deadlines и claim.
+6. Добавь tests, запусти проверки и исправь M9 errors.
+
+ФОРМАТ ОТВЕТА:
+1. Сначала дай план без кода, зависимости, blockers и OQ.
+2. Дождись моего «ок»; до него не изменяй файлы.
+3. После «ок» показывай изменения с полными путями `res://...`.
+4. Перечисли проверки и результаты.
+5. В конце дай заполненный M9 gate checklist.
+
+M9 GATE CHECKLIST:
+- [ ] Все семь Contract Resources и IDs валидны.
+- [ ] Setup создаёт 3 unique deterministic offers за 3 RNG steps.
+- [ ] Human выбирает один offered contract; AI не получает contracts.
+- [ ] Все семь conditions и progress rules работают.
+- [ ] Market, Income, Combat и deadline hooks подключены.
+- [ ] Deadlines fail только при `round > deadline`.
+- [ ] Completion не выдаёт reward автоматически.
+- [ ] Manual claim применяет reward ровно один раз.
+- [ ] Failed operations не мутируют state.
+- [ ] Unit, integration, random и static tests проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M9 и web stack не добавлены.

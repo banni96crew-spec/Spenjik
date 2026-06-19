@@ -1,0 +1,108 @@
+---
+description: Medium-priority asset folders, stable res paths, theme/audio boundaries, import/export checks, and missing-resource prevention.
+globs:
+  - "project.godot"
+  - "export_presets.cfg"
+  - "autoload/AudioManager.gd"
+  - "assets/**/*"
+  - "themes/**/*"
+  - "scenes/**/*.gd"
+  - "scenes/**/*.tscn"
+  - "tests/**/*.gd"
+  - "**/*.import"
+alwaysApply: false
+---
+
+# Assets and Audio
+
+## Applies when
+
+Apply when creating, reviewing, moving, renaming, importing, exporting, or referencing fonts, icons, audio files, themes, UI assets, scene asset references, `AudioManager.gd`, import metadata, export presets, or asset/static-scan tests. Priority: Medium.
+
+## Source of truth
+
+- `docs/prd/15_GODOT_ARCHITECTURE.md` owns project structure, stable `res://` architecture paths, Autoload boundaries, and required folder/static-scan expectations.
+- `docs/prd/17_UI_UX_SPEC.md` owns UI usage of themes/assets where specified by UI screens, panels, widgets, and readability requirements.
+
+The project does not currently define an art/audio specification or licensing policy. This rule must not invent art direction, palette, line-art style, icon style, SFX catalog, music direction, audio bus topology, or licensing policy. If any asset, style, sound, music, or license behavior is required but not defined by PRD or explicit user-provided files, stop and request clarification.
+
+## Required asset structure
+
+Use only the documented asset/theme ownership paths:
+
+- `res://assets/fonts/`
+- `res://assets/icons/`
+- `res://assets/audio/`
+- `res://themes/`
+- `res://themes/main_theme.tres` when using the documented main theme path.
+
+- Keep references stable and project-relative through `res://`.
+- Do not use absolute local paths, user-profile paths, temporary paths, or OS-specific path separators in scenes, scripts, themes, or Resources.
+- If moving or renaming an asset, update every scene, script, theme, Resource, import reference, and export reference that points to it.
+- Do not place fonts, icons, or audio at project root.
+
+## Themes and UI assets
+
+- Themes are presentation assets only.
+- Theme changes must preserve the UI PRD requirements for desktop landscape layout, mouse input, button-based core actions, readable `1080p` text, `1280x720` minimum window, and `1920x1080` target layout.
+- UI icons and fonts may support existing UI controls, labels, buttons, panels, and widgets.
+- Do not encode gameplay rules, validation decisions, prices, card effects, IDs, AI scores, or phase behavior in theme files, icon names, font resources, or asset metadata.
+- Do not create a new visual identity, palette, line-art style, illustration style, animation language, or icon family unless an owner PRD or explicit user instruction defines it.
+
+## AudioManager boundary
+
+- `AudioManager.gd` is allowed only as a non-gameplay Autoload.
+- `AudioManager.gd` must not own, store, mutate, validate, or derive gameplay state.
+- Audio must be presentation-only and must not affect `GameStateManager.state`, `state["random"]`, logs, validation results, phase transitions, AI decisions, winner resolution, or replay output.
+- Audio may react to UI actions or facade signals only as presentation feedback.
+- Audio failure or missing audio must never block gameplay, change result payloads, or change validation behavior.
+- Do not add new gameplay Autoloads for audio.
+
+## Import, export, and missing resources
+
+- Every committed asset referenced by scenes, scripts, themes, or Resources must exist at the referenced `res://` path.
+- Every imported asset must keep the Godot import metadata needed by the project.
+- Used assets must be included in export output through Godot's normal resource dependency tracking or explicit export preset inclusion when required.
+- Avoid export exclusions that remove referenced fonts, icons, audio, themes, scenes, or Resources.
+- Project should produce no missing-resource warnings for committed scenes, themes, scripts, or Resources.
+- If an asset path is optional or a placeholder is intentionally absent, the owning PRD or task must say so explicitly and the UI/audio code must fail visibly and safely without gameplay mutation.
+
+## Licensing and provenance
+
+- Do not add third-party fonts, icons, audio, music, samples, or generated asset packs without explicit source and license information from the user or project docs.
+- Do not infer that an asset is usable because it exists online or in a local cache.
+- Do not invent license headers, attribution text, or redistribution terms.
+- If licensing is unknown, report the missing licensing policy and stop the asset addition or replacement.
+
+## Forbidden behavior
+
+- Do not invent art direction, palette, line-art style, icon style, SFX list, music list, ambience plan, or audio bus setup without PRD/user authority.
+- Do not connect audio playback to gameplay state mutation, random consumption, validation success/failure decisions, or replay output.
+- Do not read or write `GameStateManager.state` from `AudioManager.gd`.
+- Do not make gameplay logic depend on audio playback success, theme load success, asset load timing, or animation completion.
+- Do not hide missing-resource warnings by catching errors and silently falling back to unrelated assets.
+- Do not commit broken `res://` references, absolute paths, generated import noise unrelated to touched assets, or unused large binary assets.
+- Do not treat asset filenames, icon labels, audio filenames, or theme names as gameplay IDs or rule definitions.
+
+## Required checks
+
+When touching assets, audio, themes, scenes, or export settings, verify as relevant:
+
+- Referenced `res://` paths exist.
+- Scene/theme/script Resource references do not point to missing files.
+- Godot import metadata exists or can be regenerated for used assets.
+- Used assets are not excluded from export.
+- `AudioManager.gd` remains non-gameplay and does not access mutable gameplay state.
+- UI remains readable and button-based for required desktop resolutions.
+- Static scans do not show absolute asset paths, root-level asset placement, forbidden low-level gameplay dependencies, or hidden fallbacks.
+
+## Output requirements
+
+When implementing or reviewing asset/audio changes, report:
+
+- Owner PRD sections used.
+- Asset, theme, scene, Autoload, import, and export files changed.
+- New, moved, renamed, or removed `res://` paths.
+- Import/export checks performed.
+- Licensing/provenance status for new external assets, or explicit `not provided`.
+- Tests or checks run, including explicit `not run` items with the reason.

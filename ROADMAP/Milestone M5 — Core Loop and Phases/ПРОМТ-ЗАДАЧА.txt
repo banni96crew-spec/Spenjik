@@ -1,0 +1,326 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Реализуй только `M5 — Core Loop and Phases`. Не переходи к M6 и последующим gameplay-модулям.
+
+КОНТЕКСТ ПРОЕКТА:
+
+M5 выполняется только после успешных M0–M4.
+
+До изменений изучи:
+
+- `res://docs/prd/02_CORE_LOOP_AND_PHASES.md` — owner PRD;
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`;
+- `res://docs/prd/04_GAME_STATE_SCHEMA.md`;
+- `res://docs/prd/12_TURF_LEVELS.md`, только Level 10 winner contract;
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`;
+- `res://docs/prd/18_TEST_PLAN.md`;
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`;
+- `res://docs/prd/20_LLM_AGENT_RULES.md`;
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`.
+
+Resolved `FIX-*` имеют приоритет. Проверь phase API correction и `FIX-013` для Turf Level 10.
+
+M5 — orchestration milestone. Он определяет порядок и переходы, но не реализует внутренние правила будущих domain modules.
+
+ЗАДАЧА:
+
+1. Проверь repository state и сохрани пользовательские изменения.
+2. Фактически проверь M0–M4 gates.
+3. Проведи transition audit: phase, condition, next phase, round change, resets, validation.
+4. Проверь конфликты между M5 и ещё не реализованными owner modules.
+5. Оформи unresolved integration ambiguity как `OQ-*`.
+6. Реализуй `GamePhaseController.gd`.
+7. Реализуй `WinnerResolver.gd`.
+8. Добавь focused GUT tests.
+9. Запусти M5 tests, prerequisite regressions и static scans.
+10. Проверь mutation safety, random-step stability, scope и итоговый diff.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ:
+
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/game_state/WinnerResolver.gd`
+- `res://tests/unit/test_phase_controller.gd`
+- `res://tests/unit/test_winner_resolver.gd`
+
+При необходимости обнови M4 fixtures targeted phase-state builders. Не дублируй full schema в tests.
+
+REQUIRED PHASE API:
+
+```gdscript
+class_name GamePhaseController
+
+static func can_advance_phase(state: Dictionary) -> Dictionary
+static func advance_phase(state: Dictionary) -> Dictionary
+static func enter_income_phase(state: Dictionary) -> Dictionary
+static func enter_market_phase(state: Dictionary) -> Dictionary
+static func enter_action_phase(state: Dictionary) -> Dictionary
+static func advance_action_player(state: Dictionary) -> Dictionary
+static func enter_street_deal_phase(state: Dictionary) -> Dictionary
+static func enter_game_over_phase(state: Dictionary) -> Dictionary
+static func reset_round_flags(state: Dictionary) -> Dictionary
+static func reset_market_flags(state: Dictionary) -> Dictionary
+static func reset_action_flags(state: Dictionary) -> Dictionary
+```
+
+Используй фактически принятые API names из resolved fixes. Если correction заменяет `next_phase` на `advance_phase`, не создавай две конкурирующие public conventions.
+
+REQUIRED WINNER API:
+
+Определи небольшой static API, соответствующий owner PRD и M4 `GameResult` shape. Минимально он должен:
+
+- принять state или players + turf level;
+- вернуть structured result;
+- определить `winner_id`;
+- построить `final_scores`;
+- записать tie-break metadata;
+- не мутировать input;
+- не использовать random.
+
+Не добавляй GameStateManager facade в M5.
+
+PHASE CONTRACT:
+
+Match:
+
+- ровно 15 rounds;
+- initial gameplay round — 1;
+- round увеличивается только после завершённого Action без Street Deal либо после завершённого Street Deal;
+- после round 15 Action переход идёт в Game Over без increment.
+
+Transitions:
+
+- valid completed Setup → Income;
+- completed Income → Market;
+- Market ждёт `ready_for_action == true` у всех players;
+- completed Market → Action;
+- Action остаётся Action, пока не завершены все players;
+- completed Action rounds 4/8/12 → Street Deal;
+- completed Action other rounds `< 15` → next round Income;
+- completed Street Deal → next round Income;
+- completed Action round 15 → Game Over;
+- Game Over не продвигается дальше.
+
+Action:
+
+- order: `player_1`, `ai_1`, `ai_2`, `ai_3`;
+- active player следует order;
+- done players пропускаются при advancement;
+- после последнего player active ID очищается;
+- outside Action active ID пустой.
+
+Skip action:
+
+- проверяется, когда player становится active;
+- `skip_next_action` сбрасывается;
+- `action_done` становится true;
+- hand и random state не изменяются;
+- active player продвигается;
+- controller не запускает combat/contract effects.
+
+Resets:
+
+- применяй только reset rules из owner schema/core-loop PRD;
+- не очищай persistent match data;
+- `used_deal_ids` сохраняется;
+- per-round flags и contact usage сбрасываются только по documented timing;
+- reset helpers не реализуют gameplay effects.
+
+MUTATION CONTRACT:
+
+Каждая mutating operation:
+
+1. Проверяет input/preconditions.
+2. Работает с `state.duplicate(true)`.
+3. Применяет только transition-owned changes.
+4. Валидирует resulting state.
+5. Возвращает changed state только при success.
+6. При failure возвращает original state unchanged.
+
+Используй stable result shape проекта:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"state": {},
+	"log_entries": []
+}
+```
+
+Не создавай ad-hoc error strings.
+
+INTEGRATION BOUNDARY:
+
+Income, market generation, Street Deal generation/resolution и AI action принадлежат будущим milestones.
+
+Поэтому:
+
+- не создавай их fake implementations;
+- не рассчитывай их effects внутри controller;
+- readiness/completion определяй только по documented state fields;
+- оставляй explicit integration boundary там, где owner module будет подключён позже;
+- не помечай placeholder как реализованный gameplay.
+
+Если `GameStateValidator` требует populated market/AI data, которые M5 не имеет права генерировать, сначала проверь fixtures и documented allowed partial states. Если безопасная форма не определена, создай `OQ-*`, а не обход validator.
+
+WINNER CONTRACT:
+
+Base winner resolution:
+
+1. Highest VP.
+2. Highest Nal.
+3. Highest total Status building VP value.
+4. Highest number of Status buildings.
+5. Stable order: `player_1`, `ai_1`, `ai_2`, `ai_3`.
+
+Status tie-break values:
+
+- stash = 1;
+- workshop = 2;
+- district_control = 3.
+
+Эти значения используются только для tie-break и не добавляют VP.
+
+Winner result должен соответствовать M4:
+
+- `winner_id`;
+- `final_scores`;
+- `tie_break_used`;
+- `tie_break_steps`;
+- `turf_level_10_ai_win_applied`.
+
+TURF LEVEL 10 BOUNDARY:
+
+`19_IMPLEMENTATION_ORDER.md` требует в M5 только Turf Level 10 hook placeholder. Полный `TurfLevelLogic.gd` принадлежит M12.
+
+При этом `FIX-013` требует, чтобы финальная архитектура делегировала Level 10 tie-break в TurfLevelLogic и не использовала random.
+
+В M5:
+
+- не создавай `TurfLevelLogic.gd`;
+- не реализуй другие Turf Level effects;
+- создай явную, тестируемую integration boundary/hook;
+- не используй random;
+- не дублируй будущий Turf module как скрытую реализацию.
+
+Если owner docs требуют одновременно полный Level 10 result и только placeholder, а существующая архитектура не определяет временный contract, зарегистрируй `OQ-*` до спорной реализации.
+
+МИНИМАЛЬНЫЕ ТЕСТЫ:
+
+Phase controller:
+
+- valid Setup → Income;
+- Income → Market;
+- Market не advances, пока не все ready;
+- Market → Action при all ready;
+- fixed Action order;
+- active player advancement;
+- skip action consumption;
+- Action не завершается, пока кто-то not done;
+- rounds 4, 8, 12 → Street Deal;
+- Street Deal increments round и → Income;
+- normal completed Action increments round и → Income;
+- round 15 → Game Over;
+- round 16 не создаётся;
+- invalid transition/range/active player fails;
+- failed operation не мутирует state;
+- random state/step не изменяются.
+
+Winner resolver:
+
+- highest VP wins;
+- Nal, status value, status count и stable-order tie-breaks;
+- final score/result shape корректен;
+- calculations не изменяют player VP/state;
+- input и random state не мутируются;
+- no forbidden random dependency;
+- Level 10 hook boundary покрыта в пределах разрешённого M5 scope.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинай M5 при проваленном prerequisite gate.
+- Не добавляй новые phases или round 16.
+- Не обходи GameStateValidator.
+- Не мутируй original state при failure.
+- Не используй random в WinnerResolver или phase flow.
+- Не меняй M3 random contract или M4 schema без owner decision.
+- Не реализуй IncomeLogic, MarketLogic или purchase flow.
+- Не реализуй CombatEngine, AI logic или domain effects.
+- Не генерируй/разрешай Street Deals.
+- Не реализуй TurfLevelLogic.
+- Не создавай GameStateManager или UI.
+- Не добавляй save/load, web stack или hidden global state.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Ориентиры длины prompt-файлов примерные; это не acceptance criteria.
+- Не ослабляй tests и не скрывай failed/not-run checks.
+- Не откатывай несвязанные пользовательские изменения.
+- Не оставляй ambiguity markers без `OQ-*`.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь prerequisites, repository state, fixes и open questions.
+2. Составь transition table и winner tie-break table.
+3. Отдельно перечисли integration gaps с M6/M10/M12/M13.
+4. Дай план без кода и дождись моего `ок`.
+5. После `ок` сначала обнови fixtures и добавь focused tests.
+6. Реализуй и проверь GamePhaseController.
+7. Реализуй и проверь WinnerResolver.
+8. Запусти полный M5 test group.
+9. Запусти M0–M4 regressions и static scans.
+10. Проверь mutation snapshots, random step, file length, scope и diff.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Не изменяй файлы до моего `ок`.
+3. После `ок` работай непосредственно в репозитории.
+4. Указывай пути в формате `res://...`.
+5. Не скрывай failed или not-run проверки.
+6. Не отмечай M5 завершённым при непрошедшем gate.
+
+Финальный отчёт:
+
+```text
+Prerequisites:
+- M0–M4: PASS/FAIL/NOT RUN
+
+Implemented:
+- ...
+
+Changed files:
+- res://...
+
+Integration boundaries:
+- ...
+
+Tests and scans:
+- command
+- passed/failed
+
+Open questions:
+- none / OQ-*
+
+M5 gate:
+- PASS/FAIL/NOT RUN
+```
+
+M5 GATE CHECKLIST:
+
+- [ ] M0–M4 gates проходят.
+- [ ] GamePhaseController и WinnerResolver существуют.
+- [ ] Phase order соответствует owner PRD.
+- [ ] Action order фиксирован и корректно advances.
+- [ ] Skip action работает.
+- [ ] Street Deal occurs only after rounds 4, 8, 12.
+- [ ] Game ends after round 15; round 16 невозможен.
+- [ ] Winner result соответствует schema.
+- [ ] WinnerResolver не использует random.
+- [ ] Failed validation/transition не мутирует state.
+- [ ] Random step не меняется.
+- [ ] Turf Level 10 hook не реализует M12 преждевременно.
+- [ ] M0–M4 regressions и static scans проходят.
+- [ ] Все `.gd` files меньше 250 строк.
+- [ ] M6+ gameplay и web stack не добавлены.
+- [ ] Пользовательские изменения сохранены.

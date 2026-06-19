@@ -1,0 +1,546 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Ты реализуешь logic-first, data-driven системы на typed GDScript,
+пишешь GUT tests и строго соблюдаешь PRD.
+
+Сначала изучи репозиторий и contracts M0–M9.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources;
+- Windows/Linux;
+- без web stack.
+
+Архитектура:
+
+- logic-first и data-driven;
+- UI только view/input layer;
+- Dictionary state snapshots;
+- validation before mutation;
+- deterministic RNG через M3;
+- явные inter-module hooks.
+
+M0–M9 считаются выполненными, но проверь фактические:
+
+- IDs, Resources и catalogs;
+- state factory, validator и fixtures;
+- `SeededPicker` APIs;
+- Street Deal phase lifecycle;
+- Income/Cops upkeep order;
+- temporary price modifiers;
+- `ContractLogic.on_state_changed`.
+
+Источники истины:
+
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализовать Milestone M10 — Street Deals and Debts:
+
+- deterministic Street Deal generation;
+- human-only A/B selection;
+- все шесть Street Deal definitions;
+- explicit AI side effects;
+- used deal exclusion;
+- player-level debts;
+- automatic Income debt processing;
+- ContractLogic hooks;
+- M11 Contact и M12 Turf-safe boundaries;
+- GUT tests и static scan.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+- `res://logic/street_deals/StreetDealLogic.gd`
+- `res://logic/street_deals/DebtLogic.gd`
+- `res://tests/unit/test_street_deal_logic.gd`
+- `res://tests/unit/test_debt_logic.gd`
+
+Проверь и точечно обнови при необходимости:
+
+- `res://data/ids/StreetDealIds.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/resources/street_deals/StreetDealDefinition.gd`
+- шесть Street Deal `.tres`;
+- `res://logic/catalog/StreetDealCatalog.gd`
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/economy/IncomeLogic.gd`
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/contracts/ContractLogic.gd`
+- fixtures и integration tests.
+
+Не пересоздавай корректные M1/M2 artifacts.
+Дополнительные validator/effect/log helpers допустимы при необходимости.
+Каждый `.gd` файл должен быть меньше 250 строк.
+
+IDS, RESOURCES И STATE OWNERSHIP:
+
+Используй только Street Deal IDs:
+
+- `loan_shark`;
+- `dirty_tip`;
+- `cheap_protection`;
+- `black_market_cache`;
+- `inside_contact`;
+- `risky_contract`.
+
+IDs бери из `StreetDealIds`.
+Gameplay не парсит descriptions или option text.
+
+Global `state["street_deals"]` хранит:
+
+- `offered_this_round`;
+- `current_deal_id`;
+- `used_deal_ids`;
+- `choices_by_player`;
+- `pending_contact_offer`.
+
+Debts хранятся только в:
+
+- `player["debts"]`.
+
+Resolved ownership fix имеет приоритет над ранним M4 примером
+с `active_debts` или player-level `street_deals`.
+Не поддерживай два runtime source of truth.
+
+Debt runtime содержит:
+
+- id и source;
+- amount due;
+- deadline round;
+- penalty;
+- repaid;
+- created round;
+- repaid round;
+- penalty applied round.
+
+Обнови factory, validator, fixtures и serializer conventions согласованно.
+
+ОБЯЗАТЕЛЬНЫЙ API:
+
+`StreetDealLogic` предоставляет проектные эквиваленты:
+
+- `create_empty_state()`
+- `generate_street_deal(state)`
+- `get_eligible_deal_ids(state, player_id)`
+- `validate_street_deal_choice(state, payload)`
+- `select_street_deal(state, payload)`
+- `get_payment_amount(state, deal_id, option_id, player_id)`
+- `apply_option_effects(...)`
+- `reset_for_new_street_deal_phase(state)`
+
+`DebtLogic` предоставляет:
+
+- `create_debt(...)`
+- `has_active_debt(player)`
+- `get_active_debts(player)`
+- `process_debts_for_player(state, player_id)`
+- internal auto-repay helper;
+- debt penalty helper.
+
+Manual debt repayment не является public MVP action.
+
+GENERATION:
+
+Street Deal генерируется только:
+
+- в `PhaseIds.STREET_DEAL`;
+- в раундах 4, 8 и 12;
+- после завершённого Action phase.
+
+При входе в новую Street Deal phase:
+
+1. Сбросить current offer fields и human choice.
+2. Не очищать `used_deal_ids`.
+3. Построить eligible weighted pool.
+4. Применить `min_round`.
+5. Исключить used deals.
+6. Исключить `loan_shark` при active human debt.
+7. Выбрать один deal через `SeededPicker.pick_weighted`.
+8. Использовать tag `street_deal_round_%s`.
+9. Записать returned random state и current deal.
+10. Установить `offered_this_round = true`.
+
+Weighted generation расходует ровно один RNG step.
+No eligible deal возвращает no-offer result без effect mutation.
+Active debt не исключает никакие deals, кроме `loan_shark`.
+
+SELECTION И VALIDATION:
+
+Payload:
+
+```gdscript
+{
+    "player_id": "player_1",
+    "deal_id": "dirty_tip",
+    "option_id": "A"
+}
+```
+
+Валидируй:
+
+- current phase;
+- round;
+- current deal существует и совпадает с payload;
+- player является human;
+- option равна `A` или `B`;
+- human ещё не выбирал в этой phase;
+- upfront Nal достаточно;
+- Loan Shark не имеет active debt;
+- Inside Contact A имеет доступный handoff path.
+
+Ошибки используй из constants:
+
+- `INVALID_PHASE`;
+- `INVALID_TARGET`;
+- `NOT_ENOUGH_NAL`;
+- `ACTIVE_DEBT_EXISTS`;
+- `STREET_DEAL_CHOICE_UNAVAILABLE`;
+- специализированные IDs, если они существуют.
+
+Failed validation не мутирует state, RNG, hand, Nal, VP,
+used deals, choices, debts, modifiers или logs.
+
+После success:
+
+- применить effects в указанном порядке;
+- записать human choice;
+- добавить deal в `used_deal_ids` ровно один раз;
+- вызвать ContractLogic hook после state changes;
+- создать structured log/result;
+- очистить current deal, кроме необходимого pending handoff;
+- не продвигать phase самостоятельно.
+
+TURF LEVEL 8 BOUNDARY:
+
+M12 ещё не реализуется.
+Используй существующий state `turf_level` и чистый helper/extension point.
+
+При Turf Level 8+ увеличить на +1 только direct upfront payment:
+
+- Dirty Tip A: 3 → 4;
+- Black Market Cache B: 6 → 7;
+- Risky Contract A: 3 → 4.
+
+Не увеличивать:
+
+- Loan Shark amount due;
+- repayment;
+- penalties;
+- positive gains;
+- AI side effects;
+- temporary modifier values.
+
+STREET DEAL EFFECTS:
+
+Loan Shark, доступен с round 8 и без active debt.
+
+Option A:
+
+- human Nal +10;
+- создать debt amount 12;
+- deadline = current round +2;
+- overdue penalty: lose all Nal и -1 VP.
+
+Option B:
+
+- human Nal +5;
+- создать debt amount 6;
+- deadline = current round +2;
+- overdue penalty: -1 VP.
+
+Debt ID должен быть стабильным, например:
+
+- `loan_shark_round_8_A`.
+
+Dirty Tip, доступен с round 4.
+
+Option A:
+
+- оплатить 3 Nal, либо 4 при Turf 8+;
+- добавить один Bruiser в human hand.
+
+Option B:
+
+- human Nal +3;
+- один deterministic random AI получает один Thug;
+- выбирать только из `ai_1`, `ai_2`, `ai_3`;
+- использовать `SeededPicker` и обновить random state;
+- расходовать ровно один дополнительный RNG step.
+
+Cheap Protection, доступен с round 4.
+
+Option A добавляет temporary modifier:
+
+- next Defense card price delta -2;
+- minimum price 1;
+- expires at next matching purchase;
+- consumed false.
+
+Option B:
+
+- human Nal +2;
+- temporary next War card price delta +1;
+- expires at next matching purchase;
+- consumed false.
+
+PriceLogic применяет и consume-ит modifier.
+StreetDealLogic не реализует purchase.
+При duplicate unconsumed modifier используй existing stacking convention;
+не изобретай новое правило без проверки PRD/repository.
+
+Black Market Cache, доступен с round 4.
+
+Option A:
+
+- human Nal +6.
+
+Option B:
+
+- оплатить 6 Nal, либо 7 при Turf 8+;
+- human VP +1.
+
+Inside Contact, доступен с round 8.
+
+Option A:
+
+- запросить future offer из 2 available contacts;
+- создать structured pending handoff;
+- не unlock-ить contact напрямую.
+
+M11 ещё не реализован:
+
+- не создавай fake `ContactLogic`;
+- используй существующий integration convention, если он уже есть;
+- иначе создай только безопасный pending request contract,
+  который M11 сможет обработать;
+- фактическое offer generation/selection принадлежит M11.
+
+Option B:
+
+- human Nal +4.
+
+Risky Contract, доступен только с round 12.
+
+Option A:
+
+- оплатить 3 Nal, либо 4 при Turf 8+;
+- human VP +1.
+
+Option B:
+
+- human Nal +5;
+- richest AI Nal +1;
+- highest Nal wins;
+- tie-break строго `ai_1`, затем `ai_2`, затем `ai_3`;
+- RNG не использовать.
+
+NAL/VP clamp:
+
+- Nal и VP не могут стать меньше 0;
+- paid option сначала проверяет достаточность Nal;
+- partial effect при failed payment запрещён.
+
+DEBT PROCESSING:
+
+Debts обрабатываются для игрока в stable array order во время Income:
+
+1. Income gain.
+2. Cops upkeep.
+3. Debt processing.
+4. Contract state-change hook.
+
+Для каждой active debt:
+
+- если Nal >= amount due: auto-repay;
+- иначе при `round <= deadline`: оставить active;
+- иначе при `round > deadline`: применить penalty и закрыть debt.
+
+Auto-repay:
+
+- списывает exact amount due;
+- `repaid = true`;
+- `repaid_round = current round`;
+- создаёт result/log.
+
+Overdue penalty:
+
+- Option A debt может установить Nal = 0;
+- применяет VP delta и clamp к 0;
+- `repaid = true`;
+- `penalty_applied_round = current round`;
+- повторно не применяется.
+
+Repaid debts пропускаются.
+Manual repayment не добавляй.
+
+STREET MEDIC BOUNDARY:
+
+Street Medic реализуется в M11.
+Перед VP loss DebtLogic должен иметь safe prevention hook point.
+
+Если future hook предотвращает VP loss:
+
+- VP loss не применять;
+- lose-all-Nal часть всё равно применить;
+- debt всё равно закрыть;
+- prevention отразить в structured result/log.
+
+Не реализуй contact ownership, cooldown или consumption в M10.
+
+CONTRACT HOOK:
+
+После успешного Street Deal effect и после debt processing,
+если изменились Nal, VP, hand или другие contract-relevant fields,
+вызови existing `ContractLogic.on_state_changed`.
+
+Не дублируй contract conditions и completion logic.
+Failed choice не вызывает hook.
+
+RESULT CONTRACT:
+
+Street Deal result содержит эквиваленты:
+
+- ok/error;
+- player/deal/option IDs;
+- effects applied;
+- selected AI, если применимо;
+- pending contact handoff;
+- random metadata, если RNG использован;
+- resulting state;
+- log entries.
+
+Debt result содержит для каждой debt:
+
+- debt ID;
+- was active;
+- auto-repaid;
+- penalty applied;
+- amount paid;
+- Nal/VP lost;
+- Street Medic prevention status;
+- resulting state и logs.
+
+TESTS:
+
+Добавь targeted GUT tests для:
+
+- generation только rounds 4/8/12;
+- min-round, used-deal и active-debt filters;
+- deterministic weighted generation и RNG step +1;
+- human-only choice и invalid options;
+- всех 12 option effects;
+- Turf 8 только для трёх direct payments;
+- Dirty Tip B deterministic AI и дополнительный RNG step;
+- Risky Contract B richest/tie behavior без RNG;
+- temporary modifier shape и PriceLogic consumption;
+- Inside Contact pending handoff без direct unlock;
+- player-level debt ownership;
+- both Loan Shark debts;
+- auto-repay, not-yet-due и overdue penalties;
+- VP clamp и repeated-processing safety;
+- Street Medic safe boundary;
+- ContractLogic hooks;
+- failed choice deep immutability;
+- no-offer behavior;
+- отсутствие UI и forbidden RNG.
+
+Используй existing fixtures/helpers.
+Обнови state/schema/catalog tests.
+Запусти relevant unit, integration, random и static suites.
+
+STATIC SCAN:
+
+Street Deal/debt implementation не должна содержать:
+
+- `randf(`, `randi(`, `randomize(`;
+- `RandomNumberGenerator`;
+- UI/scene access;
+- parsing Resource descriptions;
+- unrelated hardcoded card prices;
+- combat resolution;
+- AI scoring;
+- direct phase advancement;
+- direct contact unlock;
+- direct contract completion;
+- web stack.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй IDs, effects, debt amounts, deadlines или penalties.
+- Не давай AI право выбора Street Deal.
+- Не реализуй M11–M17 заранее.
+- Не создавай fake ContactLogic или TurfLevelLogic.
+- Не дублируй M5/M6/M9 owner logic.
+- Не добавляй manual debt repayment.
+- Не выполняй unrelated refactor.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительны.
+
+Resolved fixes `FIX-001`–`FIX-007` обязательны.
+При новом противоречии проверь документ 21.
+Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи M10 PRD, state/RNG contracts, tests и fixes.
+2. Проинспектируй M0–M9 и integration points.
+3. Сопоставь state ownership, APIs, errors и Resources.
+4. Выяви M11/M12 placeholders и blockers.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» реализуй generation, validation и effects.
+7. Реализуй DebtLogic и Income/Contract integrations.
+8. Добавь и запусти tests/static scan.
+9. Исправь M10 errors и представь итог.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ без кода.
+2. Укажи зависимости, placeholders, blockers и OQ.
+3. Дождись моего «ок».
+4. До «ок» не изменяй файлы.
+5. После «ок» показывай изменения по файлам с путями `res://...`.
+6. Перечисли проверки и их результаты.
+7. В конце дай заполненный M10 gate checklist.
+
+Не пиши общие советы и не подменяй реализацию псевдокодом.
+Не отмечай gate пройденным без успешных проверок.
+
+M10 GATE CHECKLIST:
+
+- [ ] Все шесть Street Deal Resources и IDs валидны.
+- [ ] Deals генерируются только в rounds 4/8/12.
+- [ ] Generation deterministic и used deals исключены.
+- [ ] Active debt блокирует только Loan Shark.
+- [ ] Только human выбирает A/B.
+- [ ] Все 12 option effects работают.
+- [ ] Explicit AI effects работают детерминированно.
+- [ ] Turf 8 изменяет только direct upfront payments.
+- [ ] Debts хранятся только в `player["debts"]`.
+- [ ] Debt processing встроен после Income/Cops upkeep.
+- [ ] Auto-repay и overdue penalties работают.
+- [ ] Failed choices не мутируют state.
+- [ ] Contract hooks вызываются безопасно.
+- [ ] M11 contact boundaries готовы без fake implementation.
+- [ ] Unit, integration, random и static tests проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M10 и web stack не добавлены.

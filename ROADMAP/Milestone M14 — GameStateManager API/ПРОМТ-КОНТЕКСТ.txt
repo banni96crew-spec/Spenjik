@@ -1,0 +1,161 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+В матче участвуют один человек и три локальных AI.
+Игровая партия длится до 15 раундов и использует детерминированный state.
+
+Текущий этап: Milestone M14 — GameStateManager API.
+Он выполняется строго после завершённых M0–M13.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript со статической типизацией, где это практично.
+- GUT.
+- `.tres` Resources для статических definitions.
+- Dictionary snapshots для runtime state.
+- Windows/Linux first.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first, data-driven.
+- `GameStateManager.gd` — единственный gameplay facade для UI.
+- Он является Autoload с именем `GameStateManager`.
+- Он владеет единственным активным runtime snapshot `state`.
+- Gameplay rules остаются в owner logic modules M5–M13.
+- Facade принимает commands, создаёт deep working copy и делегирует.
+- Active state заменяется только после успешного result и validation.
+- Failed mutator не изменяет active state ни частично, ни полностью.
+- Selectors и previews не мутируют state и не consume random.
+- UI не получает writable reference на active state.
+- UI не вызывает low-level gameplay mutators напрямую.
+- AI использует те же owner modules и validation boundaries.
+- Gameplay random существует только в `state["random"]`.
+- Resources не мутируют во время run.
+- GameStateManager не является местом для gameplay formulas.
+
+## Структура проекта
+
+Релевантные пути:
+
+- `res://autoload/GameStateManager.gd`
+- `res://logic/game_state/GameViewBuilder.gd`
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/game_state/WinnerResolver.gd`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/contracts/`
+- `res://logic/street_deals/`
+- `res://logic/contacts/`
+- `res://logic/turf_levels/`
+- `res://logic/ai/`
+- `res://tests/unit/test_game_state_manager_api.gd`
+- `res://tests/integration/`
+- `res://tests/static/`
+
+Источники истины:
+
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- owner PRD-файлы M6–M13
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0–M4:
+
+- создан Godot project, структура, GUT, IDs и Resources;
+- реализованы deterministic random, state factory, validator и fixtures.
+
+M5:
+
+- реализованы phases, readiness, action order и winner resolution;
+- phase fields изменяются только через phase owner.
+
+M6–M7:
+
+- реализованы economy, market, previews и purchases;
+- реализованы combat validation, previews, targets, resolve и discard.
+
+M8–M11:
+
+- реализованы roles, contracts, Street Deals, debts и contacts;
+- owner modules содержат rules, hooks и result contracts.
+
+M12:
+
+- реализованы Turf Level setup/runtime modifiers.
+
+M13:
+
+- реализован deterministic AI setup, Market и Action behavior;
+- AI делегирует purchases в MarketLogic, attacks в CombatEngine.
+
+Перед M14 coding-agent обязан проверить фактические APIs M0–M13,
+а не предполагать их имена или result shapes.
+
+## Что сейчас делаю
+
+Реализую M14 — GameStateManager API:
+
+- регистрирую gameplay Autoload;
+- создаю тонкий UI-facing facade;
+- подключаю setup, phase и domain mutators;
+- создаю safe selectors и previews;
+- обеспечиваю atomic commit;
+- добавляю facade signals;
+- при необходимости выношу view shaping в GameViewBuilder;
+- добавляю GUT и static boundary tests.
+
+## Договорённости по коду
+
+- `GameStateManager.gd` строго меньше 250 строк.
+- Каждый другой `.gd` файл также меньше 250 строк.
+- Public API следует `16_GAME_STATE_MANAGER_API.md`.
+- Используется `advance_phase()`, не устаревший `next_phase()`.
+- Dedicated rebuild API не маскируется fake card ID.
+- Stable errors берутся из `ValidationErrors.gd`.
+- Mutators возвращают stable structured results.
+- Selectors возвращают deep copies или safe views.
+- Signal payload не раскрывает writable active state.
+- Final returned state проверяется GameStateValidator до commit.
+- Random не вызывается и не реализуется внутри facade.
+- Setup сохраняет установленный M0–M13 random call order.
+- Изменения owner modules допускаются только для API compatibility.
+- Нерешённое расхождение фиксируется как `OQ-*`.
+- Ориентиры объёма промтов приблизительные, не жёсткие.
+
+Resolved corrections:
+
+- FIX-023: нет MVP save/load, DebugSnapshotManager только optional.
+- FIX-024: public phase method называется `advance_phase()`.
+- FIX-025: rebuild District Control имеет dedicated API.
+- FIX-026: UI gameplay идёт только через GameStateManager.
+- FIX-027: logic modules реализованы до facade.
+- FIX-028: нельзя изобретать недостающие правила.
+- FIX-029: каждый source file меньше 250 строк.
+
+## Что НЕ входит в текущий milestone
+
+- Изменение gameplay rules, formulas, IDs или balance.
+- Перенос owner logic в GameStateManager.
+- Новые state fields без schema и owner PRD.
+- Полный replay harness и 15-round integration из M15.
+- Final UI/screens/widgets из M16.
+- Polish, production logging и hardening из M17.
+- Gameplay save/load или campaign persistence.
+- Обязательная реализация optional debug snapshot API.
+- Новый random system или изменение random call order.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

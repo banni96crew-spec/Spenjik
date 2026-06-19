@@ -1,0 +1,224 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием проекта “The Turf” / “Передел”.
+
+Твоя задача — реализовать строго ограниченный milestone `M0 — Project Bootstrap`, не переходя к gameplay-разработке.
+
+До любых изменений изучи:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Не реализуй требования по памяти и не расширяй scope самостоятельно.
+
+КОНТЕКСТ ПРОЕКТА:
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Целевой стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources в будущих milestone;
+- Dictionary state snapshots в будущих milestone;
+- `GameStateManager.gd` как будущий Autoload facade;
+- Windows и Linux как первые export targets;
+- без web stack.
+
+Архитектура проекта — logic-first и data-driven. UI в будущем является только view/controller layer и не владеет gameplay logic.
+
+Текущий milestone не реализует игровую архитектуру целиком. Он создаёт только рабочую основу проекта, структуру каталогов и тестовую инфраструктуру.
+
+Owner PRD:
+
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`, раздел `Milestone M0 — Project Bootstrap`.
+
+Dependency PRDs:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализуй `Milestone M0 — Project Bootstrap`.
+
+Необходимо:
+
+1. Проверить текущее состояние репозитория и сохранить существующие пользовательские изменения.
+2. Создать корректный проект Godot 4.6.2.
+3. Создать folder structure из `res://docs/prd/15_GODOT_ARCHITECTURE.md`.
+4. Подключить реальный addon GUT, совместимый с Godot 4.6.2.
+5. Включить GUT как plugin, если это требуется выбранной версией addon.
+6. Создать пустые каталоги для unit, fixture, smoke и static tests.
+7. Создать `res://tests/smoke/test_gut_bootstrap.gd` — минимальный infrastructure-only GUT bootstrap smoke, подтверждающий, что test runner работает.
+8. Создать shell-helper для запуска static scans.
+9. Не реализовывать сами будущие static scans за пределами минимальной bootstrap-оболочки M0.
+10. Проверить открытие проекта через Godot 4.6.2.
+11. Фактически запустить smoke test и сообщить точный результат.
+12. Проверить отсутствие gameplay logic и запрещённых web-stack файлов.
+
+Если каталоги нельзя сохранить в системе контроля версий пустыми, разрешается использовать нейтральные placeholder-файлы, например `.gitkeep`. Они не должны содержать gameplay assumptions.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+Минимально обязательны:
+
+- `res://project.godot`
+- `res://addons/gut/`
+- `res://tests/`
+- `res://tests/unit/`
+- `res://tests/fixtures/`
+- `res://tests/smoke/`
+- `res://tests/static/`
+- `res://tests/smoke/test_gut_bootstrap.gd`
+- shell-helper для static scans в подходящем служебном каталоге проекта
+
+Также создай каркас каталогов из `15_GODOT_ARCHITECTURE.md`:
+
+- `res://scenes/main/`
+- `res://scenes/game/`
+- `res://scenes/ui/screens/`
+- `res://scenes/ui/panels/`
+- `res://scenes/ui/widgets/`
+- `res://autoload/`
+- `res://logic/game_state/`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/roles/`
+- `res://logic/contracts/`
+- `res://logic/street_deals/`
+- `res://logic/contacts/`
+- `res://logic/turf_levels/`
+- `res://logic/ai/`
+- `res://logic/random/`
+- `res://logic/catalog/`
+- `res://data/ids/`
+- `res://data/resources/cards/`
+- `res://data/resources/roles/`
+- `res://data/resources/contracts/`
+- `res://data/resources/contacts/`
+- `res://data/resources/street_deals/`
+- `res://data/resources/ai_profiles/`
+- `res://data/resources/turf_levels/`
+- `res://themes/`
+- `res://assets/fonts/`
+- `res://assets/icons/`
+- `res://assets/audio/`
+
+Не создавай перечисленные в архитектурном документе будущие gameplay-файлы только ради заполнения каталогов.
+
+Если точное имя или расположение static scan helper не определено PRD и в репозитории нет установленной конвенции, не угадывай молча. Зарегистрируй архитектурный вопрос `OQ-*` в `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` либо явно запроси решение до создания спорного файла.
+
+ОГРАНИЧЕНИЯ:
+
+- Не выходить за пределы M0.
+- Не реализовывать gameplay logic.
+- Не создавать карты, роли, контракты, контакты, Street Deals, долги, AI, economy, market, combat или Turf Levels.
+- Не создавать Resource schemas, catalogs или игровые `.tres`.
+- Не реализовывать `GameStateManager.gd`.
+- Не регистрировать gameplay Autoload.
+- Не создавать runtime state или игровые Dictionary schemas.
+- Не реализовывать deterministic random.
+- Не создавать игровые сцены и UI-компоненты из будущих milestone.
+- Допустим только минимальный bootstrap placeholder, если без него нельзя проверить запуск проекта. Он не должен содержать gameplay logic.
+- Не менять игровые правила, баланс, ID, API или state schemas из PRD.
+- Не добавлять React, TypeScript, JavaScript gameplay runtime, Tailwind, Zustand, Docker, backend, web routing или browser-first architecture.
+- Не использовать `randf()`, `randi()`, `randomize()` и `RandomNumberGenerator` в gameplay logic.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Не создавать фиктивную пустую папку вместо настоящего GUT addon.
+- Не ослаблять smoke test ради получения формального pass.
+- Не создавать в M0 канонический MVP smoke `res://tests/integration/test_smoke_mvp.gd`: его gameplay-зависимости появляются только в последующих milestone, а сам тест обязателен не позднее M15.
+- Не заявлять о прохождении проверки, если команда не была запущена.
+- Не удалять и не откатывать несвязанные изменения пользователя.
+- Не оставлять `TODO`, `TBD`, `FIXME` или `???` без ссылки на `OQ-*`.
+- Не придумывать отсутствующие требования.
+
+Если информации недостаточно:
+
+1. Останови только затронутую часть реализации.
+2. Проверь существующие `OQ-*` и `FIX-*`.
+3. При необходимости добавь новый `OQ-*` в `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`.
+4. Не подменяй вопрос собственной архитектурной или gameplay-догадкой.
+5. Продолжай только те части M0, которые однозначно определены.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи owner PRD и dependency PRDs.
+2. Проверь текущую структуру репозитория, Godot executable и существующие изменения.
+3. Сопоставь текущее состояние с M0 requirements.
+4. Подготовь точный план без кода и без изменения файлов.
+5. Дождись моего сообщения `ок`.
+6. После подтверждения создай минимальный `project.godot`.
+7. Создай недостающий каркас каталогов.
+8. Подключи GUT и проверь его конфигурацию.
+9. Создай `res://tests/smoke/test_gut_bootstrap.gd`.
+10. Создай static scan helper shell.
+11. Открой или импортируй проект через Godot 4.6.2.
+12. Запусти smoke test.
+13. Проверь структуру каталогов.
+14. Проверь отсутствие gameplay logic и запрещённых web-stack artifacts.
+15. Сообщи обо всех созданных и изменённых файлах и о фактических результатах команд.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ по шагам без кода.
+2. Не изменяй файлы до моего сообщения `ок`.
+3. Дождись моего `ок`.
+4. После `ок` выполняй изменения непосредственно в репозитории.
+5. При описании каждого файла указывай полный Godot-путь в формате `res://...`.
+6. Не вставляй без необходимости содержимое всего стороннего GUT addon в ответ.
+7. В финальном отчёте используй структуру:
+
+Реализовано:
+- ...
+
+Созданные файлы:
+- `res://...`
+
+Изменённые файлы:
+- `res://...`
+
+Подключённые зависимости:
+- версия и источник GUT
+
+Проверки выполнены:
+- команда или способ запуска;
+- результат;
+- количество прошедших и упавших тестов.
+
+Не выполнено:
+- отсутствует или причина
+
+Open questions:
+- none или `OQ-*`
+
+M0 gate:
+- каждый пункт `PASS`, `FAIL` или `NOT RUN`
+
+8. Не отмечай milestone завершённым, если хотя бы один обязательный gate имеет статус `FAIL` или `NOT RUN`.
+
+M0 GATE CHECKLIST:
+
+- [ ] Godot 4.6.2 project opens.
+- [ ] Required folder structure exists.
+- [ ] `res://project.godot` exists.
+- [ ] `res://tests/` exists.
+- [ ] `res://addons/gut/` contains a working GUT addon.
+- [ ] GUT plugin configuration is valid.
+- [ ] Minimal smoke test exists.
+- [ ] GUT can discover and run the smoke test.
+- [ ] Smoke test passes.
+- [ ] Static scan helper shell exists.
+- [ ] No gameplay logic was implemented.
+- [ ] No future gameplay files were created merely as placeholders.
+- [ ] No forbidden random API was introduced into gameplay logic.
+- [ ] No forbidden web-stack files were created.
+- [ ] Every created `.gd` file is under 250 lines.
+- [ ] No untracked ambiguity markers were introduced.
+- [ ] Existing unrelated user changes were preserved.

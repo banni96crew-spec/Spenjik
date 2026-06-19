@@ -1,0 +1,128 @@
+---
+description: High-priority desktop UI, mouse input, facade-only gameplay access, selectors/previews, disabled reasons, payloads, and signal refresh rules.
+globs:
+  - "project.godot"
+  - "autoload/GameStateManager.gd"
+  - "logic/game_state/**/*.gd"
+  - "scenes/**/*.gd"
+  - "scenes/**/*.tscn"
+  - "themes/**/*.tres"
+  - "themes/**/*.theme"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# UI, UX and Input
+
+## Applies when
+
+Apply when creating, reviewing, or modifying UI scenes, UI scripts, view models, selectors, preview calls, disabled-reason display, input behavior, signal refresh, setup/market/action/progression panels, game log, game over screen, project window settings, themes, or UI tests. Priority: High.
+
+## Source of truth
+
+- `docs/prd/17_UI_UX_SPEC.md` owns UI layout, UX rules, input assumptions, payload construction, disabled-state presentation, preview display, UI panels, error display, and UI tests.
+- `docs/prd/16_GAME_STATE_MANAGER_API.md` owns the public facade API, selector safety, exact payload/result shapes, canonical errors, and signal expectations.
+- Domain owner PRDs own gameplay rules. UI may display and request actions, but must not define economy, combat, contracts, contacts, Street Deals, AI, Turf Levels, random, or phase behavior.
+
+This rule is a guardrail summary for UI/UX and input. It must not override `17_UI_UX_SPEC.md`, `16_GAME_STATE_MANAGER_API.md`, or domain owner PRDs. If any listed payload, selector, error, signal, layout, or action flow conflicts with the owner PRD, stop and report PRD drift.
+
+## Desktop and input baseline
+
+- Target desktop first.
+- Required layout is landscape.
+- Required input is mouse.
+- Core commands must have button-based actions.
+- Required drag-and-drop is forbidden for core actions; drag-and-drop may only be optional enhancement.
+- Recommended minimum window is `1280x720`.
+- Recommended target layout is `1920x1080`.
+- Text must be readable at `1080p`.
+- Do not introduce mobile-first assumptions.
+- Keyboard, gamepad, and `InputMap` behavior are not defined by PRD; do not invent them unless the owner PRD is updated.
+
+## UI state ownership
+
+- UI may store only local selection state and presentation state.
+- UI selection state may include selected card ID, target ID, attack mode, engine target card ID, selected modifiers, selected Street Deal option, selected contact ID, panel visibility, hover state, and local helper text.
+- UI selection state must be cleared after successful actions, phase changes, manual cancel, or failed actions that make the selection stale.
+- UI must not store runtime gameplay state as an alternative source of truth.
+- UI must not cache selector or view results as authoritative gameplay state across mutators, signals, phase changes, or game restart.
+- UI must refresh from `GameStateManager.get_view()` or relevant selectors after mutator calls and signals.
+- UI must not manually patch displayed Nal, VP, cards, logs, flags, phase, round, debts, contacts, contracts, AI state, or winner fields from guessed mutation.
+
+## Facade and selector access
+
+- UI and high-level scene scripts must call `GameStateManager.gd` for gameplay operations.
+- UI must use public selectors and preview APIs for views, prices, disabled reasons, valid targets, valid engine targets, combat previews, contracts, Street Deals, contacts, debts, and game state snapshots.
+- UI must not call low-level gameplay mutators in `logic/**` directly.
+- UI must not read or mutate `GameStateManager.state` directly.
+- Selectors and previews must not mutate active state or consume active `state["random"]`.
+- If UI needs data that no selector exposes, add or request a selector in the owner facade/view-model layer defined by `16_GAME_STATE_MANAGER_API.md` and `17_UI_UX_SPEC.md`. Do not invent a new view-model architecture.
+
+## Disabled reasons and previews
+
+- Every disabled gameplay action must expose a stable error code from a facade selector or owner API.
+- UI must display user-readable text mapped from canonical validation error codes.
+- UI must not infer disabled reasons by duplicating gameplay validation.
+- Required previews and disabled reasons include card price preview, purchase disabled reason, combat preview, valid combat targets, valid Saboteur engine targets, contract claim disabled reason, Street Deal disabled reason, and contact disabled reason.
+- Previews must be refreshed before commit when relevant state may have changed.
+- Error text may change; error codes must stay stable.
+
+## Payloads and local completeness checks
+
+- UI must build exact payloads documented by `16_GAME_STATE_MANAGER_API.md` and `17_UI_UX_SPEC.md`.
+- UI may validate only local input completeness before sending payloads.
+- Allowed local checks include required target selected, required mode selected, required card selected, Street Deal option selected, contact selected, and non-empty setup seed.
+- UI must not send incomplete payloads when a required selection is obviously missing.
+- If payload is incomplete, show local helper text and do not call the mutator.
+- UI must not check affordability, market membership, blocked attacks, completed contracts, contact limit, debt rules, AI scores, phase transition legality, or any other gameplay rule.
+
+## Mutator results and signals
+
+- After every public mutator call, inspect the returned result.
+- On `ok == true`, refresh from `GameStateManager.get_view()` or relevant selectors.
+- On `ok == false`, show the canonical `error`, refresh from current state, do not manually rollback, and do not retry automatically.
+- Keep selection after failure only if it is still meaningful.
+- Gameplay UI screens must listen to the relevant facade signals: `state_changed`, `action_failed`, `phase_changed`, `game_started`, and `game_ended`.
+- UI may refresh view after signals, open or close panels, clear stale selection after phase changes, and request previews on hover or selection.
+
+## AI visibility and execution
+
+- UI may show AI activity summaries from state/view/logs, including AI purchases, attacks, skipped actions, and explicit Street Deal side effects.
+- UI does not need to animate every AI decision in MVP.
+- UI must not run AI logic directly.
+- UI must not auto-run AI outside phase-controller flow or explicit debug/dev facade buttons defined by `16_GAME_STATE_MANAGER_API.md`.
+- Debug AI buttons must call facade APIs, respect phase errors, and show canonical errors.
+
+## Forbidden behavior
+
+- Do not put gameplay validation, price calculation, combat resolution, effect application, debt creation, contract claiming, contact unlocking, AI scoring, random decisions, winner logic, or phase transition logic in UI scripts.
+- Do not mutate `GameStateManager.state`, player dictionaries, card arrays, Nal, VP, hands, market, combat logs, event logs, contracts, debts, contacts, AI state, phase fields, readiness flags, random state, or winner fields from UI.
+- Do not read internal state paths directly when a selector or view model should be used.
+- Do not add hidden auto-actions such as auto-buy on hover, auto-claim, auto-select contact, auto-resolve Street Deal choice, auto-play War cards, or hidden AI execution.
+- Do not invent keyboard, gamepad, `InputMap`, mobile, multiplayer, web, or backend UI behavior.
+- Do not invent a new UI state store, view-model architecture, event bus, or cached gameplay model unless the owner PRD explicitly requires it.
+- Do not hardcode card price tables, combat effect tables, validation maps, AI score tables, or owner gameplay constants in UI.
+- Do not use ad-hoc error strings where canonical `ValidationErrors` are required.
+
+## Required tests
+
+Add or update focused tests when touching UI behavior:
+
+- Static boundary tests: UI scripts do not mutate `GameStateManager.state`, Nal, VP, hand arrays, combat logs, gameplay logs, random state, or gameplay owner state directly.
+- Setup UI tests: setup config shape, empty seed behavior, selected role ID, selected Turf Level int, selected contract ID, and `start_new_game` facade call.
+- Market UI tests: market view selector, price preview, purchase disabled reason, `buy_card`, `end_market_for_player`, and no direct Nal mutation.
+- Action UI tests: exact attack payloads, required mode selectors, Saboteur engine target selector, valid Insider modifier display, `execute_attack`, `discard_war_card`, `end_action_for_player`, and no direct hand mutation.
+- Street Deal, contact, and contract UI tests: selector usage, disabled reason usage, exact payloads, facade mutator calls, and no direct gameplay effect application.
+- Game log tests: render entries from state/view and do not create gameplay logs.
+- Signal tests: refresh on `state_changed`, show errors on `action_failed`, switch panels on `phase_changed`, and open game over UI on `game_ended`.
+- Static scans: no forbidden random APIs, no gameplay tables in UI, no low-level logic mutator calls from UI, and UI scripts stay under the file-size limit.
+
+## Output requirements
+
+When implementing or reviewing UI changes, report:
+
+- Owner PRD sections used.
+- UI files, scenes, selectors, facade methods, themes, and tests changed.
+- Payloads, disabled reasons, previews, and signals touched.
+- Any new selector or view-model path added.
+- Tests run, including explicit `not run` items with the reason.

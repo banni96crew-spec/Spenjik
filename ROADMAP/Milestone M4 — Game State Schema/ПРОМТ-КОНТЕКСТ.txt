@@ -1,0 +1,139 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Разработка идёт строго по milestone-порядку:
+
+M0 Project Bootstrap
+→ M1 Constants and IDs
+→ M2 Resource Schemas and Catalogs
+→ M3 Deterministic Random
+→ M4 Game State Schema
+→ последующие gameplay-модули
+
+Игровое ядро должно быть детерминированным, тестируемым без UI и сериализуемым. Resources описывают статические данные, а Dictionary snapshots хранят runtime state.
+
+Документы в `res://docs/prd/` — источник истины. Не добавляй скрытые state fields и не придумывай gameplay behavior. При конфликте проверь `21_OPEN_QUESTIONS_AND_FIXES.md`; unresolved ambiguity оформляй как `OQ-*`.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript и GUT.
+- `.tres` Resources для статических данных.
+- Dictionary и Array для runtime state.
+- Windows и Linux как первые export targets.
+- Без web stack.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+M4 вводит canonical runtime schema:
+
+- `GameStateFactory.gd` создаёт полные default snapshots.
+- `GameStateValidator.gd` проверяет shape и critical invariants.
+- Fixtures создают reusable test states без test-only gameplay rules.
+- Runtime state не зависит от Nodes, scene tree или UI.
+- Runtime state хранит IDs, а не Resource instances.
+
+State должен быть JSON-compatible. Разрешены только:
+
+- String, int, float, bool;
+- Array и Dictionary.
+
+Запрещены внутри runtime state:
+
+- Node, Resource и Object references;
+- Callable, Signal и SceneTree;
+- `RandomNumberGenerator`;
+- скрытое singleton state.
+
+Критические ownership rules:
+
+- Root GameState владеет shared market, Street Deal offer, contact offer, AI metadata, action flow, logs и result.
+- PlayerState владеет player resources, cards, contracts, contacts, debts, role flags и temporary modifiers.
+- RandomState изменяется только deterministic random layer.
+- Runtime concept не должен иметь двух источников истины.
+- `FIX-002` имеет приоритет: debts принадлежат player state под canonical key, закреплённым resolved fix; не создавай дублирующий debt container.
+- UI не мутирует state напрямую.
+
+## Структура проекта
+
+Production files M4:
+
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+
+Required fixtures:
+
+- `res://tests/fixtures/TestGameStateFactory.gd`
+- `res://tests/fixtures/TestPlayers.gd`
+- `res://tests/fixtures/TestCards.gd`
+- `res://tests/fixtures/TestStates.gd`
+
+Required tests:
+
+- `res://tests/unit/test_game_state_factory.gd`
+- `res://tests/unit/test_game_state_validator.gd`
+- architecture static scan по существующей convention проекта.
+
+## Что уже сделано
+
+M0 создал Godot project, GUT, folder structure, smoke test и scan helper.
+
+M1 создал stable IDs, phases, defense states и validation errors.
+
+M2 создал Resource schemas, `.tres` data и domain catalogs.
+
+M3 создал `SeededRandom.gd`, `SeededPicker.gd`, deterministic tests и forbidden random scan.
+
+Перед M4 фактически проверь M0–M3 gates. Если prerequisite не проходит, не начинай M4.
+
+## Что сейчас делаю
+
+Реализую только `Milestone M4 — Game State Schema`:
+
+- canonical root и nested Dictionary shapes;
+- factory functions;
+- validators;
+- reusable fixtures;
+- schema, invalid-state и serialization tests;
+- architecture scan.
+
+Owner PRD:
+
+- `res://docs/prd/04_GAME_STATE_SCHEMA.md`
+
+Direct dependencies:
+
+- `03_IDS_AND_CONSTANTS.md`
+- relevant gameplay PRD только для owned schema fields
+- `14_DETERMINISTIC_RANDOM.md`
+- `15_GODOT_ARCHITECTURE.md`
+- `18_TEST_PLAN.md`
+- `19_IMPLEMENTATION_ORDER.md`
+- `20_LLM_AGENT_RULES.md`
+- `21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Договорённости по коду
+
+- Factory и Validator находятся под hard stub ban.
+- Factory создаёт complete shapes, но не разрешает gameplay.
+- Validator возвращает stable shape: `ok`, `error`, `details`.
+- Invalid input не мутируется.
+- Используй constants и catalogs вместо дублирования IDs.
+- Fixtures строятся через production factory и targeted overrides.
+- Не копируй неполный state вручную в каждом test.
+- Каждый `.gd` файл должен быть меньше 250 строк; при необходимости разделяй helpers/tests.
+- Ориентиры длины prompt-файлов примерные и не являются acceptance criteria.
+- Не ослабляй tests, не скрывай failures и не откатывай пользовательские изменения.
+
+## Что НЕ входит в текущий milestone
+
+Не реализуй phase transitions, market generation, income, purchases, combat, role effects, contract progression, Street Deal effects, debts processing, contacts effects, Turf modifiers, AI decisions, WinnerResolver, GameStateManager или UI.
+
+M4 создаёт AI/market/game-result placeholder shapes, но не выбирает strong AI, profiles, offers, winner и не потребляет random для будущего setup.

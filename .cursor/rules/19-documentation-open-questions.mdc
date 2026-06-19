@@ -1,0 +1,146 @@
+---
+description: High-priority documentation ownership, cross-references, OQ/FIX tracking, owner PRD updates, and ambiguity control.
+globs:
+  - "docs/**/*.md"
+  - ".cursor/rules/**/*.mdc"
+  - "tests/**/*.gd"
+  - "README.md"
+  - "CHANGELOG.md"
+alwaysApply: false
+---
+
+# Documentation and Open Questions
+
+## Applies when
+
+Apply when creating, reviewing, or modifying PRD files, Cursor rules, README/changelog/docs, implementation notes, static scans for docs, open questions, accepted fixes, cross-document references, or tests that enforce documentation/source-of-truth rules. Priority: High.
+
+## Source of truth
+
+- `docs/prd/00_INDEX.md` owns the PRD map, reading order, cross-document reference format, and documentation update rules.
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` owns `OQ-*` and `FIX-*` tracking, required fields, statuses, ambiguity handling, and static scan expectations.
+- Owner PRD files own final executable requirements for their domains.
+
+This rule is a guardrail summary for documentation and open questions. It must not override owner PRDs, `00_INDEX.md`, or `21_OPEN_QUESTIONS_AND_FIXES.md`. If a documentation edit would change implementation behavior, update the owner PRD and tests before implementing code.
+
+## Single owner rule
+
+- Every requirement must have exactly one owner PRD module.
+- Update only the file that owns the rule.
+- Do not create a second source of truth in Cursor rules, README, changelog, implementation notes, comments, tests, roadmap, skills, or generated docs.
+- Cursor rules may summarize guardrails, but must not become independent balance, schema, API, event, or behavior authority.
+- Roadmap, skills, comments, and future code are not sources of truth when they conflict with owner PRDs or accepted `FIX-*`.
+
+## Cross-references
+
+- Use cross-references instead of copying full tables, formulas, schemas, payloads, card lists, balance values, or long rule descriptions.
+- If a rule must be mentioned in another file, link to the owner source file.
+- Use the documented format:
+
+```text
+See: 05_CARDS_DATABASE.md#war-cards
+See: 07_COMBAT_SYSTEM.md#defense-resolution
+See: 14_DETERMINISTIC_RANDOM.md#replay-test
+```
+
+- If a change affects other systems, add a cross-reference to the affected owner module.
+- If a rule changes, update the owner file and keep references pointing to it.
+
+## Open questions
+
+- Use `OQ-*` only for unresolved missing behavior, ambiguity, ownership uncertainty, or contradiction.
+- Every open question must use stable IDs like `OQ-001`; do not reuse deleted IDs.
+- Every `OQ-*` must identify one owner module. If ownership is unclear, resolve ownership first.
+- Do not hide unresolved ambiguity inside code comments, tests, TODOs, implementation notes, or Cursor rules.
+- Do not implement unresolved behavior.
+- If an existing `OQ-*` is open, follow its blocking rule.
+- If an existing `OQ-*` is resolved, implement the owner module, not the historical discussion.
+- If no suitable `OQ-*` exists, report the exact proposed `OQ-*` entry instead of modifying PRD files unless the user explicitly asked for PRD maintenance.
+
+Required `OQ-*` fields:
+
+- ID
+- Title
+- Status
+- Owner module
+- Related modules
+- Type
+- Blocking
+- Problem
+- Options, if gameplay-impacting
+- Recommended option, if known
+- Decision, when resolved
+- Implementation impact
+- Test impact
+
+## Resolved fixes
+
+- Use `FIX-*` only for resolved contradictions or corrections.
+- Every resolved correction must use stable IDs like `FIX-001`; do not reuse deleted IDs.
+- Every `FIX-*` must identify one owner module.
+- Accepted `FIX-*` entries explain why a correction was made; the corrected owner PRD is the final executable specification.
+- If an accepted `FIX-*` and its owner PRD still conflict, stop and report PRD drift.
+
+Required `FIX-*` fields:
+
+- ID
+- Title
+- Status
+- Owner module
+- Related modules
+- Problem
+- Accepted correction
+- Gameplay impact
+- Implementation impact
+- Test impact
+
+## Owner PRD before implementation
+
+- Newly resolved behavior must be documented in the owner PRD before implementation.
+- Do not update owner PRDs unless the user explicitly requested PRD maintenance or approved the proposed `OQ-*` / `FIX-*` decision.
+- If a decision affects schema, API, constants, IDs, tests, architecture, or MVP scope, update the corresponding owner files in the same documentation change.
+- If a change affects MVP scope, update `01_PRODUCT_OVERVIEW.md` and `19_IMPLEMENTATION_ORDER.md`.
+- If a change affects LLM development workflow, update `20_LLM_AGENT_RULES.md`.
+- Add or update tests after resolution, not before inventing behavior.
+- Synchronize static scans and required tests when documentation rules change.
+
+## Language and style
+
+- Preserve the language style of the edited document.
+- Do not mix languages within the same requirement, table, or entry unless the user explicitly asks.
+- Keep documentation focused and concrete.
+- Do not rewrite the entire PRD or reorder large sections unless explicitly requested.
+- Avoid large copied fragments from other docs; summarize and link to the owner source.
+
+## Forbidden behavior
+
+- Do not rewrite the entire PRD for a local documentation change.
+- Do not duplicate owner tables, schemas, balance values, APIs, payloads, event contracts, or formulas across files.
+- Do not create a second source of truth.
+- Do not leave `TODO`, `TBD`, `FIXME`, or `???` without an `OQ-*` ID.
+- Do not use roadmap, skills, comments, generated docs, or future code as higher authority than owner PRDs.
+- Do not resolve PRD-vs-PRD conflicts by preference; stop and report the conflict.
+- Do not silently change gameplay requirements in docs without updating owner PRD, `OQ-*`/`FIX-*` when needed, and tests.
+- Do not mix languages without explicit request.
+
+## Required checks
+
+When touching documentation or documentation-enforcing tests, verify:
+
+- The requirement has one owner PRD.
+- Cross-references point to owner files instead of copied duplicate rules.
+- `OQ-*` and `FIX-*` IDs are unique and have required fields.
+- No untracked `TODO`, `TBD`, `FIXME`, or `???` remains.
+- Resolved fixes reference owner modules.
+- Owner PRD, schema/API/constants, and tests are synchronized when behavior changes.
+- Static scan expectations in `21_OPEN_QUESTIONS_AND_FIXES.md` remain enforceable.
+
+## Output requirements
+
+When completing documentation/open-question changes, report:
+
+- Owner PRD files changed.
+- `OQ-*` / `FIX-*` entries added, changed, or referenced.
+- Cross-references added or updated.
+- Tests/static scans updated or intentionally not run, with reason.
+- Any unresolved ambiguity or PRD drift.

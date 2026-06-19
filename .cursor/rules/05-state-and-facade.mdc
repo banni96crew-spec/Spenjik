@@ -1,0 +1,123 @@
+---
+description: Critical runtime state ownership, GameStateManager facade transactions, selector safety, signals, and no-persistence rules.
+globs:
+  - "autoload/**/*.gd"
+  - "logic/game_state/**/*.gd"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# State, Facade and Persistence
+
+## Applies when
+
+Apply when modifying the gameplay facade, runtime state factories or validators, state views, previews, or scene scripts. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/04_GAME_STATE_SCHEMA.md` owns runtime Dictionary schemas, state ownership, validation, and mutation boundaries.
+- `docs/prd/15_GODOT_ARCHITECTURE.md` owns facade direction, Resource immutability, Autoload boundaries, and debug snapshot policy.
+- `docs/prd/16_GAME_STATE_MANAGER_API.md` owns public mutators, selectors, result shapes, commit flow, signal behavior, and snapshot access.
+
+## Runtime state ownership
+
+- Store the single active runtime gameplay snapshot only in `GameStateManager.state`.
+- `GameStateManager.state` is either `{}` before setup or a complete committed `Dictionary` that passes `GameStateValidator.validate_game_state`.
+- Store runtime values only as JSON-compatible Dictionaries, Arrays, Strings, integers, floats, and booleans.
+- Store Resource IDs in runtime state, not Resource instances.
+- Keep `.tres` Resources immutable and limited to static configuration data.
+- Do not create duplicate runtime ownership in scenes, Controls, Nodes, Resources, catalogs, or additional managers.
+
+## Facade transaction
+
+Every gameplay mutator operating on active state must:
+
+1. Validate that the operation may start.
+2. Deep-copy active state with `state.duplicate(true)`.
+3. Delegate gameplay validation, calculations, random consumption, and candidate mutation to the owner logic module.
+4. Return delegated failures unchanged and discard the complete candidate.
+5. Validate the complete returned candidate with `GameStateValidator`.
+6. Replace `GameStateManager.state` exactly once and only after success.
+7. Emit success signals only after the committed state is valid.
+8. Return the documented result shape.
+
+- Commit only when `result["ok"] == true`.
+- Never repair, partially commit, or separately commit owner-module sub-results.
+- Keep `GameStateManager.gd` as a thin facade; gameplay rules remain in owner logic.
+- Logic modules receive all state and inputs explicitly and never access active singleton state.
+- Follow the dedicated PRD flows for `start_new_game` and `reset_game`; do not force them through an unrelated active-state owner mutator.
+
+## Selectors and previews
+
+- `get_state_snapshot()` must return `state.duplicate(true)`.
+- Other selectors must return safe, isolated views, previews, disabled reasons, or result data according to their documented API contracts.
+- UI must not receive writable access to active state or nested mutable references owned by active state.
+- Selectors and previews must not mutate active state, active random, Resources, flags, modifiers, logs, or phases.
+- Selectors must not emit signals.
+- `generate_contract_offers(config)` may consume only a temporary setup RandomState and must not read or mutate active state or active random.
+
+## Signals
+
+- Emit `state_changed` only after a successful committed mutation.
+- Failed mutators must not emit `state_changed` or any success signal.
+- A failed public mutator may emit `action_failed` with the exact canonical error and result.
+- `start_new_game` emits `game_started`, then `state_changed`, after its single successful commit.
+- A successful phase transition emits `state_changed`, then `phase_changed`.
+- Emit `game_ended` only after a committed Game Over result.
+- Logic modules and selectors must not emit facade signals.
+
+## Persistence
+
+- MVP has no campaign persistence, save/load gameplay loop, save slots, profiles, cloud saves, or state restoration flow.
+- Do not implement `SaveManager`.
+- The only allowed gameplay-state file output is the optional development-only debug snapshot.
+- Debug snapshots write JSON only to:
+
+```text
+user://debug_run_snapshot.json
+```
+
+- Debug snapshots are for tests, replay debugging, and diagnostics only.
+- Gameplay must not read, depend on, or recover active state from the debug snapshot.
+- Debug snapshot failure must not mutate or break gameplay.
+
+## Forbidden behavior
+
+- Do not store runtime gameplay state in a `Resource`, `.tres`, Node, scene tree, Control, UI-local model, catalog, or secondary singleton.
+- Do not expose active `GameStateManager.state` or its mutable nested values to UI.
+- Do not let UI mutate `GameStateManager.state`, player Dictionaries, random state, logs, phase fields, or gameplay collections directly.
+- Do not let UI call low-level logic mutators for gameplay.
+- Do not let logic modules call, import, or read `GameStateManager`.
+- Do not let logic modules emit facade signals or commit active state.
+- Do not commit before complete candidate validation.
+- Do not commit on failure, commit partial state, or commit more than once per public transaction.
+- Do not mutate `.tres` Resources at runtime.
+- Do not create `SaveManager`, save slots, autosaves, campaign saves, load-game flows, or persistence-backed gameplay.
+- Do not make any runtime module depend on `DebugSnapshotManager` or debug snapshot files.
+
+## Output requirements
+
+For state or facade changes, report:
+
+- Active state owner:
+- Owner logic delegated to:
+- Copy, validation, and commit flow:
+- Selector isolation:
+- Signals emitted and order:
+- Persistence impact:
+- Mutation-safety tests:
+
+## Verification checklist
+
+- Active runtime state exists only in `GameStateManager.state`.
+- Runtime state contains no Node or Resource references.
+- Every mutator deep-copies, delegates, validates, and commits exactly once on success.
+- Failed operations preserve state, random, and logs; they emit no success signals and may emit only `action_failed` as documented.
+- `get_state_snapshot()` returns a deep copy.
+- Other selectors return safe isolated data and do not mutate active state or random.
+- UI has no writable state access.
+- Logic has no dependency on `GameStateManager`.
+- `.tres` Resources remain immutable.
+- Signal order matches `16_GAME_STATE_MANAGER_API.md`.
+- No persistence exists beyond the optional debug snapshot at the canonical `user://` path.

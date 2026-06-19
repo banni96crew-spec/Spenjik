@@ -1,0 +1,791 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 UI architect, UX engineer и coding-agent.
+
+Ты умеешь:
+
+- строить desktop UI на Control/Container nodes;
+- проектировать scene composition и reusable widgets;
+- подключать signal-driven view layer к gameplay facade;
+- создавать safe command payloads;
+- писать GUT scene/payload/static tests;
+- удерживать UI полностью вне gameplay logic.
+
+Реализуй функциональный MVP UI для уже готовой игры.
+Сначала изучи repository и дай план.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+с одним human player и тремя local AI.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- Godot Control nodes, Containers и Theme;
+- GUT;
+- `.tres` Resources;
+- Dictionary state snapshots;
+- GameStateManager Autoload;
+- Windows/Linux desktop first;
+- без web stack.
+
+M0–M15 считаются завершёнными.
+Production gameplay и replay уже должны работать без UI.
+Проверь это по repository/tests, а не по предположению.
+
+Dependency direction:
+
+`UI -> GameStateManager -> logic modules -> catalogs/resources/constants`
+
+Источники истины:
+
+- `docs/prd/17_UI_UX_SPEC.md`
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- owner PRD-файлы M5–M13
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Приоритет:
+
+1. UI behavior и scene ownership из `17_UI_UX_SPEC.md`.
+2. Public method/result/view contracts из M14.
+3. Test file ownership из `18_TEST_PLAN.md`.
+4. State ownership из schema и resolved FIX.
+5. Owner gameplay PRD только для meaning, не для UI reimplementation.
+
+ЗАДАЧА:
+
+Реализовать Milestone M16 — UI / UX:
+
+- создать Main/GameRoot scene composition;
+- создать Setup, Game и Game Over screens;
+- создать required panels и widgets;
+- подключить их только к GameStateManager;
+- реализовать UI-local selection state;
+- показывать previews, stable disabled reasons и errors;
+- строить exact command payloads;
+- обновлять UI по signals и после commands;
+- поддержать functional desktop layout;
+- добавить UI payload/scene/static tests;
+- сохранить зелёными M0–M15 suites.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+Main/game:
+
+- `res://scenes/main/Main.tscn`
+- `res://scenes/main/Main.gd`
+- `res://scenes/game/GameRoot.tscn`
+- `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+- `res://scenes/ui/screens/SetupScreen.tscn`
+- `res://scenes/ui/screens/SetupScreen.gd`
+- `res://scenes/ui/screens/GameScreen.tscn`
+- `res://scenes/ui/screens/GameScreen.gd`
+- `res://scenes/ui/screens/GameOverScreen.tscn`
+- `res://scenes/ui/screens/GameOverScreen.gd`
+
+Panels:
+
+- `res://scenes/ui/panels/PlayerBoard.tscn`
+- `res://scenes/ui/panels/PlayerBoard.gd`
+- `res://scenes/ui/panels/MarketPanel.tscn`
+- `res://scenes/ui/panels/MarketPanel.gd`
+- `res://scenes/ui/panels/ActionPanel.tscn`
+- `res://scenes/ui/panels/ActionPanel.gd`
+- `res://scenes/ui/panels/StreetDealPanel.tscn`
+- `res://scenes/ui/panels/StreetDealPanel.gd`
+- `res://scenes/ui/panels/ContactPanel.tscn`
+- `res://scenes/ui/panels/ContactPanel.gd`
+- `res://scenes/ui/panels/ContractPanel.tscn`
+- `res://scenes/ui/panels/ContractPanel.gd`
+- `res://scenes/ui/panels/GameLogPanel.tscn`
+- `res://scenes/ui/panels/GameLogPanel.gd`
+
+Widgets:
+
+- `res://scenes/ui/widgets/CardView.tscn`
+- `res://scenes/ui/widgets/CardView.gd`
+- `res://scenes/ui/widgets/DefenseBadges.tscn`
+- `res://scenes/ui/widgets/DefenseBadges.gd`
+- `res://scenes/ui/widgets/NalVpDisplay.tscn`
+- `res://scenes/ui/widgets/NalVpDisplay.gd`
+- `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+- `res://scenes/ui/widgets/DisabledReasonLabel.gd`
+
+Recommended helpers:
+
+- `res://scenes/ui/helpers/ErrorTextMap.gd`
+- `res://scenes/ui/helpers/UIViewFormatters.gd`
+
+Tests:
+
+- `res://tests/static/test_ui_static_boundaries.gd`
+- `res://tests/unit/test_ui_payloads.gd`
+
+При необходимости добавь focused UI scene tests, например:
+
+- `res://tests/unit/test_ui_screens.gd`
+- `res://tests/unit/test_ui_signals.gd`
+
+Не создавай duplicate static test в:
+
+- `res://tests/unit/test_ui_static_boundaries.gd`
+
+`18_TEST_PLAN.md` является authoritative для static test location.
+
+Точечно обнови при необходимости:
+
+- `res://project.godot` для main scene/window/stretch settings;
+- existing Theme/assets;
+- `res://autoload/GameStateManager.gd` или GameViewBuilder
+  только при подтверждённом missing selector/view contract;
+- `res://data/ids/ValidationErrors.gd`
+  только для уже документированных missing constants.
+
+PRE-IMPLEMENTATION AUDIT:
+
+До кода:
+
+1. Проверь M15 gate и full test suite status.
+2. Найди фактический Godot project root и `project.godot`.
+3. Проинспектируй existing scenes, Theme, fonts, icons и assets.
+4. Проинспектируй actual GameStateManager API и `get_view()` shape.
+5. Сопоставь каждый UI action с public facade method/selector.
+6. Сопоставь каждый displayed field с safe view/selector.
+7. Проверь actual ValidationErrors и documented fallbacks.
+8. Проверь scene/test naming conventions.
+9. Проверь FIX-001–FIX-030 и open `OQ-*`.
+10. Построй UI contract matrix:
+    scene/panel -> input view -> public calls -> local selection.
+
+ОБЯЗАТЕЛЬНЫЙ CONTACT STATE AUDIT:
+
+Документы расходятся:
+
+- `04_GAME_STATE_SCHEMA.md` показывает `state["contact_offer"]`;
+- `11_CONTACTS.md`, FIX-008 и FIX-030 используют
+  `state["contacts"]["pending_offer"]`.
+
+До подключения ContactPanel:
+
+1. Проверь actual M4 schema/factory/validator.
+2. Проверь actual M11 ContactLogic.
+3. Проверь M14 `get_contact_offer()` и `get_view()`.
+4. Не читай любой из raw keys напрямую из UI.
+5. Используй только resolved facade selector contract.
+6. Если M4/M11/M14 фактически не согласованы, добавь новый `OQ-*`
+   в `21_OPEN_QUESTIONS_AND_FIXES.md`.
+7. Останови только ContactPanel data wiring до решения.
+
+Не выбирай один key молча и не создавай duplicate compatibility state.
+
+VALIDATION ERROR AUDIT:
+
+UI-spec упоминает error codes, часть которых в owner PRDs описана
+как recommended additions/fallbacks.
+
+До ErrorTextMap:
+
+- проверь actual `ValidationErrors.gd`;
+- map-ь только существующие stable constants;
+- используй owner-documented fallback code, если он фактически возвращается;
+- не добавляй ad-hoc strings как gameplay errors;
+- не меняй production error semantics ради текста;
+- missing semantic contract оформляй как `OQ-*`.
+
+UI OWNERSHIP:
+
+UI может:
+
+- render safe views;
+- хранить selection/hover/expanded state;
+- собирать payload;
+- проверять очевидную completeness payload;
+- запрашивать previews/disabled reasons;
+- вызывать GameStateManager;
+- показывать errors и logs;
+- переключать screens/panels;
+- управлять focus, scroll и presentation locks.
+
+UI не может:
+
+- вычислять prices/affordability;
+- проверять market availability;
+- вычислять attack block/effect;
+- применять card/role/contract/contact/Street Deal effects;
+- менять Nal, VP, hands, buildings, debts или logs;
+- писать phase/readiness/action flags;
+- выбирать AI action;
+- consume-ить gameplay random;
+- парсить descriptions как rules;
+- хранить копию authoritative gameplay state.
+
+EXACT FACADE CALL CONTRACT:
+
+Setup/state:
+
+- `get_available_roles()`
+- `get_available_turf_levels()`
+- `generate_contract_offers(config)`
+- `start_new_game(config)`
+- `get_view()`
+- `get_current_phase()`
+- `get_round()`
+
+Market:
+
+- `get_market_view(player_id)`
+- `get_card_price_preview(player_id, card_id)`
+- `get_purchase_disabled_reason(player_id, card_id)`
+- `buy_card(player_id, card_id)`
+- `end_market_for_player(player_id)`
+- `rebuild_district_control(player_id)`
+
+Combat:
+
+- `get_valid_targets(action_payload)`
+- `get_valid_engine_targets(attacker_id, target_id)`
+- `get_combat_preview(payload)`
+- `get_action_disabled_reason(action_payload)`
+- `execute_attack(payload)`
+- `discard_war_card(player_id, card_id)`
+- `end_action_for_player(player_id)`
+
+Street Deals/Debts:
+
+- `get_street_deal_view(player_id)`
+- `get_street_deal_disabled_reason(payload)`
+- `select_street_deal(payload)`
+- `get_debt_status(player_id)`
+
+Contacts:
+
+- `get_contact_offer(player_id)`
+- `get_contact_state(player_id)`
+- `get_contact_disabled_reason(payload)`
+- `select_contact(payload)`
+- `activate_contact(payload)` только для documented active-contact UI.
+
+Contracts:
+
+- `get_contract_state(player_id)`
+- `get_contract_claim_disabled_reason(player_id, contract_id)`
+- `claim_contract(player_id, contract_id)`
+
+Если actual M14 method отсутствует или shape отличается:
+
+- не вызывай owner logic напрямую;
+- зафиксируй missing facade contract;
+- добавь/сошлись на `OQ-*`, если docs не дают однозначного решения.
+
+UI-LOCAL STATE:
+
+Разрешено хранить:
+
+- selected setup role/Turf/contract;
+- selected market card;
+- selected War card;
+- selected target/mode/engine target;
+- selected modifiers;
+- selected Street Deal option;
+- hovered card;
+- expanded log entry;
+- UI-only busy/waiting flag.
+
+UI-local state не переживает неподходящую phase/state:
+
+- clear после successful command;
+- clear после cancel;
+- clear при relevant `phase_changed`;
+- clear, если selected ID исчез из refreshed view;
+- failed command сохраняет selection только если она ещё meaningful.
+
+Не добавляй UI selections в GameState schema.
+
+SCENE COMPOSITION:
+
+`Main.tscn`:
+
+- project entry scene;
+- создаёт/показывает GameRoot;
+- не владеет gameplay state;
+- не содержит gameplay orchestration.
+
+`GameRoot.tscn`:
+
+- screen host/coordinator;
+- содержит SetupScreen, GameScreen и GameOverScreen;
+- переключает visibility по active game/phase/signals;
+- подписывается на GameStateManager signals один раз;
+- не дублирует panel gameplay behavior.
+
+Screen switching:
+
+- no active game -> SetupScreen;
+- successful `game_started` -> GameScreen;
+- successful `game_ended`/game_over view -> GameOverScreen;
+- New Game очищает/перезапускает только через documented facade flow;
+- Exit/Main Menu не реализует save/load.
+
+SETUP SCREEN:
+
+Собирает:
+
+- non-empty seed;
+- Turf Level 0..10 из `get_available_turf_levels()`;
+- role из `get_available_roles()`;
+- one contract из deterministic offer.
+
+Flow:
+
+1. User выбирает seed, Turf и role.
+2. UI вызывает `generate_contract_offers(config)`.
+3. Показывает returned offer IDs/definitions.
+4. User выбирает one contract.
+5. UI вызывает `start_new_game(config)`.
+6. Success открывает GameScreen.
+7. Failure показывает readable error и остаётся в Setup.
+
+UI может проверить только completeness:
+
+- seed не пуст;
+- role/Turf/contract выбраны.
+
+Validity/offer membership проверяет GameStateManager.
+Не генерируй seed через random/time без явной PRD.
+
+GAME SCREEN:
+
+Обязательно показывает:
+
+- round и current phase;
+- active action player;
+- все 4 PlayerBoard;
+- human-relevant controls;
+- MarketPanel;
+- ActionPanel;
+- StreetDealPanel;
+- ContactPanel;
+- ContractPanel;
+- GameLogPanel;
+- waiting/AI activity state.
+
+Panels показываются/disabled по phase/view, но UI не меняет phase.
+Phase visibility не является заменой owner validation.
+
+PLAYER BOARD:
+
+Render для каждого player:
+
+- stable player identity/display label;
+- human/AI/strong AI/profile indicators, если доступны view;
+- Nal/VP через NalVpDisplay;
+- Engine, Status и Defense summaries;
+- War hand только в разрешённом human-safe representation;
+- readiness/action status;
+- relevant contact/contract badges для human.
+
+Не раскрывай hidden information, если safe view её не предоставляет.
+Не читай raw active state ради удобства.
+
+MARKET PANEL:
+
+- получает data через `get_market_view(human_id)`;
+- отображает available cards через CardView;
+- при selection вызывает price preview и disabled reason;
+- показывает final price/modifiers из preview;
+- Buy вызывает `buy_card`;
+- End Market вызывает `end_market_for_player`;
+- Rebuild вызывает `rebuild_district_control`;
+- после любого result refresh-ится из facade.
+
+UI не subtract-ит Nal, не place-ит card и не вычисляет requirements.
+
+ACTION PANEL:
+
+Local state:
+
+- selected card ID;
+- selected target ID;
+- selected mode;
+- selected engine target ID;
+- selected modifier IDs.
+
+Flow:
+
+1. Покажи War cards из safe view.
+2. Получи targets через `get_valid_targets`.
+3. Получи engine targets для Saboteur.
+4. Собери exact combat payload.
+5. Получи disabled reason и `get_combat_preview`.
+6. Покажи target/mode/block/effect/cards-consumed preview.
+7. Execute вызывает `execute_attack`.
+8. Discard вызывает `discard_war_card`.
+9. End Action вызывает `end_action_for_player`.
+
+Payload fields:
+
+- `attacker_id`;
+- `target_id`;
+- `card_id`;
+- `mode`;
+- `modifiers`;
+- `engine_target_card_id`.
+
+Completeness behavior:
+
+- Bruiser/Cleaner требуют selected documented mode.
+- Federal Raid требует `destroy_district`.
+- Saboteur требует explicit engine target.
+- Insider доступен только как modifier option для Thug.
+
+Не реализуй effect/defense rules в UI.
+Какие options действительно legal, определяют selectors.
+
+STREET DEAL PANEL:
+
+- видим только в relevant phase/view;
+- получает data через `get_street_deal_view`;
+- показывает title/description и Option A/B;
+- запрашивает disabled reason для каждой option;
+- вызывает `select_street_deal` с exact payload;
+- не применяет effects и не создаёт debts;
+- после success показывает ContactPanel при pending offer.
+
+Payload:
+
+- human `player_id`;
+- current `deal_id`;
+- selected `"A"` или `"B"`.
+
+CONTACT PANEL:
+
+- получает pending offer через `get_contact_offer`;
+- owned state через `get_contact_state`;
+- disabled reason через `get_contact_disabled_reason`;
+- selection вызывает `select_contact`;
+- manual activation показывается только если actual M14/owner contract
+  предоставляет применимый active contact.
+
+Не предлагай manual pre-activation Street Medic:
+его MVP use case идёт через DebtLogic hook.
+
+UI не unlock-ит contact и не меняет pending offer.
+
+CONTRACT PANEL:
+
+- получает runtime через `get_contract_state`;
+- показывает ID/title/progress/deadline/status/reward view;
+- Claim availability получает через disabled reason selector;
+- Claim вызывает `claim_contract`;
+- не проверяет condition и не начисляет reward.
+
+GAME LOG PANEL:
+
+- render-ит logs из safe view;
+- корректно обрабатывает empty logs;
+- позволяет scroll/expand entries;
+- не создаёт gameplay log entries;
+- не добавляет wall-clock gameplay timestamps.
+
+GAME OVER SCREEN:
+
+Показывает:
+
+- winner;
+- final VP/Nal;
+- game result/tie-break summary;
+- contract result;
+- Turf Level;
+- strong AI;
+- selected role/contract;
+- summary log.
+
+Controls:
+
+- New Game;
+- Exit/Main Menu.
+
+No rematch persistence.
+Gameplay commands после Game Over не доступны.
+
+WIDGETS:
+
+`CardView`:
+
+- render-ит card identity/display data, type, price/preview и state;
+- emits UI selection/request signal;
+- не validates gameplay.
+
+`DefenseBadges`:
+
+- render-ит Cops/Cartel/Judge status из view;
+- не вычисляет block.
+
+`NalVpDisplay`:
+
+- render-ит Nal/VP;
+- не изменяет values.
+
+`DisabledReasonLabel`:
+
+- получает stable code;
+- использует ErrorTextMap;
+- безопасно обрабатывает unknown code без изменения semantics.
+
+`UIViewFormatters`:
+
+- pure presentation formatting;
+- no gameplay decisions;
+- no state mutation.
+
+SIGNALS И REFRESH:
+
+Подпишись на:
+
+- `state_changed`;
+- `action_failed`;
+- `phase_changed`;
+- `game_started`;
+- `game_ended`.
+
+После каждого mutator:
+
+1. Inspect `ok/error`.
+2. Refresh authoritative view на success.
+3. Show mapped error и также refresh на failure.
+4. Не patch-ить labels по предполагаемому result.
+5. Не делать automatic retry.
+
+Предотвращай duplicate signal connections и stale callbacks.
+Scene teardown/reload не должен удваивать refresh.
+
+AI VISIBILITY:
+
+- AI actions могут выполняться автоматически owner flow;
+- UI показывает waiting/busy state;
+- human command buttons disabled во время active AI resolution;
+- purchases/attacks/blocked results показываются через logs/summaries;
+- UI не запускает AI вне phase owner;
+- AI debug buttons допустимы только явно dev/debug и не обязательны.
+
+ERROR TEXT MAP:
+
+- key = stable ValidationErrors code;
+- value = readable presentation text;
+- `ValidationErrors.OK` отображается как available/empty helper text;
+- unknown code отображается безопасно, но не подменяется другим code;
+- mapping не содержит validation conditions;
+- localization framework не требуется в M16.
+
+DESKTOP LAYOUT:
+
+Required baseline:
+
+- landscape;
+- mouse input;
+- readable text at 1080p;
+- minimum supported layout 1280x720;
+- target layout 1920x1080;
+- button-based alternative для каждой core action;
+- drag-and-drop optional, не required.
+
+Используй anchors, size flags, Containers и ScrollContainer.
+На меньшем окне core controls должны оставаться reachable.
+
+Переиспользуй existing Theme/assets.
+Если их нет, создай нейтральный функциональный Godot Theme/layout,
+но не изобретай lore, new icons с gameplay meaning или art requirements.
+
+PROJECT SETTINGS:
+
+Проверь и при необходимости настрой:
+
+- Main Scene -> `res://scenes/main/Main.tscn`;
+- desktop viewport/window baseline;
+- stretch behavior для landscape UI.
+
+Не меняй unrelated renderer/export settings.
+
+TESTS:
+
+Authoritative static test:
+
+- `res://tests/static/test_ui_static_boundaries.gd`
+
+Payload/scene test:
+
+- `res://tests/unit/test_ui_payloads.gd`
+
+Static tests:
+
+- UI не содержит `GameStateManager.state` mutation;
+- UI не меняет Nal/VP/hands/logs/phase;
+- UI не вызывает owner mutators напрямую;
+- UI не содержит gameplay random;
+- UI не содержит price/effect/scoring tables;
+- каждый UI `.gd` меньше 250 строк;
+- logic не зависит от UI scenes;
+- web stack отсутствует.
+
+Payload tests:
+
+- Setup config shape и unchanged selected IDs;
+- Turf Level передаётся как int;
+- attack payload содержит exact fields;
+- Bruiser/Cleaner mode completeness;
+- Federal Raid `destroy_district`;
+- Saboteur engine target completeness;
+- Insider только как selected Thug modifier;
+- Street Deal option payload `"A"`/`"B"`;
+- contact payload;
+- no mutator call для obviously incomplete payload.
+
+Scene/panel tests:
+
+- required scenes instantiate without parse errors;
+- required child controls доступны по stable node paths;
+- Setup start вызывает facade;
+- Market buy/end/rebuild вызывают facade;
+- Action execute/discard/end вызывают facade;
+- Street Deal/Contact/Contract calls корректны;
+- state_changed refresh-ит UI;
+- action_failed показывает error;
+- phase_changed переключает panels/clears stale selection;
+- game_ended открывает GameOverScreen;
+- selector failure показывает safe empty/disabled UI.
+
+Не дублируй gameplay expected formulas в UI tests.
+Используй test doubles только на facade boundary, если existing GUT pattern
+позволяет injection; иначе тестируй payload builders/pure presentation
+и integration через real GameStateManager.
+
+STATIC SCAN FORBIDDEN PATTERNS:
+
+- `GameStateManager.state[`
+- direct `["nal"] +=` / `-=`;
+- direct `["vp"] +=` / `-=`;
+- `["hand"].append` / `.erase`;
+- `["combat_log"].append`;
+- `["purchased_this_round"].append`;
+- `randf(`, `randi(`, `randomize(`, `RandomNumberGenerator`;
+- `MarketLogic.buy_card`;
+- `CombatEngine.resolve_attack`;
+- `StreetDealLogic.select_street_deal`;
+- `ContactLogic.select_contact`;
+- `ContractLogic.claim_contract`;
+- `AIBotController.run_action_for_ai`;
+- `PriceLogic.calculate`;
+- UI `.gd` files >= 250 lines.
+
+Static scan должен учитывать false positives в test scan definitions,
+но не ослаблять реальные UI path checks.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй gameplay rules, IDs, state schema или balance.
+- Не добавляй missing gameplay selector молча.
+- Не читай raw GameStateManager.state.
+- Не вызывай low-level gameplay modules из UI.
+- Не дублируй gameplay validation.
+- Не добавляй hidden auto-actions.
+- Не создавай UI-owned gameplay store.
+- Не consume-ь random в gameplay UI.
+- Не реализуй save/load, network или M17 polish.
+- Не выполняй unrelated production refactor.
+- Не ослабляй M0–M15 tests.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительные.
+
+Обязательные decisions:
+
+- FIX-001: Street Deal choice делает только human.
+- FIX-007–FIX-012: contact offers/ownership/effects.
+- FIX-023: no gameplay persistence.
+- FIX-024: `advance_phase` и phase-safe facade methods.
+- FIX-025: dedicated rebuild API.
+- FIX-026: UI только render/input/payload/facade/error/preview.
+- FIX-027: UI после tested logic/facade/integration.
+- FIX-028: ambiguity оформляется как OQ.
+- FIX-029: все scripts меньше 250 строк.
+- FIX-030: duplicate contact/Street Deal state запрещён,
+  но contact key conflict требует audit выше.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи UI spec, M14 API, architecture, Test Plan и fixes.
+2. Проверь M0–M15 readiness и фактический project root.
+3. Проаудируй scenes/assets/Theme/view shapes/errors.
+4. Выполни Contact State Audit.
+5. Построй UI contract matrix и screen/panel hierarchy.
+6. Определи minimal functional desktop layout.
+7. Дай план без кода и дождись моего «ок».
+8. После «ок» сначала добавь static/payload scene tests.
+9. Реализуй Main/GameRoot, screens, panels, widgets и helpers.
+10. Подключи facade signals, selectors, previews и commands.
+11. Проверь 1280x720 и 1920x1080 layout.
+12. Запусти UI tests, static scans и full M0–M15 suite.
+13. Исправь только подтверждённые UI/integration defects.
+14. Представь итог и M16 gate checklist.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ по шагам без кода.
+2. Покажи UI contract matrix.
+3. Покажи scene tree/screen-panel hierarchy.
+4. Отдельно сообщи результат Contact State Audit.
+5. Укажи missing selectors/errors, blockers и OQ.
+6. Дождись моего «ок».
+7. До «ок» не изменяй файлы.
+8. После «ок» показывай изменения с полными `res://...` путями.
+9. Для каждого файла кратко указывай UI responsibility.
+10. Перечисли реально запущенные tests и viewport checks.
+11. Не заявляй pass для незапущенных проверок.
+12. В конце дай M16 gate checklist.
+
+Не пиши общие советы.
+Не подменяй UI прямой mutation state.
+Не отмечай gate пройденным без static boundary tests.
+
+M16 GATE CHECKLIST:
+
+- [ ] M0–M15 readiness проверена.
+- [ ] UI contract matrix и scene hierarchy подтверждены.
+- [ ] Contact State Audit завершён; conflict разрешён или оформлен OQ.
+- [ ] Required Main/GameRoot scenes существуют.
+- [ ] SetupScreen запускает game через GameStateManager.
+- [ ] GameScreen показывает round, phase и all player boards.
+- [ ] GameOverScreen показывает valid final result.
+- [ ] Все required panels и widgets существуют.
+- [ ] MarketPanel использует views/previews/disabled reasons/facade.
+- [ ] ActionPanel строит exact combat payloads.
+- [ ] StreetDealPanel отправляет only human A/B choices.
+- [ ] ContactPanel использует facade selector/mutator.
+- [ ] ContractPanel claim-ит только через facade.
+- [ ] GameLogPanel только отображает logs.
+- [ ] UI-local state не содержит gameplay state.
+- [ ] Stale selections очищаются корректно.
+- [ ] Signals refresh/screens/errors работают без duplicate connections.
+- [ ] Failed commands показывают error и refresh без rollback patch.
+- [ ] AI activity видима; human controls locked appropriately.
+- [ ] Core commands доступны кнопками без required drag-and-drop.
+- [ ] Layout usable at 1280x720 and 1920x1080.
+- [ ] Main Scene и stretch/window settings корректны.
+- [ ] UI вызывает только GameStateManager для gameplay.
+- [ ] UI не мутирует active state напрямую.
+- [ ] UI не содержит gameplay validation/random/effect logic.
+- [ ] UI payload/scene tests проходят.
+- [ ] `tests/static/test_ui_static_boundaries.gd` проходит.
+- [ ] Все UI `.gd` files меньше 250 строк.
+- [ ] M0–M15 suites и static scans не сломаны.
+- [ ] M17 polish, persistence и web stack не добавлены.

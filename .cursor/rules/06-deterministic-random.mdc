@@ -1,0 +1,223 @@
+---
+description: Critical deterministic gameplay random, unified random state, replay safety, step contracts, and forbidden RNG rules.
+globs:
+  - "autoload/**/*.gd"
+  - "logic/**/*.gd"
+  - "scenes/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Deterministic Random and Replay
+
+## Applies when
+
+Apply when creating, reviewing, or modifying gameplay random helpers, gameplay random consumers, state setup, previews, AI choices, winner resolution, UI scripts that use visual-only randomness, or tests/static scans touching randomness. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/14_DETERMINISTIC_RANDOM.md` owns gameplay random algorithms, random state schema, step mutation, tag behavior, allowed consumers, and replay rules.
+- `docs/prd/18_TEST_PLAN.md` owns deterministic-random tests, replay tests, static scans, exact step assertions, and test seed rules.
+- Domain owner PRDs own when their system may consume random and what gameplay result the random choice affects.
+
+## Core contract
+
+- All gameplay random must flow only through the shared `state["random"]`.
+- `state["random"]` is the single source of truth for gameplay random progression.
+- `SeededRandom.gd` must use `cyrb53` for seed hashing and `mulberry32` for deterministic pseudo-random generation.
+- Treat `cyrb53`, `mulberry32`, float normalization, step progression, and picker step usage as gameplay/replay contracts.
+- Use `SeededRandom.gd` for primitive draws and dice.
+- Use `SeededPicker.gd` for random item selection, weighted selection, unique selection, and random tie-breaks.
+- Tags are debug labels only; do not mix tags into seeds or random values.
+
+Required random state shape:
+
+```gdscript
+{
+	"seed": "run_12345",
+	"step": 0,
+	"last_random_tag": "",
+	"random_history_enabled": false,
+	"history": []
+}
+```
+
+- `seed` stays stable for the full run.
+- `step` starts at `0` and increases by exactly `1` per random draw.
+- `last_random_tag` stores the latest tag passed to `SeededRandom.next`.
+- `history` is always present and remains empty when `random_history_enabled == false`.
+- Gameplay logic must not depend on `history`.
+
+## Step contracts
+
+Use these exact step counts:
+
+| API or behavior | Steps used |
+| --- | ---: |
+| `SeededRandom.seeded_random(seed, step)` | 0 |
+| `SeededRandom.next(random_state, tag)` | 1 |
+| `SeededRandom.roll_d6_pair(random_state, tag)` | 2 |
+| `SeededPicker.pick_one(random_state, items, tag)` | 1 on success |
+| `SeededPicker.pick_one` with empty input | 0 |
+| `SeededPicker.pick_unique(random_state, items, count, tag)` | 1 per selected item |
+| `SeededPicker.pick_unique` with `count <= 0` | 0 |
+| `SeededPicker.pick_unique` with `count > items.size()` | 1 per available item |
+| `SeededPicker.pick_weighted(random_state, weighted_items, tag)` | 1 on success |
+| `SeededPicker.pick_weighted` with no positive weights | 0 |
+| `SeededPicker.pick_best_tie` with no items | 0 |
+| `SeededPicker.pick_best_tie` with one item | 0 |
+| `SeededPicker.pick_best_tie` with multiple items | 1 |
+
+- Every random-consuming function must return the updated random state.
+- Callers must write the returned random state back into `state["random"]`.
+- Failed random validation or picker validation must leave random state unchanged.
+- Random helpers must treat input `random_state` as immutable and return a new updated random-state Dictionary.
+- Do not mutate the caller-provided `random_state` in place.
+- Validation failures must return the original random state unchanged when the API result includes random state.
+- Active-game previews and selectors must not consume active random.
+- Contract setup preview is the only random-consuming preview; it uses a temporary setup `RandomState` and never mutates active `GameState`.
+
+## Allowed gameplay random consumers
+
+Gameplay random may be consumed only by these systems and only for the listed purpose:
+
+| System | Random use |
+| --- | --- |
+| `IncomeLogic` | 2d6 Income roll |
+| `MarketLogic` | Rotating market card selection |
+| `ContractLogic` | Setup contract offer selection |
+| `StreetDealLogic` | Street Deal generation |
+| `StreetDealLogic` | `dirty_tip` Option B random AI target |
+| `ContactLogic` | Contact offer generation |
+| `AIBotController` | Strong AI selection |
+| `AIBotController` | AI profile assignment |
+| `AIPurchaseLogic` | Purchase score tie-break |
+| `AIBotController` / `AIActionLogic` | Attack probability roll |
+| `AITargetLogic` | Target score tie-break |
+| `AIActionLogic` | Attack option tie-break |
+
+- If a new system needs gameplay random, stop and require a PRD update defining owner module, call timing, tag, step consumption, and replay test.
+- Do not consume random in `WinnerResolver`.
+
+## Non-random deterministic tie-breaks
+
+These tie-breaks must not consume random:
+
+| System | Tie-break |
+| --- | --- |
+| Risky Contract Option B | Richest AI; if tied, `ai_1`, `ai_2`, `ai_3` |
+| AI Saboteur Engine Target | `brothel`, `laundry`, `accountant`, `informant` |
+| Turf Level 10 AI Winner Tie | Highest Nal, then `ai_1`, `ai_2`, `ai_3` |
+| WinnerResolver base rules | No random |
+
+- Do not replace non-random deterministic tie-breaks with `SeededPicker` unless the owner PRD explicitly changes the rule.
+
+## Required helper APIs
+
+Required files:
+
+```text
+res://logic/random/SeededRandom.gd
+res://logic/random/SeededPicker.gd
+```
+
+`SeededRandom.gd` must provide:
+
+These are required signatures, not placeholder implementations.
+
+```gdscript
+class_name SeededRandom
+
+static func seeded_random(seed: String, step: int) -> float:
+
+static func next(random_state: Dictionary, tag: String = "") -> Dictionary:
+
+static func roll_d6_pair(random_state: Dictionary, tag: String = "") -> Dictionary:
+
+static func create_random_state(seed: String, history_enabled: bool = false) -> Dictionary:
+```
+
+`SeededPicker.gd` must provide:
+
+These are required signatures, not placeholder implementations.
+
+```gdscript
+class_name SeededPicker
+
+static func pick_one(random_state: Dictionary, items: Array, tag: String = "") -> Dictionary:
+
+static func pick_unique(random_state: Dictionary, items: Array, count: int, tag: String = "") -> Dictionary:
+
+static func pick_weighted(random_state: Dictionary, weighted_items: Array[Dictionary], tag: String = "") -> Dictionary:
+
+static func pick_best_tie(random_state: Dictionary, tied_items: Array, tag: String = "") -> Dictionary:
+```
+
+- `seeded_random` is pure, consumes 0 steps, mutates no state, and returns `0.0 <= value < 1.0`.
+- Integer selection must use `int(floor(value * count))` and then clamp defensively to the valid index range.
+- Random and picker results must use the exact result shapes documented in `14_DETERMINISTIC_RANDOM.md`.
+
+## Forbidden behavior
+
+- Do not use `randf()`, `randi()`, `randi_range()`, `randomize()`, or `RandomNumberGenerator` for gameplay random.
+- Do not use system time, OS random, UUIDs, frame count, wall-clock timestamps, or generated values as active-run seeds.
+- Do not create local random streams, local random counters, per-module random state, or `game_seed + round` standalone seeds.
+- Do not reset `state["random"]["step"]` during a run.
+- Do not change `state["random"]["seed"]` during a run.
+- Do not let tags affect random values.
+- Do not consume random in `WinnerResolver`.
+- Do not consume active random in active-game previews, selectors, view builders, or disabled-reason methods.
+- Do not use random calls inside Resource definitions or `.tres` data.
+- Do not use UI random to choose gameplay outcomes, mutate state, affect logs, affect replay assertions, or decide card availability, AI decisions, dice, combat, prices, or scoring.
+- Do not add new gameplay random consumers without a PRD update.
+- Do not mutate random state through shared Dictionary references.
+- Do not cache random values for later gameplay decisions outside the committed runtime state.
+
+## Visual-only random exception
+
+- Godot visual-only random is allowed only in UI or visual scripts when it cannot affect gameplay state.
+- Visual-only randomness may vary animation, particles, sound pitch, screen shake, hover jitter, or similar presentation details.
+- Visual-only RNG must not write to `state`, gameplay logs, replay-relevant fields, Resource data, catalogs, AI decisions, card availability, scoring, or test snapshots.
+- Static scans may ignore visual-only UI scripts only when they cannot affect gameplay state.
+
+## Replay and tests
+
+- Every gameplay random consumer must have tests proving same seed and same state produce the same result.
+- Every gameplay random consumer must have exact step assertions matching `14_DETERMINISTIC_RANDOM.md`.
+- Picker tests must assert no random step is consumed on validation failure or single-item deterministic tie resolution.
+- Selector and preview tests must assert no active state mutation and no active random step mutation.
+- Replay tests must rerun the same scripted game with the same seed and compare final snapshots exactly, including final random step.
+- Static scan tests must fail if gameplay code contains forbidden random APIs or hidden local random streams.
+- Tests must use stable string seeds and must not use current time, OS random, generated UUIDs, or Godot random APIs.
+- Visual-only random must be excluded from replay influence and must not require snapshot ignores beyond explicitly debug-only fields.
+
+## Output requirements
+
+For random or replay-affecting changes, report:
+
+- Random owner PRD:
+- Random consumer and purpose:
+- Step count before and after:
+- Tag used:
+- Updated `state["random"]` write-back:
+- Deterministic or non-random tie-break used:
+- Replay/static/step tests run:
+- Visual-only RNG impact, if any:
+
+## Verification checklist
+
+- Gameplay random uses only `SeededRandom` and `SeededPicker`.
+- `cyrb53 + mulberry32` remains stable.
+- All gameplay random consumes unified `state["random"]`.
+- Every random-consuming API returns updated random state.
+- Step counts match the PRD exactly.
+- Tags are labels only.
+- Active previews and selectors do not mutate active random.
+- Contract setup preview uses only temporary setup random.
+- Allowed consumers list was not expanded without PRD approval.
+- `WinnerResolver` and documented deterministic tie-breaks use no random.
+- Visual-only RNG cannot affect state, logs, replay, or gameplay decisions.
+- Static scans cover forbidden random APIs.
+- Replay tests and exact step assertions cover random changes.

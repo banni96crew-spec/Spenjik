@@ -1,0 +1,397 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Ты реализуешь logic-first, data-driven системы на typed GDScript,
+пишешь GUT tests и строго соблюдаешь PRD.
+
+Сначала изучи репозиторий и contracts M0–M6.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+Проект: The Turf / «Передел».
+
+Это desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources;
+- Windows/Linux;
+- без web stack.
+
+Архитектура:
+
+- logic-first;
+- data-driven;
+- UI только view/input layer;
+- централизованные IDs и state schema;
+- mutation только после validation;
+- preview и validation read-only;
+- deterministic behavior.
+
+M0–M6 считаются выполненными, но проверь репозиторий:
+
+- bootstrap и GUT;
+- constants и IDs;
+- Resource schemas и catalogs;
+- deterministic RNG;
+- game state schema;
+- core loop и phases;
+- economy и market.
+
+Источники истины:
+
+- `docs/prd/07_COMBAT_SYSTEM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализовать Milestone M7 — Combat System:
+
+- validation attack payload;
+- resolution пяти MVP War-карт;
+- defense resolution;
+- card consumption;
+- immutable combat preview;
+- valid target selectors;
+- discard War-карты;
+- structured results и logs;
+- безопасную boundary для будущих hooks;
+- GUT tests и static checks.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+- `res://logic/combat/CombatEngine.gd`
+- `res://logic/combat/AttackValidator.gd`
+- `res://logic/combat/DefenseResolver.gd`
+- `res://logic/combat/CombatLogBuilder.gd`
+- `res://tests/unit/combat/`
+
+Дополнительные combat helpers допустимы только при необходимости.
+Каждый `.gd` файл должен быть меньше 250 строк.
+
+ОБЯЗАТЕЛЬНЫЙ API:
+
+`CombatEngine.gd`:
+
+- `validate_attack(state, payload)`
+- `resolve_attack(state, payload)`
+- `discard_war_card(state, player_id, card_id)`
+- `get_combat_preview(state, payload)`
+- `get_valid_targets(state, payload)`
+- `get_valid_engine_targets(state, attacker_id, target_id)`
+
+`AttackValidator.gd` разделяет normalization и проверки:
+
+- payload shape;
+- attacker и target;
+- card in hand;
+- mode;
+- modifiers;
+- target requirements.
+
+`DefenseResolver.gd` предоставляет read-only defense preview
+и отдельное применение block side effects.
+
+`CombatLogBuilder.gd` строит attack и discard logs.
+
+Сохрани existing API conventions, если сигнатуры проекта отличаются,
+но обеспечь всё перечисленное поведение.
+
+ATTACK CONTRACT:
+
+Нормализованный payload:
+
+```gdscript
+{
+    "attacker_id": ...,
+    "target_id": ...,
+    "card_id": ...,
+    "mode": "",
+    "modifiers": [],
+    "engine_target_card_id": ""
+}
+```
+
+Primary cards:
+
+- Thug;
+- Bruiser;
+- Cleaner;
+- Saboteur;
+- Federal Raid.
+
+Insider является только modifier для Thug.
+Он не может быть primary card и должен находиться в hand.
+
+Порядок validation:
+
+1. Action phase.
+2. Required payload fields.
+3. Attacker существует.
+4. Target существует.
+5. Attacker не равен target.
+6. Attacker равен `active_action_player_id`.
+7. Primary card допустима.
+8. Primary card находится в hand.
+9. Modifiers допустимы и находятся в hand.
+10. Required mode указан.
+11. Mode допустим для карты.
+12. Target удовлетворяет effect requirements.
+13. Saboteur engine target явно выбран и допустим.
+
+Используй существующие error IDs, включая эквиваленты:
+
+- `INVALID_PHASE`;
+- `INVALID_TARGET`;
+- `INVALID_ACTION_CARD`;
+- `ATTACK_MODE_REQUIRED`;
+- `INVALID_ATTACK_MODE`.
+
+Не создавай ad hoc ID.
+
+MUTATION CONTRACT:
+
+- Validation, preview и selectors не мутируют state.
+- Failed validation не расходует карты и не вызывает hooks.
+- Failed validation не меняет `last_attacked_by`.
+- Resolution работает с `state.duplicate(true)`.
+- Любая валидная resolved атака расходует primary card.
+- Blocked valid attack также расходует primary card.
+- Валидный Thug + Insider расходует обе карты.
+- Удаляется ровно один экземпляр каждой карты.
+- Successful и blocked attack обновляют `last_attacked_by`.
+- Combat не завершает action и не меняет phase.
+- Combat не использует и не изменяет RNG.
+- Blocked destroy не переключается на steal.
+
+CARD RULES:
+
+Thug:
+
+- mode не нужен;
+- steal до 6 Nal с учётом protected Nal;
+- active Cops блокирует Thug без Insider;
+- Cops остаётся active и не расходуется;
+- valid Insider обходит Cops.
+
+Bruiser:
+
+- обязательный mode: `steal_nal` или `destroy_stash`;
+- steal до 8 Nal с учётом protected Nal;
+- destroy требует Stash у target;
+- active Cartel блокирует destroy и остаётся active;
+- успешный destroy: Stash -1, target VP -1, attacker Nal +3.
+
+Cleaner:
+
+- обязательный mode: `steal_nal` или `destroy_workshop`;
+- steal до 14 Nal с учётом protected Nal;
+- destroy требует Workshop у target;
+- active Cartel блокирует destroy и становится depleted;
+- успешный destroy: Workshop -1, target VP -2,
+  attacker Nal +5, `skip_next_action = true`.
+
+Saboteur:
+
+- mode не нужен;
+- attacker явно выбирает `engine_target_card_id`;
+- допустимы Informant, Laundry, Accountant и Brothel;
+- target обязан владеть выбранным engine;
+- случайный выбор запрещён;
+- active Judge блокирует атаку и становится inactive/none;
+- success уничтожает только выбранный engine.
+
+Federal Raid:
+
+- обязательный mode: `destroy_district`;
+- требует `district_control > 0`;
+- Cops, Cartel и Judge его не блокируют;
+- success: district control -1, target VP -3,
+  `can_rebuild_district_for_8 = true`.
+
+VP и Nal clamp к 0.
+Federal Raid не реализует rebuild API заново.
+
+PROTECTED NAL:
+
+Используй единый M6 API `PriceLogic.get_protected_nal(...)`
+или его фактический эквивалент.
+
+```text
+stealable = min(card_max, max(0, target_nal - protected_nal))
+```
+
+Steal 0 остаётся успешной атакой и расходует карту.
+Не дублируй protected Nal formula.
+
+DEFENSE И PREVIEW:
+
+Проверяй максимум одну релевантную защиту:
+
+- Cops против Thug без Insider;
+- Cartel против destroy Stash/Workshop;
+- Judge против Saboteur.
+
+Defense result содержит как минимум:
+
+- `blocked`;
+- blocker;
+- side effects;
+- description.
+
+Preview должен показывать применимые данные:
+
+- validation/error;
+- would be blocked и blocker;
+- protected/max/stealable Nal;
+- VP loss и Nal gain;
+- уничтожаемый объект;
+- skip, Cartel и Judge side effects;
+- расходуемые карты.
+
+Preview сообщает эффекты, но ничего не применяет,
+не пишет log в state и не вызывает hooks.
+
+Selectors возвращают только фактически допустимые targets/engines
+и также не имеют side effects.
+
+DISCARD:
+
+`discard_war_card`:
+
+- принимает только War-карту из hand игрока;
+- удаляет ровно один экземпляр;
+- создаёт discard log;
+- не применяет combat effect;
+- не меняет `last_attacked_by`, phase или action;
+- не вызывает success hooks;
+- не использует RNG.
+
+RESULT И HOOK BOUNDARY:
+
+Combat result должен быть структурированным и содержать эквиваленты:
+
+- ok/error;
+- attacker, target, card, mode и modifiers;
+- blocked, blocker и success;
+- effect result;
+- cards consumed;
+- contract/contact result slots;
+- log entries;
+- resulting state.
+
+Не создавай fake `ContractLogic` или `ContactLogic`.
+Не реализуй contract progress, contact offers или AI behavior.
+
+Result/hook event должен позволять будущим модулям определить:
+
+- successful unblocked attack;
+- уничтожение Stash, Workshop или district control;
+- уничтожение engine card;
+- attacker, target и владельца объекта;
+- blocked outcome.
+
+Используй существующий hook convention.
+Если его нельзя определить без выдумывания rules/API,
+создай `OQ-*` и остановись на этом integration point.
+
+TESTS:
+
+Добавь targeted GUT tests для:
+
+- всех карт, modes и target requirements;
+- порядка основных validation failures;
+- primary Insider и invalid modifiers;
+- selected Saboteur engine target;
+- Cops, Cartel и Judge behavior;
+- protected Nal и steal 0;
+- всех success effects и VP clamp;
+- card consumption при success и block;
+- отсутствия consumption/mutation при failure;
+- `last_attacked_by`;
+- отсутствия destroy-to-steal fallback;
+- discard одной копии;
+- immutable validation, preview и selectors;
+- неизменности RNG state/step;
+- structured result, logs и safe hook boundary.
+
+Используй fixtures M4 и existing helpers.
+Запусти relevant GUT suite и static scan.
+
+Static scan должен исключать в combat logic:
+
+- `randf(`, `randi(` и `randomize(`;
+- `RandomNumberGenerator`;
+- UI/scene access;
+- hardcoded economy formulas;
+- phase progression;
+- AI, contract или contact implementation;
+- forbidden web stack.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй combat rules.
+- Не реализуй M8 roles, M9 contracts или M11 contacts.
+- Не реализуй M13 AI, M14 GameStateManager или M16 UI.
+- Не меняй M6 economy formulas и M5 phase behavior.
+- Не добавляй карты, modes, defenses, IDs или state keys самовольно.
+- Не выполняй unrelated refactor.
+- Не создавай web/backend files.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительны, не являются лимитом кода.
+
+При противоречии сначала проверь resolved fixes документа 21.
+Если вопрос не разрешён, запиши `OQ-*`, не изобретай правило.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи M7 PRD, test plan, implementation order и resolved fixes.
+2. Проинспектируй APIs, IDs, state и tests M0–M6.
+3. Найди phase/action и protected Nal contracts.
+4. Выяви расхождения и blockers.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» реализуй validation и immutable boundaries.
+7. Реализуй defenses, effects, consumption, results и logs.
+8. Реализуй preview, selectors и discard.
+9. Добавь и запусти targeted tests и static scan.
+10. Исправь M7 errors и представь итог.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ без кода.
+2. Укажи зависимости, blockers и OQ.
+3. Дождись моего «ок».
+4. До «ок» не изменяй файлы.
+5. После «ок» показывай изменения по файлам.
+6. Для каждого файла указывай полный путь `res://...`.
+7. Перечисли выполненные проверки и их результаты.
+8. В конце дай заполненный M7 gate checklist.
+
+Не пиши общие советы и не подменяй реализацию псевдокодом.
+Не отмечай gate пройденным без успешных проверок.
+
+M7 GATE CHECKLIST:
+
+- [ ] Все War-карты и modes валидируются и разрешаются.
+- [ ] Cops, Cartel, Judge и Insider работают по PRD.
+- [ ] Saboteur использует attacker-selected engine target.
+- [ ] Protected Nal берётся из M6 API.
+- [ ] Blocked valid attacks расходуют карты.
+- [ ] Failed attacks не мутируют state и не расходуют карты.
+- [ ] `last_attacked_by` обновляется только для resolved attacks.
+- [ ] Blocked destroy не имеет fallback.
+- [ ] Preview, validation и selectors не мутируют state.
+- [ ] Combat не изменяет RNG state/step.
+- [ ] Discard удаляет одну карту без combat hooks.
+- [ ] Structured results, logs и safe hook boundary готовы.
+- [ ] GUT tests и static scan проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M7 и web stack не добавлены.

@@ -1,0 +1,269 @@
+---
+description: Critical combat payload, validation, War card resolution, defense, card consumption, hooks, previews, and combat tests.
+globs:
+  - "autoload/GameStateManager.gd"
+  - "logic/combat/**/*.gd"
+  - "logic/ai/**/*.gd"
+  - "logic/contracts/**/*.gd"
+  - "logic/contacts/**/*.gd"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Combat System
+
+## Applies when
+
+Apply when creating, reviewing, or modifying combat validation, War card resolution, defense resolution, combat logs, combat previews, combat hooks, or combat tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/07_COMBAT_SYSTEM.md` owns attack payloads, combat validation order, War card effects, defense resolution, card consumption, previews, combat hooks, and combat tests.
+- `docs/prd/03_IDS_AND_CONSTANTS.md` owns card IDs, attack modes, defense states, validation errors, `LogEventTypes`, and event payload contracts.
+- Adjacent owner PRDs own their hook internals. Combat defines when hooks are called, not how contracts, contacts, AI, economy, phase flow, or UI behavior works internally.
+
+This rule is a guardrail summary for combat. It must not override `07_COMBAT_SYSTEM.md` or `03_IDS_AND_CONSTANTS.md`. If any listed payload, mode, effect, defense, event, or error conflicts with the owner PRD, stop and report PRD drift.
+
+## Required combat files
+
+- `res://logic/combat/CombatEngine.gd`
+- `res://logic/combat/AttackValidator.gd`
+- `res://logic/combat/DefenseResolver.gd`
+- `res://logic/combat/CombatLogBuilder.gd`
+
+Optional helpers are allowed only when they keep responsibilities small, such as preview builders, effect resolvers, hand mutators, or combat constants.
+
+## Attack payload
+
+All attacks use this Dictionary shape:
+
+```gdscript
+{
+	"attacker_id": "player_1",
+	"target_id": "ai_1",
+	"card_id": "bruiser",
+	"mode": "destroy_stash",
+	"modifiers": [],
+	"engine_target_card_id": ""
+}
+```
+
+- Required for all attacks: `attacker_id`, `target_id`, `card_id`.
+- Conditional: `mode` for `bruiser`, `cleaner`, and `federal_raid`.
+- Conditional: `engine_target_card_id` for `saboteur`.
+- Optional: `modifiers`, but MVP allows only `insider` as a modifier.
+- Missing optional fields must normalize to `mode == ""`, `modifiers == []`, and `engine_target_card_id == ""`.
+
+## Validation order
+
+Combat validation must run in this exact order and must not mutate state:
+
+1. Validate `state["current_phase"] == PhaseIds.ACTION`.
+2. Validate payload has `attacker_id`, `target_id`, and `card_id`.
+3. Validate attacker exists.
+4. Validate target exists.
+5. Validate attacker and target are different players.
+6. Validate attacker is `state["active_action_player_id"]`.
+7. Validate primary card is a valid primary War card.
+8. Validate attacker has primary card in hand.
+9. Validate modifiers.
+10. Validate required attack mode.
+11. Validate mode is legal for the selected card.
+12. Validate selected target has required target resource/building/card.
+13. Validate selected engine target for `saboteur`.
+14. Return `ValidationErrors.OK`.
+
+Error mapping:
+
+| Condition | Error |
+| --- | --- |
+| Not Action phase | `INVALID_PHASE` |
+| Missing attacker or target | `INVALID_TARGET` |
+| Missing card_id | `INVALID_ACTION_CARD` |
+| Attacker equals target | `INVALID_TARGET` |
+| Attacker is not active player | `INVALID_TARGET` |
+| Invalid primary War card | `INVALID_ACTION_CARD` |
+| Primary card not in hand | `INVALID_ACTION_CARD` |
+| Invalid modifier | `INVALID_ACTION_CARD` |
+| Modifier card not in hand | `INVALID_ACTION_CARD` |
+| Required mode missing | `ATTACK_MODE_REQUIRED` |
+| Mode not allowed for card | `INVALID_ATTACK_MODE` |
+| Target lacks required building/card/resource | `INVALID_TARGET` |
+| Target protected by defense | Validation passes; attack resolves as blocked |
+| Attack would steal 0 Nal | Validation passes |
+
+## War cards and modes
+
+Valid primary War cards:
+
+| Card ID | Primary action | Mode rule |
+| --- | --- | --- |
+| `thug` | yes | mode must be empty |
+| `bruiser` | yes | requires `steal_nal` or `destroy_stash` |
+| `cleaner` | yes | requires `steal_nal` or `destroy_workshop` |
+| `saboteur` | yes | mode must be empty; requires `engine_target_card_id` |
+| `federal_raid` | yes | requires `destroy_district` |
+| `insider` | no | modifier only |
+
+- `insider` must not be used as a standalone primary attack.
+- If `payload["card_id"] == "insider"`, return `INVALID_ACTION_CARD`.
+- Do not change War card effects, modes, max steal values, target requirements, or defense interactions.
+
+## Insider and Saboteur
+
+- `insider` is the only valid MVP combat modifier.
+- `insider` may be used only with `thug`.
+- `insider` is valid only when attacker has `insider` in hand and target has active Cops.
+- Duplicate `insider` modifiers are invalid.
+- Valid `insider` usage makes `thug` ignore active Cops and consumes both `thug` and one `insider`.
+
+`saboteur`:
+
+- does not use mode;
+- requires attacker-selected `engine_target_card_id`;
+- valid engine targets are `informant`, `laundry`, `accountant`, and `brothel`;
+- must validate the target owns the selected Engine card;
+- must not randomly select an Engine card;
+- target never chooses which Engine card is destroyed.
+
+## Defense resolution
+
+Defense resolution must run in this order:
+
+1. Cops check for `thug`.
+2. Cartel check for `destroy_stash` or `destroy_workshop`.
+3. Judge check for `saboteur`.
+
+- Only one defense should block a single attack in MVP.
+- Defenses usually do not make the attack invalid; validation passes and resolution marks the attack as blocked.
+- If the target lacks the required building/card before defense resolution, validation fails with `INVALID_TARGET`.
+- Cops block `thug` unless valid `insider` is used. Cops are not consumed or deactivated when blocking.
+- Cartel blocks `destroy_stash` and `destroy_workshop`; it does not reduce Nal theft and does not block `federal_raid`.
+- Cartel remains active after blocking `bruiser` `destroy_stash`.
+- Cartel becomes depleted only when it blocks `cleaner` `destroy_workshop`.
+- Judge blocks `saboteur` once and becomes none.
+- Cops, Cartel, and Judge do not block `federal_raid`.
+
+## Resolution rules
+
+General attack flow:
+
+1. Normalize payload defaults.
+2. Validate attack without mutation.
+3. If validation fails, return failed result and do not mutate state.
+4. Locate attacker and target in mutable working state.
+5. Resolve defense block status.
+6. If blocked: apply defense side effects, consume primary card and valid modifiers, update `last_attacked_by`, write blocked log, validate state, return blocked result.
+7. If not blocked: apply selected card effect, consume primary card and valid modifiers, update `last_attacked_by`, call owner-defined success hooks, write success log, validate state, return success result.
+
+The following effect summaries are guardrail mirrors of `07_COMBAT_SYSTEM.md`, not independent balance authority.
+
+Effect summaries:
+
+- `thug`: steal up to 6 Nal.
+- `bruiser` `steal_nal`: steal up to 8 Nal.
+- `bruiser` `destroy_stash`: destroy one Stash, attacker gains +3 Nal, target loses 1 VP.
+- `cleaner` `steal_nal`: steal up to 14 Nal.
+- `cleaner` `destroy_workshop`: destroy one Workshop, attacker gains +5 Nal, target loses 2 VP, target `skip_next_action = true`.
+- `saboteur`: destroy exactly one attacker-selected Engine card.
+- `federal_raid` `destroy_district`: destroy one District Control, target loses 3 VP, set `can_rebuild_district_for_8 = true`.
+
+- Nal stealing must use protected Nal from `PriceLogic.get_protected_nal`.
+- Nal and VP must never go below 0.
+- A valid steal for 0 Nal still succeeds if validation passed and the attack was not blocked.
+- Federal Raid rebuild pricing and rebuild flow remain owned by `06_ECONOMY_AND_MARKET.md`.
+
+## Card consumption and discard
+
+- A valid resolved attack always consumes the primary War card, even if blocked.
+- Valid `insider` usage consumes one `insider` in addition to the primary `thug`.
+- Failed validation must not consume cards.
+- Blocked attacks consume cards but do not apply the successful attack effect.
+- Discarding requires Action phase, active player ownership, and the card in hand.
+- Valid discard removes exactly one War card from hand and writes `LogEventTypes.CARD_DISCARDED`.
+- Discard does not update contracts, contacts, or `last_attacked_by`.
+
+## Hooks and logs
+
+- Successful unblocked attacks call owner-defined ContractLogic combat hooks.
+- Successful unblocked attacks may call owner-defined ContactLogic combat hooks if the contact system requires it.
+- Combat logic may invoke owner-defined hook entry points but must not implement contract/contact progression rules internally.
+- Blocked attacks must not grant success-only contract or contact progress.
+- Discards must not grant combat progress.
+- Failed validation must not call hooks.
+- After any valid resolved attack against a target, including blocked attacks, set `target["last_attacked_by"] = attacker["id"]`.
+- Failed validation and discards must not update `last_attacked_by`.
+- Use only canonical combat event types: `ATTACK_EXECUTED`, `ATTACK_BLOCKED`, and `CARD_DISCARDED`.
+- Do not invent event payloads in this rule; payload shapes come from `03_IDS_AND_CONSTANTS.md` and the state schema PRD.
+
+## Combat previews
+
+- `get_combat_preview`, `get_valid_targets`, and `get_valid_engine_targets` must not mutate state.
+- Previews must not consume random, cards, role flags, modifiers, logs, hooks, defenses, or phase fields.
+- Previews may report blocked status, blocker, protected Nal, stealable Nal, max steal, VP loss, Nal gain, skip/cartel/judge side effects, destroyed target, and cards that would be consumed.
+- Preview result shapes must match `07_COMBAT_SYSTEM.md`.
+
+## Forbidden behavior
+
+- Do not implement automatic fallback from blocked or invalid destructive modes to steal modes.
+- Do not use random target selection for `saboteur` or any MVP combat target-card choice.
+- Do not add random target selection without a PRD update.
+- Do not change War card effects, modes, max steal values, defense behavior, card consumption, or hook timing.
+- Do not let UI or AI bypass `GameStateManager`/`CombatEngine` combat validation and resolution.
+- Do not put combat resolution in UI scenes or AI scoring modules.
+- Do not mutate state during failed validation.
+- Do not consume cards, update logs, call hooks, or set `last_attacked_by` on failed validation.
+- Do not parse `.tres` `effect_summary` text as combat behavior.
+- Do not calculate card prices, generate markets, advance phases, score AI targets, or resolve contract/contact internals inside combat logic.
+- Do not use `randf`, `randi`, `randomize`, or `RandomNumberGenerator` in MVP combat logic.
+
+## Required tests
+
+Combat tests must cover:
+
+- attack payload validation and exact validation error mapping;
+- failed validation mutation safety;
+- `thug` steal, protected Nal, active Cops block, and valid `insider` usage;
+- `bruiser` steal, `destroy_stash`, Cartel block, no fallback, and card consumption;
+- `cleaner` steal, `destroy_workshop`, Cartel depletion on block, skip flag on success, no fallback, and card consumption;
+- `saboteur` selected Engine target validation, Judge block, no random target selection, and each valid Engine target mutation;
+- `federal_raid` mode requirement, District Control destruction, VP clamp, rebuild flag, and no Cops/Cartel/Judge block;
+- valid discard and invalid discard;
+- blocked, failed, and successful attack result shapes;
+- combat logs and owner-defined canonical event payloads;
+- success-only hooks called only for successful unblocked attacks;
+- `last_attacked_by` updates for blocked/successful attacks and not for failed/discard;
+- previews do not mutate state;
+- no forbidden random APIs or UI dependencies exist in combat logic.
+
+## Output requirements
+
+For combat changes, report:
+
+- Owner PRD:
+- Combat module touched:
+- Attack payload fields:
+- Validation order/error mapping:
+- War card/mode affected:
+- Defense resolution:
+- Cards consumed:
+- Hooks called or not called:
+- Combat log events:
+- Preview mutation safety:
+- Tests run:
+
+## Verification checklist
+
+- `AttackValidator`, `DefenseResolver`, `CombatEngine`, and `CombatLogBuilder` responsibilities are preserved.
+- Validation runs before mutation and follows PRD order.
+- Failed validation does not mutate state.
+- Blocked attacks consume cards and apply only defense side effects.
+- Successful attacks apply exactly the selected War card effect.
+- No automatic fallback behavior exists.
+- `insider` and `saboteur` behavior matches PRD.
+- Defense order and side effects match PRD.
+- Nal/VP clamps are applied.
+- Hooks and logs follow owner-defined contracts.
+- Previews are read-only.
+- Blocked, failed, and successful attacks have focused GUT coverage.

@@ -1,0 +1,372 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Твоя задача — реализовать строго ограниченный milestone:
+
+`M2 — Resource Schemas and Catalogs`
+
+M2 выполняется только после успешного завершения:
+
+- `M0 — Project Bootstrap`
+- `M1 — Constants and IDs`
+
+До любых изменений изучи:
+
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`
+- `res://docs/prd/05_CARDS_DATABASE.md`
+- `res://docs/prd/08_ROLES.md`
+- `res://docs/prd/09_CONTRACTS.md`
+- `res://docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `res://docs/prd/11_CONTACTS.md`
+- `res://docs/prd/12_TURF_LEVELS.md`
+- `res://docs/prd/13_AI_SYSTEM.md`
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Не реализуй gameplay из этих документов. Используй их только как источники точных Resource schemas, IDs и статических значений.
+
+КОНТЕКСТ ПРОЕКТА:
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Целевой стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources для static gameplay data;
+- domain catalogs для доступа к Resources;
+- Dictionary snapshots для будущего runtime state;
+- `GameStateManager.gd` как будущий gameplay facade;
+- Windows и Linux как первые export targets;
+- без web stack.
+
+Архитектура:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+Resource layer должен быть:
+
+- data-only;
+- типизированным;
+- неизменяемым во время gameplay;
+- доступным через catalogs;
+- согласованным с constants из M1;
+- не содержащим gameplay resolution logic.
+
+Предполагается, что M0 и M1 завершены. Перед началом M2 проверь это фактически.
+
+ЗАДАЧА:
+
+Реализуй `Milestone M2 — Resource Schemas and Catalogs`.
+
+Необходимо:
+
+1. Проверить M0 gate.
+2. Проверить M1 gate и constants-файлы.
+3. Проверить текущее состояние репозитория и сохранить пользовательские изменения.
+4. Определить точные поля каждого Resource schema из owner PRD.
+5. Сопоставить каждый `.tres` ID с constants из M1.
+6. Создать Resource schema scripts.
+7. Создать все обязательные `.tres` Resources.
+8. Создать отдельный catalog для каждого Resource domain.
+9. Реализовать загрузку и получение Resource по ID.
+10. Реализовать получение полного набора Resources, если это требуется архитектурой.
+11. Обеспечить безопасный результат для неизвестного ID согласно PRD.
+12. Не допускать изменения Resource instances.
+13. Добавить GUT-тесты Resource schemas и catalogs.
+14. Проверить наличие всех обязательных `.tres`.
+15. Проверить соответствие Resource IDs constants.
+16. Проверить отсутствие дублирующихся Resource IDs.
+17. Проверить обязательные поля каждого Resource.
+18. Проверить загрузку каждого Resource через соответствующий catalog.
+19. Проверить поведение catalog при неизвестном ID.
+20. Проверить, что catalogs и consumers не мутируют Resources.
+21. Запустить M0 smoke test.
+22. Запустить M1 constants tests.
+23. Запустить M2 Resource и catalog tests.
+24. Запустить Resource integrity scan.
+25. Запустить file-length, open-question и banned-stack scans.
+26. Сообщить точные результаты всех проверок.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+Resource schema scripts:
+
+- `res://data/resources/cards/CardDefinition.gd`
+- `res://data/resources/roles/RoleDefinition.gd`
+- `res://data/resources/contracts/ContractDefinition.gd`
+- `res://data/resources/contacts/ContactDefinition.gd`
+- `res://data/resources/street_deals/StreetDealDefinition.gd`
+- `res://data/resources/ai_profiles/AIProfileDefinition.gd`
+- `res://data/resources/turf_levels/TurfLevelDefinition.gd`
+
+Card Resources:
+
+- `res://data/resources/cards/informant.tres`
+- `res://data/resources/cards/laundry.tres`
+- `res://data/resources/cards/accountant.tres`
+- `res://data/resources/cards/brothel.tres`
+- `res://data/resources/cards/stash.tres`
+- `res://data/resources/cards/workshop.tres`
+- `res://data/resources/cards/district_control.tres`
+- `res://data/resources/cards/cops.tres`
+- `res://data/resources/cards/cartel.tres`
+- `res://data/resources/cards/judge.tres`
+- `res://data/resources/cards/thug.tres`
+- `res://data/resources/cards/bruiser.tres`
+- `res://data/resources/cards/cleaner.tres`
+- `res://data/resources/cards/insider.tres`
+- `res://data/resources/cards/saboteur.tres`
+- `res://data/resources/cards/federal_raid.tres`
+
+Role Resources:
+
+- `res://data/resources/roles/merchant.tres`
+- `res://data/resources/roles/enforcer.tres`
+- `res://data/resources/roles/gray_cardinal.tres`
+- `res://data/resources/roles/district_boss.tres`
+
+Contract Resources:
+
+- `res://data/resources/contracts/silent_expansion.tres`
+- `res://data/resources/contracts/bloody_turf_war.tres`
+- `res://data/resources/contracts/gray_capital.tres`
+- `res://data/resources/contracts/iron_roof.tres`
+- `res://data/resources/contracts/district_under_control.tres`
+- `res://data/resources/contracts/proxy_war.tres`
+- `res://data/resources/contracts/big_cashbox.tres`
+
+Contact Resources:
+
+- `res://data/resources/contacts/black_cash.tres`
+- `res://data/resources/contacts/corrupt_clerk.tres`
+- `res://data/resources/contacts/street_medic.tres`
+
+Street Deal Resources:
+
+- `res://data/resources/street_deals/loan_shark.tres`
+- `res://data/resources/street_deals/dirty_tip.tres`
+- `res://data/resources/street_deals/cheap_protection.tres`
+- `res://data/resources/street_deals/black_market_cache.tres`
+- `res://data/resources/street_deals/inside_contact.tres`
+- `res://data/resources/street_deals/risky_contract.tres`
+
+AI Profile Resources:
+
+- `res://data/resources/ai_profiles/builder.tres`
+- `res://data/resources/ai_profiles/racketeer.tres`
+- `res://data/resources/ai_profiles/merchant_ai.tres`
+- `res://data/resources/ai_profiles/paranoid.tres`
+- `res://data/resources/ai_profiles/schemer.tres`
+- `res://data/resources/ai_profiles/avenger.tres`
+
+Turf Level Resources:
+
+- `res://data/resources/turf_levels/turf_level_0.tres`
+- `res://data/resources/turf_levels/turf_level_1.tres`
+- `res://data/resources/turf_levels/turf_level_2.tres`
+- `res://data/resources/turf_levels/turf_level_3.tres`
+- `res://data/resources/turf_levels/turf_level_4.tres`
+- `res://data/resources/turf_levels/turf_level_5.tres`
+- `res://data/resources/turf_levels/turf_level_6.tres`
+- `res://data/resources/turf_levels/turf_level_7.tres`
+- `res://data/resources/turf_levels/turf_level_8.tres`
+- `res://data/resources/turf_levels/turf_level_9.tres`
+- `res://data/resources/turf_levels/turf_level_10.tres`
+
+Catalog files:
+
+- `res://logic/catalog/CardCatalog.gd`
+- `res://logic/catalog/RoleCatalog.gd`
+- `res://logic/catalog/ContractCatalog.gd`
+- `res://logic/catalog/ContactCatalog.gd`
+- `res://logic/catalog/StreetDealCatalog.gd`
+- `res://logic/catalog/AIProfileCatalog.gd`
+- `res://logic/catalog/TurfLevelCatalog.gd`
+
+Обязательные или эквивалентные GUT tests:
+
+- `res://tests/unit/test_card_catalog.gd`
+- `res://tests/unit/test_role_catalog.gd`
+- `res://tests/unit/test_contract_catalog.gd`
+- `res://tests/unit/test_contact_catalog.gd`
+- `res://tests/unit/test_street_deal_catalog.gd`
+- `res://tests/unit/test_ai_profile_catalog.gd`
+- `res://tests/unit/test_turf_level_catalog.gd`
+- `res://tests/static/test_resource_integrity_scan.gd`
+
+Допускается другое разделение тестов, если вся M2 coverage сохранена, ответственность файлов ясна, а файлы остаются меньше 250 строк.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинать M2 при проваленном M0 или M1 gate.
+- Не выходить за пределы M2.
+- Не реализовывать gameplay logic.
+- Не реализовывать эффекты, указанные в Resources.
+- Не реализовывать runtime state.
+- Не хранить ownership, cooldown, progress, market state, debts или random state в Resources.
+- Не изменять constants из M1 без прямого требования owner PRD.
+- Не менять ID, цены, значения, эффекты, условия или баланс.
+- Не добавлять undocumented Resource fields.
+- Не добавлять undocumented `.tres`.
+- Не создавать fallback Resource для неизвестного ID.
+- Не использовать display descriptions как машиночитаемые правила.
+- Не мутировать Resources после загрузки.
+- Не загружать `.tres` ad hoc из будущих gameplay modules.
+- Не создавать один mega-catalog для всех доменов.
+- Не реализовывать deterministic random.
+- Не реализовывать GameStateFactory, GameStateValidator или GameStateManager.
+- Не реализовывать economy, combat, roles logic, contracts logic, Street Deals logic, debts, contacts logic, Turf Levels logic или AI.
+- Не создавать gameplay scenes или UI.
+- Не добавлять React, TypeScript, Tailwind, Zustand, Docker, backend или web routing.
+- Не использовать `randf()`, `randi()`, `randomize()` или `RandomNumberGenerator` в gameplay logic.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Использовать static typing там, где это практично.
+- Не ослаблять тесты ради формального pass.
+- Не заявлять о прохождении тестов без фактического запуска.
+- Не удалять и не откатывать несвязанные пользовательские изменения.
+- Не оставлять ambiguity markers без `OQ-*`.
+- Не придумывать отсутствующие schema fields или Resource values.
+
+Если информации недостаточно или PRD конфликтуют:
+
+1. Останови только затронутый Resource domain.
+2. Проверь существующие `OQ-*` и `FIX-*`.
+3. Определи owner PRD спорного поля или значения.
+4. Добавь новый `OQ-*` в `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`, если вопрос ещё не зарегистрирован.
+5. Не добавляй временное значение или скрытый fallback.
+6. Продолжай только однозначно определённые части M2.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь состояние репозитория.
+2. Проверь M0 gate.
+3. Проверь M1 gate и constants.
+4. Изучи owner PRD и dependency PRDs.
+5. Проверь `21_OPEN_QUESTIONS_AND_FIXES.md`.
+6. Составь таблицу:
+   Resource domain → owner PRD → constants → schema fields → `.tres` files → catalog → tests.
+7. Проверь полноту и непротиворечивость данных до создания файлов.
+8. Подготовь точный план без кода.
+9. Дождись моего сообщения `ок`.
+10. После `ок` сначала создай или обнови M2 tests.
+11. Создай Resource schema scripts.
+12. Создай `.tres` Resources по одному домену за раз.
+13. После каждого домена проверь ID и обязательные поля.
+14. Создай соответствующие catalogs.
+15. Запусти domain tests после каждого завершённого домена.
+16. Запусти полный M2 test group.
+17. Запусти M0 и M1 regression tests.
+18. Запусти Resource integrity scan.
+19. Запусти file-length, open-question и banned-stack scans.
+20. Проверь git diff и отсутствие изменений вне M2.
+21. Подготовь финальный отчёт с фактическими результатами.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ по шагам без кода.
+2. Не изменяй файлы до моего сообщения `ок`.
+3. Дождись моего `ок`.
+4. После `ок` выполняй изменения непосредственно в репозитории.
+5. Для каждого файла указывай полный путь в формате `res://...`.
+6. Не вставляй содержимое всех `.tres` в отчёт, если это не требуется для объяснения проблемы.
+7. Не скрывай упавшие или незапущенные проверки.
+8. Не отмечай M2 завершённым, если M0, M1 или M2 gate не прошёл.
+
+Финальный отчёт оформи так:
+
+Prerequisites:
+- M0: `PASS`, `FAIL` или `NOT RUN`
+- M1: `PASS`, `FAIL` или `NOT RUN`
+
+Реализовано:
+- ...
+
+Resource schemas:
+- `res://...`
+
+Resources:
+- количество и список по доменам
+
+Catalogs:
+- `res://...`
+
+Тесты добавлены или обновлены:
+- `res://...`
+
+Проверки выполнены:
+- команда или способ запуска
+- количество passed/failed
+- итоговый статус
+
+Open questions:
+- `none` или список `OQ-*`
+
+Отклонения от плана:
+- `none` или точное объяснение
+
+M2 gate:
+- каждый пункт `PASS`, `FAIL` или `NOT RUN`
+
+M2 GATE CHECKLIST:
+
+Prerequisites:
+
+- [ ] M0 gate passes.
+- [ ] M1 gate passes.
+- [ ] Godot 4.6.2 project opens.
+- [ ] GUT is operational.
+- [ ] M0 smoke test passes.
+- [ ] M1 constants tests pass.
+- [ ] Required M1 ID files exist.
+
+Resource schemas:
+
+- [ ] `CardDefinition.gd` exists and matches its owner PRD.
+- [ ] `RoleDefinition.gd` exists and matches its owner PRD.
+- [ ] `ContractDefinition.gd` exists and matches its owner PRD.
+- [ ] `ContactDefinition.gd` exists and matches its owner PRD.
+- [ ] `StreetDealDefinition.gd` exists and matches its owner PRD.
+- [ ] `AIProfileDefinition.gd` exists and matches its owner PRD.
+- [ ] `TurfLevelDefinition.gd` exists and matches its owner PRD.
+- [ ] Resource schemas contain no runtime state.
+- [ ] Resource schemas contain no gameplay resolution logic.
+
+Resource data:
+
+- [ ] Every required `.tres` exists.
+- [ ] Every Resource ID matches a constant from M1.
+- [ ] No duplicate Resource IDs exist.
+- [ ] Every required Resource field is populated.
+- [ ] No undocumented Resource or field was invented.
+- [ ] Turf Levels 0 through 10 exist exactly once.
+- [ ] Resource display text is not used as gameplay data.
+
+Catalogs:
+
+- [ ] All seven domain catalogs exist.
+- [ ] Every catalog loads all Resources in its domain.
+- [ ] Every Resource can be retrieved by ID.
+- [ ] Unknown IDs return the documented safe result.
+- [ ] Catalogs expose required collection methods.
+- [ ] Catalogs do not own runtime state.
+- [ ] Catalogs do not mutate Resources.
+- [ ] Resources remain unchanged after catalog access.
+
+Quality gates:
+
+- [ ] All M2 GUT tests pass.
+- [ ] Resource integrity scan passes.
+- [ ] File-length scan passes.
+- [ ] Open-question marker scan passes.
+- [ ] Banned-stack scan passes.
+- [ ] Every `.gd` file is under 250 lines.
+- [ ] No forbidden random API was introduced.
+- [ ] No gameplay logic was implemented.
+- [ ] No future state, facade, AI or UI modules were implemented.
+- [ ] Existing unrelated user changes were preserved.

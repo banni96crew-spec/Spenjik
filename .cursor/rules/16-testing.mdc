@@ -1,0 +1,211 @@
+---
+description: Critical GUT 9.6.0 tests, fixtures, smoke/import/full-suite commands, mutation safety, replay, static scans, and honest test reporting.
+globs:
+  - "project.godot"
+  - "addons/gut/**/*"
+  - "autoload/**/*.gd"
+  - "logic/**/*.gd"
+  - "scenes/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "tests/**/*.gd"
+  - ".github/workflows/**/*.yml"
+  - "scripts/**/*"
+  - "*.sh"
+  - "*.ps1"
+  - "Makefile"
+alwaysApply: false
+---
+
+# Testing and Static Scans
+
+## Applies when
+
+Apply when creating, reviewing, or modifying production gameplay code, UI scripts, Resources, catalogs, facade APIs, deterministic random, tests, fixtures, static scans, replay scripts, GUT setup, Godot import behavior, or CI/test commands. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/18_TEST_PLAN.md` owns test structure, GUT version, fixture rules, unit/integration/replay/static test requirements, canonical commands, smoke test, mutation-safety rules, and acceptance criteria.
+- `docs/prd/19_IMPLEMENTATION_ORDER.md` owns implementation milestones, test timing, integration checkpoints, static scan timing, and when replay tests are required.
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` `FIX-034` owns the executable GUT and CI smoke contract.
+- Domain owner PRDs own exact behavior under test.
+
+This rule is a guardrail summary for tests and static scans. It must not override `18_TEST_PLAN.md`, `19_IMPLEMENTATION_ORDER.md`, accepted `FIX-*` decisions, or domain owner PRDs. If any command, file path, fixture shape, assertion, or required test conflicts with owner PRD, stop and report PRD drift.
+
+## Test framework contract
+
+- Use GUT `9.6.0` with Godot `4.6.2`.
+- Tests live under `res://tests/`.
+- Required top-level test folders are `res://tests/unit/`, `res://tests/integration/`, `res://tests/replay/`, `res://tests/static/`, and `res://tests/fixtures/`.
+- M0 additionally uses `res://tests/smoke/` for the infrastructure-only bootstrap smoke.
+- `godot` and `GODOT_BIN` must resolve to Godot `4.6.2`.
+- Commands must run from the directory containing `project.godot`.
+- GUT exit code `0` means all selected tests passed; exit code `1` means at least one selected test failed.
+- Do not introduce GDUnit4, ad-hoc test runners, unapproved coverage tools, or non-PRD coverage thresholds.
+- Treat `addons/gut/` as third-party test framework code, not project gameplay code.
+- If `godot` is unavailable but `GODOT_BIN` is set, use `"$GODOT_BIN"` with the same canonical arguments and report the exact command.
+
+## Canonical commands
+
+Canonical full-suite command from the Godot project root on Linux/macOS/CI:
+
+```bash
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
+
+Canonical full-suite command from PowerShell:
+
+```powershell
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
+
+M0 bootstrap smoke command on Linux/macOS/CI:
+
+```bash
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gtest=res://tests/smoke/test_gut_bootstrap.gd -gexit
+```
+
+M0 bootstrap smoke command from PowerShell:
+
+```powershell
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/smoke/test_gut_bootstrap.gd -gexit
+```
+
+Canonical MVP smoke command on Linux/macOS/CI:
+
+```bash
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gtest=res://tests/integration/test_smoke_mvp.gd -gexit
+```
+
+CI must run import, smoke, then full suite:
+
+```bash
+godot --headless --editor --path "$PWD" --quit
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gtest=res://tests/integration/test_smoke_mvp.gd -gexit
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
+
+- Success requires all three CI commands to exit `0`.
+- Any non-zero exit code, parse/import error, missing Resource, schema failure, failed assertion, or test-process timeout is a failure.
+- Do not report a test as passed unless the command was actually run and exited `0`.
+- If a command is not run, report `not run` with the exact reason.
+
+## Smoke test contract
+
+- The M0 bootstrap smoke is `res://tests/smoke/test_gut_bootstrap.gd`.
+- It verifies only project import, GUT discovery and execution of a minimal deterministic assertion.
+- It must not depend on gameplay state, Resources, catalogs, `GameStateManager`, Income or phase logic.
+- It is the smoke gate used only for M0.
+- The canonical smoke test is required at `res://tests/integration/test_smoke_mvp.gd`.
+- The canonical MVP smoke becomes required once its gameplay dependencies exist, no later than M15; it is not an M0 deliverable.
+- Once applicable, the canonical MVP smoke must pass independently before the full suite.
+- It must load the project and required catalogs/resources.
+- It must call `start_new_game` with fixed seed `test_seed_smoke`, Turf Level `0`, role `merchant`, and a contract selected from deterministic preview.
+- It must assert committed state validates, contains `player_1`, `ai_1`, `ai_2`, and `ai_3`, and starts in Income.
+- It must call `advance_phase`.
+- It must assert Income resolved once for all four players, random state remains valid, phase is Market, MarketState validates, and canonical Income/phase events exist.
+- It must assert no uncaught script, Resource, schema, or validation error occurred.
+
+## Fixture-based states
+
+- Use fixture helpers instead of copy-pasted partial handwritten states.
+- Required fixture files:
+  - `res://tests/fixtures/TestGameStateFactory.gd`
+  - `res://tests/fixtures/TestPlayers.gd`
+  - `res://tests/fixtures/TestCards.gd`
+  - `res://tests/fixtures/TestStates.gd`
+  - `res://tests/fixtures/StaticScanHelper.gd`
+  - `res://tests/fixtures/ReplayScriptRunner.gd`
+- Fixture states must include all required schema fields and validate before use unless the test explicitly targets invalid schema.
+- Incomplete fixtures must fail the fixture/test setup, not silently become accepted test state.
+- Tests may create helpers and fixtures, but must not create hidden gameplay behavior that production code lacks.
+
+## Required test categories
+
+- Unit tests verify isolated owner modules, constants, validators, resolvers, builders, catalogs, and facade methods.
+- Integration tests verify cross-module flows, hooks, phase transitions, facade commits, and adjacent module contracts.
+- Replay tests verify same seed and scripted actions produce identical normalized snapshots and identical random steps.
+- Static scans verify forbidden random APIs, architecture boundaries, UI mutation, file length, Resource integrity, open-question docs, and implementation-order readiness where applicable.
+- Mutation-safety tests verify failed validation leaves active state unchanged.
+- Selector/preview tests verify no state mutation and no active random-step mutation.
+
+## Mutation and selector assertions
+
+- Failed validation must assert no state mutation unless an owner module explicitly says otherwise.
+- Public mutator failure must leave active state, random step, logs, phase fields, readiness flags, action flags, winner fields, and signal-visible state unchanged according to owner API rules.
+- Selectors and previews must assert no mutation of active state.
+- Selectors and previews must assert no active `state["random"]["step"]` mutation; contract setup preview uses only temporary setup random.
+- Random-consuming tests must assert exact PRD-defined random step changes.
+- Tests for deterministic random must use fixed deterministic seeds such as owner-defined test seeds.
+
+## Replay and random
+
+- Use deterministic seeds for random-sensitive tests.
+- Do not use flaky RNG, Godot random APIs, time-based seeds, unordered iteration assumptions, or test-order dependencies.
+- Replay tests are required after changes touching random, setup, phase flow, AI, market, combat, contracts, contacts, Street Deals, logs, state commits, or winner resolution.
+- Replay assertions must compare normalized final snapshots and random steps.
+- Do not loosen exact random-step, event-order, payload, or snapshot assertions to make tests pass.
+
+## Static scans
+
+- Static scans must fail on forbidden gameplay random APIs, UI direct gameplay mutation, logic importing UI scenes, file-length violations, missing Resources, duplicate Resource IDs, broken constants, and forbidden architecture dependencies.
+- Static scan helpers belong in `res://tests/fixtures/StaticScanHelper.gd`.
+- Static scans may use textual patterns where PRD defines them, but must not replace behavioral tests for gameplay logic.
+- Add static scans when a module has architecture risks, forbidden APIs, direct mutation risks, or boundary risks.
+
+## Required execution order
+
+When validating the project or CI:
+
+1. Run Godot import:
+
+```bash
+godot --headless --editor --path "$PWD" --quit
+```
+
+2. Run the canonical smoke test.
+3. Run the full GUT suite.
+
+When implementing a production change:
+
+- Run the related unit test first.
+- Run the related integration test second.
+- Run static scans.
+- Run replay tests if random, phase, AI, market, setup, logs, commits, or replay-sensitive behavior changed.
+- For high-risk changes, run import → smoke → full suite.
+
+## Forbidden behavior
+
+- Do not use GDUnit4.
+- Do not invent coverage thresholds not specified by PRD.
+- Do not rely on flaky RNG, current time, unordered dictionaries, external services, network, or test execution order.
+- Do not write incomplete handwritten states when a fixture should be used.
+- Do not weaken assertions, remove exact checks, skip tests, mark tests pending, or broaden expected values to hide failures.
+- Do not change production behavior only to satisfy a poorly written test; fix the test or raise an OQ if behavior is unclear.
+- Do not assert UI-internal logic for owner gameplay formulas; move gameplay assertions to owner logic tests.
+- Do not report tests as passed when they were not run, failed, timed out, or exited non-zero.
+- Do not ignore import/parse/schema errors, missing Resources, failed assertions, or test-process timeouts.
+- Do not modify `addons/gut/` internals unless the user explicitly requests GUT installation, upgrade, or plugin maintenance.
+- Do not treat skipped, pending, blocked, timed-out, or unexecuted tests as passing.
+
+## Output requirements
+
+When implementing or reviewing changes, report:
+
+- Owner PRD sections and accepted `FIX-*` used.
+- Tests added or updated by category: unit, integration, replay, static, fixture.
+- Exact commands run.
+- Exit status for every command.
+- `not run` commands with exact reasons.
+- Any mutation-safety, selector no-mutation, random-step, replay, smoke, or static-scan coverage added or intentionally left for a later owner-approved milestone.
+
+## Verification checklist
+
+- Owner PRD and accepted `FIX-*` entries for the tested behavior were checked.
+- Related unit tests were run or reported as `not run` with reason.
+- Related integration tests were run or reported as `not run` with reason.
+- Static scans were run when boundary, random, architecture, Resource, UI, or file-length risks exist.
+- Replay tests were run when replay-sensitive behavior changed.
+- Import, smoke, and full suite were run for high-risk or milestone-gate validation.
+- No assertion was weakened, skipped, broadened, or rewritten to hide a failure.
+- Every command has an exact result: `pass`, `fail`, or `not run`.

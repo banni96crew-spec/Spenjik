@@ -1,0 +1,101 @@
+---
+description: Critical preflight, scoped implementation, verification, workspace preservation, and reporting workflow for every AI agent task.
+alwaysApply: true
+---
+
+# AI Agent Workflow and Prohibitions
+
+## Applies when
+
+Apply to every implementation, bug fix, refactor, review, and test task. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/19_IMPLEMENTATION_ORDER.md` defines milestone order, prerequisites, gates, and verification timing.
+- `docs/prd/20_LLM_AGENT_RULES.md` defines agent preflight, implementation flow, testing duties, and handoff requirements.
+- Use `00-project-overview.mdc` and `01-prd-compliance.mdc` for project scope and PRD authority.
+
+## Preflight
+
+Before editing files:
+
+1. Inspect the repository structure, relevant implementation, available tooling, and current workspace changes.
+2. Identify the target milestone and verify that its prerequisites permit the requested work.
+3. Identify the owner PRD and direct dependency PRDs.
+4. Define the allowed source, test, config, and documentation files for the task.
+5. Identify affected runtime state fields, validation errors, public APIs, random usage, and mutation boundaries.
+6. Identify required tests and milestone gates.
+7. Check related open questions and known blockers.
+8. State assumptions, scope exclusions, and any tests that cannot currently be run.
+
+Treat pre-existing or concurrent workspace changes as user-owned unless proven to be created by the current task.
+
+## Required behavior
+
+- Implement the smallest complete slice that satisfies the request and the current milestone.
+- Prefer the smallest clear implementation that satisfies the requested behavior and current milestone.
+- Every changed line must trace directly to the user request, owner PRD, failing test, or required integration.
+- For implementation-local uncertainty, use the simplest documented project convention and report the assumption. For gameplay behavior, public API, runtime state, validation, random behavior, protected contracts, or milestone gates, follow `01-prd-compliance.mdc` and stop if required.
+- Work only within the allowed files. If another file is required for the same scoped task, explicitly justify it before editing that file and include it in the final report.
+- Preserve existing user changes and integrate with them where they affect the task.
+- Add or update focused tests with behavior changes.
+- For bug fixes, reproduce the defect with a failing test when practical, then add regression coverage.
+- Validate before mutation and preserve active state on failed operations.
+- Run the narrowest relevant checks first, then broaden verification according to risk and milestone gates.
+- Run unit tests for changed module behavior.
+- Run integration tests when behavior crosses modules, state ownership, or the `GameStateManager.gd` facade.
+- Run static checks when changes affect architecture, file size, Resources, random, UI boundaries, banned stack patterns, or ambiguity markers.
+- Run replay tests when changes can affect deterministic random consumption, AI decisions, phase flow, market generation, combat order, or full-match snapshots.
+- Stop progression to later milestone work when a required gate fails.
+- Report every verification command or test group as `pass`, `fail`, or `not run`.
+- Use `not run` with the concrete reason whenever tooling, dependencies, or the environment prevented execution.
+
+## Forbidden behavior
+
+- Do not implement the whole project, multiple future milestones, or unrelated systems in one task.
+- Do not work beyond the target milestone or bypass unmet prerequisites and failed gates.
+- Do not weaken, delete, skip, or rewrite valid tests merely to make implementation pass.
+- Do not add hidden fallbacks, fake success paths, silent defaults, placeholder gameplay, or undocumented state fields.
+- Do not delete, overwrite, revert, format away, or otherwise discard changes that were not created by the current task.
+- Do not perform unrelated cleanup, refactoring, renaming, or dependency changes.
+- Do not add abstractions, configurability, fallback systems, future-proofing, or generalized frameworks unless the task or owner PRD explicitly requires them.
+- Do not add speculative error handling outside PRD-defined validation contracts.
+- Do not rewrite compliant existing code only to make it cleaner, prettier, more abstract, or more personally preferred.
+- Remove only imports, variables, functions, files, or code paths made obsolete by the current task. Do not clean up pre-existing unrelated code unless explicitly requested.
+- Do not claim tests passed, implementation is complete, or a gate is satisfied unless it was actually verified.
+- Do not report an unexecuted check as passing.
+
+## Output requirements
+
+Before implementation, report:
+
+- Target milestone:
+- Owner and dependency PRDs:
+- Allowed files:
+- Affected state, errors, and APIs:
+- Planned tests:
+- Known blockers or assumptions:
+
+After implementation, report:
+
+- Files created or changed:
+- Behavior implemented:
+- Tests added or updated:
+- Tests run and result (`pass`, `fail`, or `not run`):
+- Static and replay checks:
+- Preserved user changes:
+- Remaining blockers, failures, or limitations:
+
+## Verification checklist
+
+- Repository state and existing changes were inspected before editing.
+- Milestone prerequisites and allowed files were identified.
+- The implementation is the smallest complete slice.
+- No unrelated or future-milestone work was introduced.
+- Existing user changes were preserved.
+- Tests were not weakened and hidden fallbacks were not added.
+- Verification depth matches the change risk.
+- Every unrun test is explicitly reported as `not run` with a reason.
+- Every changed line is justified by the user request, owner PRD, failing test, or required integration.
+- Any expansion beyond initially allowed files was justified and reported.
+- No abstractions, fallbacks, future-proofing, or unrelated cleanup were introduced.

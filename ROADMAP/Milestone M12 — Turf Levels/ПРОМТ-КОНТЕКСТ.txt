@@ -1,0 +1,164 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Игра строится вокруг детерминированных фаз, экономики, рынка и конфликтов.
+
+Текущий этап: Milestone M12 — Turf Levels.
+Он выполняется строго после завершённых M0–M11.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: Turf rules находятся в logic layer.
+- Data-driven: уровни 0–10 представлены Resources.
+- UI является только view/input layer.
+- Gameplay не парсит `effect_summary`.
+- Turf Levels модифицируют owner systems через чистые helpers.
+- Validation выполняется до mutation.
+- Helper/preview functions не мутируют state.
+- Failed setup/purchase не изменяет state или flags.
+- TurfLevelLogic не использует RNG.
+- Уровни cumulative: Level N включает эффекты 1..N.
+- Turf Level выбирается только при setup и не меняется во время run.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/turf_levels/`
+- `res://logic/game_state/`
+- `res://logic/economy/`
+- `res://logic/contacts/`
+- `res://logic/street_deals/`
+- `res://logic/ai/`
+- `res://data/ids/`
+- `res://data/resources/turf_levels/`
+- `res://tests/unit/`
+- `res://tests/integration/`
+- `res://tests/fixtures/`
+
+Источники истины:
+
+- `docs/prd/12_TURF_LEVELS.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/11_CONTACTS.md`
+- `docs/prd/13_AI_SYSTEM.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0 — Project Bootstrap:
+
+- создан проект, GUT, folder structure и static scan.
+
+M1 — Constants and IDs:
+
+- определены Turf Level constants и errors;
+- ad hoc IDs запрещены.
+
+M2 — Resource Schemas and Catalogs:
+
+- созданы `TurfLevelDefinition`, Resources 0–10 и catalog;
+- summary fields не являются gameplay rules.
+
+M3 — Deterministic Random:
+
+- создан единый RNG contract;
+- M12 не использует и не изменяет RNG.
+
+M4 — Game State Schema:
+
+- `turf_level` хранится в state;
+- M12 добавляет/валидирует `turf_flags` для всех players.
+
+M5 — Core Loop and Phases:
+
+- реализованы round reset и `WinnerResolver`;
+- Level 10 интегрируется без изменения обычных tie-break rules.
+
+M6 — Economy and Market:
+
+- Market, Income и PriceLogic имеют extension points
+  для Levels 4, 5 и 6.
+
+M7–M9:
+
+- combat, roles и contracts не меняются в M12.
+
+M10 — Street Deals and Debts:
+
+- Level 8 payment boundary подготовлена;
+- debt amounts и penalties не изменяются.
+
+M11 — Contacts:
+
+- Level 7 strong-AI offer count boundary подготовлена;
+- Inside Contact всегда остаётся offer count 2.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M11.
+
+## Что сейчас делаю
+
+Реализую M12 — Turf Levels:
+
+- `res://logic/turf_levels/TurfLevelLogic.gd`;
+- validation уровней 0–10;
+- cumulative setup Levels 1–3;
+- Level 4 market slots;
+- Level 5 human Cops interval;
+- Level 6 first AI War discount;
+- Level 7 contact offer count;
+- Level 8 Street Deal payment delta;
+- Level 9 AI War weight multiplier helper;
+- Level 10 AI-favored winner tie-break;
+- turf flags/reset;
+- GUT tests и static scan.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Используй existing state, IDs, Resources и result conventions.
+- Setup order: role → strong AI assignment → Turf Levels 1–3.
+- Level 2 требует ровно одного заранее отмеченного strong AI.
+- M12 не реализует strong AI selection из M13.
+- Level 6 действует once per AI per round и consume only on success.
+- Level 7 меняет только `strong_ai_victory`.
+- Level 8 меняет только три direct upfront payments.
+- Level 9 использует strict human VP lead и не мутирует AI Resources.
+- M12 предоставляет Level 9 helper, а M13 позже его потребляет.
+- Level 10 не использует RNG.
+- Resolved fixes `FIX-004`, `FIX-011`, `FIX-013` обязательны.
+- Automatic Turf progression из `OQ-002` не входит в MVP.
+- Нерешённый вопрос фиксируй как `OQ-*`.
+- Ориентиры объёма промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Уровни ниже 0 или выше 10.
+- Automatic progression между runs.
+- Изменение card, role, contract, contact или Street Deal effects.
+- Реализация AI system из M13.
+- GameStateManager facade из M14.
+- Save/load orchestration из M15.
+- Turf selection UI из M16.
+- Изменение deterministic RNG.
+- Runtime mutator для смены Turf Level.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

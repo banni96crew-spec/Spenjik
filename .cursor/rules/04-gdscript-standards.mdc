@@ -1,0 +1,126 @@
+---
+description: High-priority GDScript quality, result shape, validation error, and canonical gameplay event logging standards.
+globs:
+  - "**/*.gd"
+alwaysApply: false
+---
+
+# GDScript, Errors and Logging
+
+## Applies when
+
+Apply when creating, reviewing, refactoring, or modifying GDScript files. Priority: High.
+
+## Source of truth
+
+- `docs/prd/03_IDS_AND_CONSTANTS.md` owns stable IDs, `ValidationErrors`, `LogEventTypes`, event envelopes, and exact event payload contracts.
+- `docs/prd/04_GAME_STATE_SCHEMA.md` owns runtime shapes, validation invariants, mutation boundaries, and `CombatLogEntry`.
+- `docs/prd/20_LLM_AGENT_RULES.md` owns GDScript constraints, result conventions, file limits, and agent implementation behavior.
+- A domain owner PRD defines the exact function result additions and canonical event execution order for that domain.
+
+## GDScript standards
+
+- Write Godot 4.6.2-compatible GDScript.
+- Use static typing wherever practical for parameters, return types, variables, arrays, and dictionaries.
+- Keep every `.gd` source file under 250 lines.
+- Give each function and class one clear responsibility.
+- Receive required inputs explicitly instead of reading hidden state.
+- Validate inputs and preconditions before mutation.
+- Mutate only an explicit working-state copy after validation succeeds.
+- Keep selectors, previews, and validators free of gameplay mutation and gameplay event emission.
+- Use short, readable control flow and return early on validation failure.
+- Split files before they become oversized or mix unrelated responsibilities.
+- Extract validators, resolvers, builders, selectors, catalogs, helpers, and test fixtures when those responsibilities are distinct.
+
+## Result and error contracts
+
+- Return the exact result shape defined by the owner PRD or public API.
+- Mutators use the canonical base fields:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"state": {},
+	"log_entries": []
+}
+```
+
+- Failed mutators return the exact owner error and must not expose a committed partial state.
+- Validators use:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"details": {}
+}
+```
+
+- Selectors use:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"view": {}
+}
+```
+
+- Domain methods may add fields only when their owner PRD documents them.
+- Return errors only through constants from `ValidationErrors`.
+- Preserve exact error codes through logic and facade boundaries.
+- Failed validation must leave active state unchanged and append no gameplay event.
+- If a required error code is absent, stop the affected implementation and follow the PRD ambiguity workflow.
+
+## Gameplay event logging
+
+- Store gameplay events only in the canonical append-only `state["combat_log"]`.
+- Use only event types from `LogEventTypes.ALL`.
+- Build every event with the exact `CombatLogEntry` envelope from `04_GAME_STATE_SCHEMA.md`.
+- Populate `details` with every required field for that event and no undocumented fields.
+- Use canonical IDs and field types in the envelope and payload.
+- Generate log IDs in append order using the documented `log_%06d` format.
+- Append events to the same candidate-state transaction as their gameplay change.
+- Append domain events in the exact execution order defined by the owner PRD.
+- Preserve the canonical ordering rules of enclosing operations; `PHASE_CHANGED` remains the final event of a successful `advance_phase` transaction.
+- Append no event when validation fails or no gameplay state change occurs.
+- Keep human-readable `summary` text separate from typed gameplay data in `details`.
+
+## Forbidden behavior
+
+- Do not return ad-hoc error strings, translated errors, generic fallback errors, or undocumented error aliases.
+- Do not hardcode magic gameplay IDs when a canonical constant owns the value.
+- Do not create ad-hoc gameplay event types.
+- Do not use free-form, missing, extra, or mistyped event payload fields.
+- Do not use `print()`, `print_rich()`, `printerr()`, or similar console output as gameplay history, gameplay state, or a substitute for canonical events.
+- Do not parse event summaries, Resource descriptions, or display text to recover gameplay data.
+- Do not append gameplay events outside the candidate-state transaction.
+- Do not append success events for failed or rolled-back operations.
+- Do not create oversized god objects or mix validation, resolution, event building, selection, and facade commit logic in one class.
+- Do not hide validation failures with silent defaults, magic values, or fallback behavior.
+
+## Output requirements
+
+For changed GDScript, report:
+
+- Files and responsibilities:
+- Result shapes used:
+- Validation errors used:
+- Log event types and payload contracts:
+- Event order:
+- File line counts and splits:
+
+## Verification checklist
+
+- GDScript is compatible with Godot 4.6.2.
+- Static typing is used where practical.
+- Every `.gd` file remains under 250 lines.
+- Functions and files have focused responsibilities.
+- Validation occurs before mutation.
+- Result shapes match their owner contracts.
+- Errors use only `ValidationErrors`.
+- Gameplay events use only `LogEventTypes` and exact payload contracts.
+- Event append order matches the owner PRD.
+- Failed operations append no event and preserve active state.
+- No magic IDs, console-based gameplay logging, free-form payloads, or god objects were introduced.

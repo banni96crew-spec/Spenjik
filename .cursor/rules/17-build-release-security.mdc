@@ -1,0 +1,140 @@
+---
+description: High-priority Godot build/export, CI gates, Windows/Linux release scope, secrets, network, and external I/O restrictions.
+globs:
+  - "project.godot"
+  - "export_presets.cfg"
+  - ".github/**/*.yml"
+  - ".github/**/*.yaml"
+  - ".gitlab-ci.yml"
+  - ".gitignore"
+  - ".gitattributes"
+  - "*.sh"
+  - "*.ps1"
+  - "Makefile"
+  - "*.cfg"
+  - "*.json"
+  - "*.env"
+  - ".env*"
+  - "ci/**/*"
+  - "scripts/**/*"
+  - "autoload/**/*.gd"
+  - "logic/**/*.gd"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+alwaysApply: false
+---
+
+# Build, CI, Export and External I/O
+
+## Applies when
+
+Apply when creating, reviewing, or modifying Godot version assumptions, `project.godot`, `export_presets.cfg`, CI config, release scripts, test gates, platform exports, import checks, external I/O, debug snapshots, credentials, signing, packaging, or banned stack artifacts. Priority: High.
+
+## Source of truth
+
+- `docs/prd/01_PRODUCT_OVERVIEW.md` owns product platform scope, local Godot MVP constraints, out-of-scope web/backend/mobile/persistence stack, and optional debug snapshot policy.
+- `docs/prd/18_TEST_PLAN.md` owns canonical headless import, smoke, full-suite commands and CI failure conditions.
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` `FIX-034` owns the executable GUT and CI smoke contract.
+
+This rule is a guardrail summary for build, CI, export, release, and external I/O. It must not override `01_PRODUCT_OVERVIEW.md`, `18_TEST_PLAN.md`, or accepted `FIX-*` decisions. If any listed platform, command, failure condition, or release/security behavior conflicts with the owner PRD, stop and report PRD drift.
+
+## Engine and platform scope
+
+- Use Godot `4.6.2`.
+- Use GDScript and the local Godot project as the implementation target.
+- MVP export targets are Windows and Linux first.
+- `export_presets.cfg` may define Windows/Linux export presets according to Godot project needs.
+- Web export is optional later and must not be treated as required MVP scope.
+- Mobile adaptation/export is out of scope for MVP.
+- Do not add C#, React, TypeScript, Zustand, Tailwind, Docker, WebSocket backend, backend services, or non-Godot release stack.
+
+## CI gates
+
+CI must run import, smoke, then full suite from the directory containing `project.godot`:
+
+```bash
+godot --headless --editor --path "$PWD" --quit
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gtest=res://tests/integration/test_smoke_mvp.gd -gexit
+godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
+
+- `godot` and `GODOT_BIN` must resolve to Godot `4.6.2`.
+- If `godot` is unavailable but `GODOT_BIN` is set, use `"$GODOT_BIN"` with the same canonical arguments and report the exact command.
+- `res://tests/integration/test_smoke_mvp.gd` is required.
+- CI success means all three commands exit `0`, the smoke test has zero failed assertions, and the full GUT suite has zero failed tests.
+- Any non-zero exit code, parse/import error, missing Resource, schema failure, failed assertion, or test-process timeout fails CI.
+- Do not publish, package, tag, or mark a release ready when CI gates fail or were not run.
+- If a gate was not run, report `not run` with the exact reason.
+
+## Export and release
+
+- Windows/Linux export presets must not bypass import, smoke, full-suite, Resource integrity, or schema checks.
+- Used assets, scenes, scripts, Resources, themes, and `.tres` files must be included in export.
+- Do not add undocumented release, signing, notarization, installer, auto-update, or upload processes.
+- If signing or release publishing is required, stop and request PRD/user authority before adding scripts or credentials.
+- Build scripts must be reproducible from project files and CI environment variables, not from local machine-specific paths.
+- Do not hardcode user-profile paths, absolute local paths, editor cache paths, or machine-specific Godot install paths in committed configs.
+
+## External I/O and persistence boundary
+
+- The product is a local Godot game.
+- There is no gameplay persistence in MVP.
+- Gameplay/runtime code must not write external files except the optional owner-approved debug snapshot.
+- Build, CI, and export scripts may write build artifacts, logs, and test reports only to explicit project/CI output directories.
+- Build artifacts must not become gameplay persistence or runtime dependencies.
+- Do not add SaveManager, save slots, cloud saves, campaign persistence, accounts, user profiles, backend sync, telemetry, analytics, crash uploaders, remote config, or network calls.
+- Do not make gameplay depend on filesystem writes, network availability, external services, OS account state, environment variables, or CI-only files.
+- Debug snapshots must not affect gameplay state, deterministic random, logs, replay output, validation, winner resolution, or test results.
+
+## Secrets and credentials
+
+- Do not commit credentials, tokens, API keys, signing keys, keystores, certificates, passwords, private URLs, service account files, secret account identifiers, private account IDs, or generated credential artifacts.
+- Secrets may be referenced only through CI environment variables when an owner-approved build/release process requires them.
+- Do not add `.env`, plaintext secret files, local signing profiles, or generated credential artifacts to the repository.
+- Do not print secrets in logs, test output, debug snapshots, exported metadata, or release artifacts.
+- If a release/signing process needs secrets and no PRD-approved process exists, stop and request clarification.
+
+## Static and security scans
+
+- Static scans must fail when banned non-Godot stack artifacts, dependencies, configs, imports, scripts, or runtime implementation code are introduced.
+- Mentions inside rules, PRD, comments, changelogs, or forbidden lists must be reviewed as context, not automatically treated as implementation.
+- Static scans should flag network APIs, HTTP clients, sockets, telemetry/analytics SDKs, credential-looking strings, local absolute paths, and external writes outside the allowed debug snapshot.
+- Static scans must not replace import/smoke/full-suite gates.
+- Security checks must preserve PRD behavior; do not remove gameplay code or tests to satisfy a broad pattern without confirming the owner rule.
+
+## Forbidden behavior
+
+- Do not make Web/mobile export mandatory for MVP.
+- Do not add Docker, backend, telemetry, analytics, accounts, cloud saves, external auth, remote config, WebSockets, or network calls.
+- Do not commit credentials or secrets.
+- Do not write external files except the optional owner-approved debug snapshot.
+- Do not add undocumented release, signing, packaging, upload, installer, or distribution workflows.
+- Do not publish or declare release readiness after non-zero CI exit, parse/import error, missing Resource, schema failure, failed assertion, timeout, or unrun required gate.
+- Do not weaken CI gates, skip smoke, skip full suite, ignore import errors, or treat flaky failures as success.
+
+## Required checks
+
+When touching build, CI, export, release, security, or external I/O behavior, verify as relevant:
+
+- Godot version remains `4.6.2`.
+- Windows/Linux remain the MVP export targets.
+- `export_presets.cfg` does not introduce required web/mobile scope.
+- Import, smoke, and full-suite commands run in the PRD-defined order.
+- Exit status is captured and reported for every required command.
+- Export includes referenced scenes, scripts, Resources, `.tres`, themes, fonts, icons, and audio.
+- No secrets, credentials, network calls, telemetry, analytics, backend dependencies, or unauthorized external writes were added.
+- Any debug snapshot remains optional, non-gameplay, and outside replay semantics.
+
+## Output requirements
+
+When implementing or reviewing build/release/security changes, report:
+
+- Owner PRD sections and accepted `FIX-*` used.
+- Build, CI, export, script, config, and code files changed.
+- Target platforms affected.
+- Exact commands run and exit status.
+- Import/smoke/full-suite gate result, including `not run` reasons.
+- Secret handling and external I/O status.
+- Any release/signing process added or explicitly not added.

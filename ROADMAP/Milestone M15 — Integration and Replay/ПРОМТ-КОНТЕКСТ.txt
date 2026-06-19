@@ -1,0 +1,151 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+В матче участвуют один человек и три локальных AI.
+Партия длится ровно 15 раундов и завершается Game Over.
+
+Текущий этап: Milestone M15 — Integration and Replay.
+Он выполняется строго после завершённых M0–M14.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript со статической типизацией, где это практично.
+- GUT.
+- `.tres` Resources для static definitions.
+- Dictionary snapshots для runtime state.
+- GameStateManager как Autoload facade.
+- Windows/Linux first.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first, data-driven.
+- Gameplay rules принадлежат owner modules M5–M13.
+- GameStateManager M14 — единственный public gameplay facade.
+- Integration tests проверяют реальные связи между modules.
+- Replay tests повторяют одинаковый seed и одинаковые commands.
+- Один shared `state["random"]` определяет весь gameplay random.
+- Replay runner является test fixture, а не gameplay system.
+- Runner вызывает GameStateManager и не мутирует state напрямую.
+- Replay не является save/load или persistence.
+- Tests используют snapshots из GameStateManager/factory.
+- Resources остаются immutable.
+- Failed commands не изменяют active state.
+- Selectors не consume random.
+- WinnerResolver не использует random.
+- UI не требуется для выполнения M15 flows.
+
+## Структура проекта
+
+Релевантные пути:
+
+- `res://autoload/GameStateManager.gd`
+- `res://logic/game_state/`
+- `res://logic/random/`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/contracts/`
+- `res://logic/street_deals/`
+- `res://logic/contacts/`
+- `res://logic/turf_levels/`
+- `res://logic/ai/`
+- `res://tests/fixtures/ReplayScriptRunner.gd`
+- `res://tests/integration/`
+- `res://tests/replay/`
+- `res://tests/static/`
+
+Основные источники истины:
+
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- owner PRD-файлы M6–M13
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0–M4:
+
+- созданы project structure, IDs, Resources/catalogs и GUT;
+- реализованы deterministic RNG, state factory, validator и fixtures.
+
+M5:
+
+- реализован 15-round phase flow;
+- Street Deals происходят после раундов 4, 8 и 12;
+- Game Over наступает после Action раунда 15;
+- WinnerResolver детерминирован.
+
+M6–M13:
+
+- реализованы Economy/Market, Combat, Roles и Contracts;
+- реализованы Street Deals/Debts, Contacts и Turf Levels;
+- реализован deterministic AI для Market и Action;
+- все gameplay random consumers используют shared random state.
+
+M14:
+
+- реализован GameStateManager Autoload;
+- public mutators используют atomic commit;
+- selectors возвращают safe views;
+- UI-facing gameplay API делегирует owner modules.
+
+Перед M15 coding-agent проверяет фактическое состояние M0–M14,
+existing tests, API signatures и все открытые вопросы.
+
+## Что сейчас делаю
+
+Реализую M15 — Integration and Replay:
+
+- дополняю cross-module integration tests;
+- создаю ReplayScriptRunner;
+- создаю full-round smoke flow;
+- создаю full 15-round scripted flow;
+- дважды выполняю одинаковый replay;
+- сравниваю final snapshots и random steps;
+- сравниваю deterministic event traces;
+- запускаю full unit/integration/replay/static suite;
+- исправляю только подтверждённые integration defects.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Tests не содержат test-only gameplay rules.
+- Replay script хранит explicit commands и payloads.
+- Human choices выполняются через GameStateManager.
+- AI выполняется через M14 AI API/phase orchestration.
+- Runner не пишет напрямую в `GameStateManager.state`.
+- Runner не вызывает low-level mutators в обход facade.
+- Runner не использует forbidden random.
+- Same seed + same script + same code дают identical result.
+- Final `random.step` является обязательной частью comparison.
+- Gameplay arrays не сортируются и не нормализуются произвольно.
+- Normalize удаляет только explicitly debug-only fields.
+- Market history собирается в test trace, а не в новый state field.
+- Replay comparison выполняется in-memory; persistence не требуется.
+- Bugs сначала воспроизводятся тестом, затем исправляются owner module.
+- Gameplay rules и deterministic call order не меняются ради pass.
+- Все resolved FIX-001–FIX-030 обязательны.
+- Нерешённое поведение фиксируется как `OQ-*`.
+- Ориентиры длины промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Новые gameplay mechanics, cards, roles, deals или AI profiles.
+- Изменение balance, formulas, IDs, rewards или probabilities.
+- Новый random algorithm или отдельный random stream.
+- Прямое редактирование state тестовым runner.
+- Gameplay save/load, campaign persistence или replay file format.
+- Final UI, screens, widgets и animations из M16.
+- Production polish, analytics и hardening из M17.
+- Подмена integration flow mocks вместо real modules.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

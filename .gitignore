@@ -1,0 +1,12 @@
+Set-Location 'C:\Users\Николай\Desktop\PEREDEL'
+
+@'
+# Generated and local files
+.godot/
+Godot_v4.6.2-stable_win64.exe/
+*.exe
+*.pck
+.env
+.env.*
+!.env.example
+'@ | Set-Content -Encoding UTF8 .gitignore

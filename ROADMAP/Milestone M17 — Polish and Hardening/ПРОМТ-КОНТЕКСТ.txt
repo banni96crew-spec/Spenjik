@@ -1,0 +1,120 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+В матче участвуют один human player и три local AI.
+Партия длится 15 раундов: Setup -> игровые фазы -> Game Over.
+Текущий этап: Milestone M17 — Polish and Hardening.
+Это финальный milestone MVP, строго после завершённых M0–M16.
+Цель M17 — повысить диагностируемость и надёжность готовой игры,
+не меняя gameplay rules, balance и deterministic behavior.
+
+## Стек
+- Godot 4.6.2 stable.
+- GDScript со статической типизацией, где практично.
+- Godot Control nodes, Containers и Theme.
+- GUT.
+- `.tres` Resources для static definitions.
+- Dictionary snapshots для runtime state.
+- GameStateManager как gameplay Autoload facade.
+- SeededRandom/SeededPicker для gameplay random.
+- Windows/Linux desktop first.
+- Без web stack.
+
+## Архитектура
+- Logic-first, data-driven, deterministic.
+- UI является view/input layer, не gameplay owner.
+- Runtime state принадлежит GameStateManager.
+- Failed validation не мутирует active state.
+- Selectors/previews не мутируют state и не consume random.
+- Combat log является append-only gameplay state.
+- Log entries имеют structured shape и readable `summary`.
+- ErrorTextMap переводит stable ValidationErrors в UI text.
+- DebugSnapshotManager — debug tool, не save system.
+- Snapshot пишет JSON в `user://debug_run_snapshot.json`.
+- Gameplay не читает snapshot и не зависит от его записи.
+- Snapshot failure не ломает матч и не мутирует state.
+- M15 replay determinism и M16 UI boundaries остаются зелёными.
+
+## Структура проекта
+Релевантные пути:
+- `res://autoload/GameStateManager.gd`
+- `res://autoload/DebugSnapshotManager.gd`
+- `res://logic/game_state/`
+- `res://logic/combat/CombatLogBuilder.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/ids/LogEventTypes.gd`
+- `res://scenes/ui/helpers/ErrorTextMap.gd`
+- `res://scenes/ui/helpers/UIViewFormatters.gd`
+- `res://scenes/ui/panels/GameLogPanel.gd`
+- `res://tests/unit/`
+- `res://tests/integration/`
+- `res://tests/replay/`
+- `res://tests/static/`
+Источники истины:
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/17_UI_UX_SPEC.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- owner PRD-файлы M6–M13
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+M0–M4:
+- созданы project structure, GUT и static scan helper;
+- реализованы IDs, Resources/catalogs, deterministic random и state schema.
+M5–M13:
+- реализованы phases, economy, market, combat;
+- реализованы Roles, Contracts, Street Deals/Debts, Contacts;
+- реализованы Turf Levels и deterministic AI.
+M14–M16:
+- GameStateManager реализован как thin facade;
+- integration/full-run/replay tests существуют;
+- одинаковый seed/script даёт одинаковый snapshot/random step;
+- functional desktop UI вызывает gameplay только через facade;
+- ErrorTextMap и GameLogPanel уже существуют.
+Перед M17 coding-agent проверяет фактическую готовность repository,
+а не принимает M0–M16 на веру.
+
+## Что сейчас делаю
+Реализую M17:
+- улучшаю error text mapping;
+- улучшаю читаемость Game Log без изменения semantics;
+- добавляю optional debug snapshot;
+- исправляю только подтверждённые defects с regression tests;
+- запускаю full GUT suite, replay и static scans;
+- проверяю полный 15-round run до Game Over;
+- проверяю отсутствие unresolved blocking `OQ-*`.
+
+## Договорённости по коду
+- M17 не разрешает gameplay redesign.
+- Не менять IDs, formulas, balance, phase order и AI policy.
+- Не менять public contracts или RNG call order без authority.
+- Не добавлять wall-clock data в gameplay state/log.
+- Cosmetic formatting делать в UI/helper layer.
+- Owner log builder менять только при доказанном PRD defect.
+- Unknown error получает safe fallback, но не маскируется как success.
+- Debug snapshot сериализует detached state copy.
+- Snapshot не восстанавливает игру и не создаёт save/load loop.
+- Не ослаблять tests, scans или replay comparisons.
+- Каждый bug fix получает focused regression test.
+- Каждый `.gd` файл строго меньше 250 строк.
+- Неясность оформляется как `OQ-*`.
+- Resolved FIX-001–FIX-030 обязательны.
+- Ориентиры длины промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+- Новые gameplay rules/content и rebalance.
+- Изменение economy, combat, AI, Turf Level или winner rules.
+- Campaign progression, save/load, profiles или cloud persistence.
+- Gameplay restore из debug snapshot.
+- Networking, multiplayer, telemetry или analytics.
+- Web export, backend и browser UX.
+- React, TypeScript, Tailwind, Zustand, Docker или routing.
+- Большой visual redesign или art production.
+- Unrelated refactor исправно работающих модулей.

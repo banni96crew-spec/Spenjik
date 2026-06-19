@@ -1,0 +1,139 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Разработка идёт строго по milestone-порядку:
+
+M0 Project Bootstrap
+→ M1 Constants and IDs
+→ M2 Resource Schemas and Catalogs
+→ M3 Deterministic Random
+→ M4 Game State Schema
+→ M5 Core Loop and Phases
+→ последующие gameplay-модули
+
+Матч длится ровно 15 раундов. Phase system управляет тем, когда запускаются игровые системы, но не определяет, как economy, combat, AI, contracts, contacts или Street Deals работают внутри.
+
+Документы в `res://docs/prd/` — источник истины. Не придумывай readiness conditions, side effects или tie-break rules. При конфликте проверь resolved `FIX-*`; нерешённую неоднозначность оформи как `OQ-*`.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript и GUT.
+- Dictionary snapshots для runtime state.
+- `.tres` Resources для static data.
+- Windows и Linux как первые export targets.
+- Без web stack.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+M5 вводит orchestration layer:
+
+- `GamePhaseController.gd` владеет round/phase transitions.
+- `WinnerResolver.gd` вычисляет deterministic final result.
+- `GameStateValidator.gd` проверяет state до и после transition.
+- UI не меняет round, phase, action order или flags напрямую.
+
+Core loop:
+
+Setup → Income → Market → Action
+
+После Action:
+
+- rounds 4, 8, 12 → Street Deal;
+- rounds 1–3, 5–7, 9–11, 13–14 → следующий Income;
+- round 15 → Game Over.
+
+Критические invariants:
+
+- Разрешены только `PhaseIds.ALL`.
+- Round всегда находится в диапазоне 1–15.
+- Round 16 никогда не создаётся.
+- Action order фиксирован: `player_1`, `ai_1`, `ai_2`, `ai_3`.
+- Outside Action `active_action_player_id == ""`.
+- Invalid transition и failed validation не мутируют original state.
+- WinnerResolver не использует random и не изменяет random step.
+- Phase controller оркестрирует модули, но не реализует их gameplay rules.
+- Каждый `.gd` файл содержит менее 250 строк.
+
+## Структура проекта
+
+Production files M5:
+
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/game_state/WinnerResolver.gd`
+
+Tests M5:
+
+- `res://tests/unit/test_phase_controller.gd`
+- `res://tests/unit/test_winner_resolver.gd`
+
+Используй M4 fixtures и расширяй их targeted builders вместо ручного копирования full state.
+
+## Что уже сделано
+
+M0 создал Godot project, GUT и bootstrap infrastructure.
+
+M1 создал stable IDs, `PhaseIds`, tie-break/log constants и validation errors.
+
+M2 создал Resources и catalogs.
+
+M3 создал deterministic random layer и random static scan.
+
+M4 создал canonical GameState, Factory, Validator, fixtures и architecture scan.
+
+Перед M5 фактически проверь M0–M4 gates. При проваленном prerequisite не начинай M5.
+
+## Что сейчас делаю
+
+Реализую только `Milestone M5 — Core Loop and Phases`:
+
+- 15-round state machine;
+- readiness-based transitions;
+- fixed Action order;
+- skip-action consumption;
+- round/reset orchestration;
+- Street Deal timing;
+- Game Over trigger;
+- deterministic winner result;
+- Turf Level 10 integration hook;
+- mutation-safety tests.
+
+Owner PRD:
+
+- `res://docs/prd/02_CORE_LOOP_AND_PHASES.md`
+
+Direct dependencies:
+
+- `03_IDS_AND_CONSTANTS.md`
+- `04_GAME_STATE_SCHEMA.md`
+- `12_TURF_LEVELS.md`, только winner hook contract
+- `15_GODOT_ARCHITECTURE.md`
+- `18_TEST_PLAN.md`
+- `19_IMPLEMENTATION_ORDER.md`
+- `20_LLM_AGENT_RULES.md`
+- `21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Договорённости по коду
+
+- Phase operations работают с duplicated working state.
+- Commit/returned state появляется только после successful validation.
+- Controller не рассчитывает income, prices, attacks, AI choices или Street Deal effects.
+- До появления owner modules используй только явно разрешённые integration hooks; не создавай fake gameplay implementations.
+- Winner result соответствует M4 schema.
+- Tie-break calculations не добавляют VP и не мутируют players.
+- Используй constants, а не repeated phase/player strings.
+- Ориентиры длины prompt-файлов примерные и не являются acceptance criteria.
+- Не ослабляй tests и не скрывай failed/not-run checks.
+
+## Что НЕ входит в текущий milestone
+
+Не реализуй IncomeLogic, MarketLogic, purchase flow, CombatEngine, AI decisions, role/contract/contact effects, Street Deal generation/resolution, debts processing, TurfLevelLogic, GameStateManager или UI.
+
+M5 может определить orchestration hook для будущего модуля, но не должен поглощать M6–M13.

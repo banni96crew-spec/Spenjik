@@ -1,0 +1,230 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Проект реализуется последовательно по milestone-подходу:
+
+M0 Project Bootstrap
+→ M1 Constants and IDs
+→ M2 Resource Schemas and Catalogs
+→ последующие gameplay milestone
+
+Игровая архитектура должна быть:
+
+- logic-first;
+- data-driven;
+- детерминированной;
+- тестируемой без UI;
+- разделённой на небольшие модули;
+- защищённой от неявного изменения правил.
+
+Документы в `res://docs/prd/` являются источниками истины. Coding-agent не должен дополнять отсутствующие правила собственными предположениями.
+
+При недостатке или конфликте информации необходимо остановить затронутую часть работы и зарегистрировать вопрос `OQ-*` в:
+
+`res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Стек
+
+- Engine: Godot 4.6.2 stable.
+- Language: GDScript.
+- Tests: GUT.
+- Static gameplay data: `.tres` Resources.
+- Resource access: domain catalogs.
+- Future runtime state: Dictionary snapshots.
+- Future gameplay facade: `GameStateManager.gd` Autoload.
+- Architecture: logic-first, data-driven, UI as view layer.
+- Export targets: Windows и Linux.
+- No web stack.
+- No gameplay persistence в MVP.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+Правила Resource layer:
+
+- `.tres` Resources хранят только статические gameplay-данные.
+- Resources не хранят runtime state.
+- Resources нельзя изменять во время выполнения.
+- Logic modules не должны загружать `.tres` напрямую в разных местах.
+- Доступ к Resources выполняется через domain catalogs.
+- Каждый Resource должен иметь стабильный ID из `res://data/ids/`.
+- ID внутри Resource должен точно совпадать с owner constants module.
+- Описания и summaries являются display text и не должны парситься как gameplay logic.
+- Catalog возвращает Resource по ID и предоставляет полный набор Resources своего домена.
+- Catalog не владеет runtime state и не изменяет Resources.
+- Отсутствующий ID должен возвращать безопасный результат, установленный PRD, без runtime fallback.
+- Все `.gd` файлы должны содержать менее 250 строк.
+- Использовать static typing там, где это практично.
+
+## Структура проекта
+
+Resource schemas и `.tres` размещаются в:
+
+- `res://data/resources/cards/`
+- `res://data/resources/roles/`
+- `res://data/resources/contracts/`
+- `res://data/resources/contacts/`
+- `res://data/resources/street_deals/`
+- `res://data/resources/ai_profiles/`
+- `res://data/resources/turf_levels/`
+
+Catalogs размещаются в:
+
+- `res://logic/catalog/`
+
+Tests размещаются в:
+
+- `res://tests/unit/`
+- `res://tests/static/`
+- при необходимости `res://tests/fixtures/`
+
+Точная структура определяется:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+
+## Что уже сделано
+
+### Milestone M0 — Project Bootstrap
+
+M0 завершён и проверен. В проекте должны существовать:
+
+- `res://project.godot`;
+- рабочий проект Godot 4.6.2;
+- архитектурный каркас каталогов;
+- `res://addons/gut/` с рабочим GUT addon;
+- тестовые каталоги;
+- GUT smoke test;
+- static scan helper shell;
+- подтверждённый запуск проекта и smoke test;
+- отсутствие gameplay logic и web-stack artifacts.
+
+### Milestone M1 — Constants and IDs
+
+M1 завершён и проверен. Реализованы:
+
+- `res://data/ids/GameIds.gd`
+- `res://data/ids/PhaseIds.gd`
+- `res://data/ids/AttackModes.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/ids/RoleIds.gd`
+- `res://data/ids/ContractIds.gd`
+- `res://data/ids/ContactIds.gd`
+- `res://data/ids/StreetDealIds.gd`
+- `res://data/ids/AIProfileIds.gd`
+- `res://data/ids/TurfLevelIds.gd`
+- `res://data/ids/DefenseStates.gd`
+
+Также должны существовать и проходить тесты:
+
+- наличие обязательных constants;
+- отсутствие дублирующихся ID;
+- соответствие ID owner PRD;
+- наличие требуемых validation error codes;
+- file-length scan;
+- open-question marker scan;
+- M0 regression smoke test.
+
+Перед M2 coding-agent обязан проверить фактическое прохождение M0 и M1. Нельзя считать prerequisites выполненными только на основании этого контекста.
+
+Если M0 или M1 gate не проходит, необходимо остановить M2 и сначала восстановить prerequisite.
+
+## Что сейчас делаю
+
+Реализую только:
+
+`Milestone M2 — Resource Schemas and Catalogs`
+
+Цель M2:
+
+- создать семь Resource schema scripts;
+- создать все обязательные `.tres` Resources;
+- создать семь domain catalogs;
+- связать Resource IDs с constants из M1;
+- проверить уникальность и целостность Resources;
+- проверить загрузку Resources через catalogs;
+- проверить неизменяемость Resources;
+- запустить M0/M1 regression tests и M2 gate tests.
+
+Owner и dependency PRD:
+
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`
+- `res://docs/prd/05_CARDS_DATABASE.md`
+- `res://docs/prd/08_ROLES.md`
+- `res://docs/prd/09_CONTRACTS.md`
+- `res://docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `res://docs/prd/11_CONTACTS.md`
+- `res://docs/prd/12_TURF_LEVELS.md`
+- `res://docs/prd/13_AI_SYSTEM.md`
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Gameplay PRD используются только для точных Resource fields и значений. Реализовывать эффекты и gameplay logic в M2 запрещено.
+
+## Договорённости по коду
+
+- Использовать Godot 4.6.2 и GDScript.
+- До изменений проверить M0 и M1 gates.
+- Сохранять пользовательские изменения.
+- Каждый Resource schema должен расширять `Resource`.
+- Использовать `class_name`, если это предусмотрено архитектурой.
+- Использовать `@export` и точные типы для сериализуемых полей.
+- Использовать constants из M1 для проверки ID.
+- Не дублировать constants внутри Resource schemas или catalogs.
+- Не использовать description или summary как источник gameplay rules.
+- Не добавлять Resource fields, отсутствующие в owner PRD.
+- Не добавлять скрытые runtime fields.
+- Не мутировать загруженные Resources.
+- Не использовать ad-hoc загрузку Resources вне catalogs.
+- Не создавать универсальный mega-catalog вместо domain catalogs.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Добавлять тесты одновременно с Resource layer.
+- Не ослаблять тесты ради формального pass.
+- Не заявлять о прохождении тестов без фактического запуска.
+- Не оставлять `TODO`, `TBD`, `FIXME` или `???` без `OQ-*`.
+- При неясности создать `OQ-*`, а не придумывать schema field или значение.
+
+## Что НЕ входит в текущий milestone
+
+В M2 запрещено реализовывать:
+
+- deterministic random;
+- GameStateFactory и GameStateValidator;
+- runtime gameplay state;
+- core loop и phases;
+- economy и market logic;
+- purchase logic;
+- combat;
+- role effects;
+- contract progress, completion и claim;
+- Street Deal resolution;
+- debt processing;
+- contact effects;
+- Turf Level runtime modifiers;
+- AI decisions;
+- `GameStateManager.gd`;
+- gameplay Autoload;
+- gameplay UI;
+- save/load;
+- campaign progression;
+- новые игровые правила.
+
+Также запрещено:
+
+- изменять constants из M1 без требования owner PRD;
+- менять цены, эффекты, условия или баланс;
+- хранить runtime state в `.tres`;
+- парсить display text как gameplay data;
+- создавать fallback Resources для отсутствующих ID;
+- добавлять React, TypeScript, Tailwind, Zustand, Docker, backend или web routing;
+- использовать `randf()`, `randi()`, `randomize()` или `RandomNumberGenerator` в gameplay logic.

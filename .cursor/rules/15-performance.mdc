@@ -1,0 +1,89 @@
+---
+description: Use for _process/_physics_process/_draw, large collections, logs, profiling, caching, or performance-sensitive changes.
+alwaysApply: false
+---
+
+# Performance
+
+## Applies when
+
+Request this rule when creating, reviewing, or modifying `_process`, `_physics_process`, `_draw`, polling loops, repeated UI refresh, large collections, gameplay logs, rendered log lists, catalog scans, cache layers, profiling code, or performance optimizations. Priority: Medium.
+
+## Source of truth
+
+- `docs/prd/15_GODOT_ARCHITECTURE.md` owns architecture boundaries, UI-to-facade flow, deterministic logic, random ownership, file-size limits, and static scan expectations.
+- `docs/prd/17_UI_UX_SPEC.md` owns UI refresh behavior, signal usage, thin UI scripts, preview/selector usage, and UI test expectations.
+
+The project does not currently define a quantitative performance budget. Do not treat `60 FPS`, `16 ms`, frame-time targets, memory ceilings, collection limits, or log limits as PRD invariants unless an owner PRD adds them.
+
+## Measurement first
+
+- Identify the concrete performance concern before optimizing.
+- Prefer Godot profiler evidence, targeted timing, reproducible test cases, or static-scan evidence over assumptions.
+- If profiling cannot be run, report `not run` with the reason instead of claiming improvement.
+- Keep optimizations scoped to the measured bottleneck.
+- Do not rewrite gameplay architecture only for speculative performance gains.
+
+## Event-driven UI
+
+- UI should refresh from facade signals, mutator results, selectors, and explicit user selection changes.
+- Do not poll gameplay state every frame when a signal or explicit refresh path exists.
+- Do not recompute expensive previews every frame; update previews on relevant selection, hover, state, or phase changes.
+- `_process`, `_physics_process`, and `_draw` in UI must be presentation-only unless the owner PRD explicitly requires otherwise.
+- Per-frame UI code must not mutate gameplay state, consume gameplay random, run AI, advance phases, validate gameplay rules, or append gameplay logs.
+
+## Bounded work
+
+- Avoid unbounded per-frame loops over players, cards, logs, Resources, scenes, or UI nodes.
+- Keep rendered UI lists bounded or virtualized where practical without mutating canonical gameplay state.
+- Do not prune, truncate, or reorder gameplay logs, history, event payloads, random history, or replay-relevant state unless the owner PRD defines that behavior.
+- Prefer owner catalogs/selectors over repeated ad-hoc filesystem loads or full Resource scans.
+- Large collections must have a clear owner, invalidation point, and test coverage when behavior is replay-sensitive.
+
+## Caching
+
+- Cache immutable Resources, catalog membership, static formatting helpers, or presentation-only derived data only when there is measured need or an established owner pattern.
+- Do not cache mutable runtime state as authoritative gameplay state.
+- Do not cache selector/view results across mutators, signals, phase changes, or game restart as if they were current gameplay truth.
+- Every cache over derived state must have explicit invalidation tied to state changes, phase changes, setup restart, or owner data reload.
+- Do not use caches to bypass validation, selectors, facade APIs, catalogs, or PRD-owned logic.
+
+## Replay and gameplay semantics
+
+- Performance changes must preserve gameplay semantics exactly.
+- Do not change deterministic random call order, random step counts, random tags, tie-break behavior, event order, validation order, phase commits, AI choices, or winner resolution for speed.
+- Do not move gameplay random into UI, `_process`, `_draw`, background helpers, audio, timers, or local random streams.
+- Do not reorder side effects if logs, signals, replay output, tests, or PRD order depend on them.
+- After sensitive optimizations touching random, AI, phase flow, combat, market, contracts, contacts, Street Deals, logs, or state commits, run replay/determinism tests or report them as `not run`.
+
+## Forbidden behavior
+
+- Do not declare `60 FPS`, `16 ms`, or any other numeric target a hard PRD invariant without owner PRD authority.
+- Do not prematurely cache mutable state, active snapshots, selector results, random state, view models, player dictionaries, card arrays, logs, or validation results.
+- Do not change random call order, validation order, event order, or committed state shape for performance.
+- Do not hide slow logic behind background timers, deferred calls, hidden auto-actions, or async flows that change gameplay ordering.
+- Do not skip validation, static scans, GUT tests, or replay tests to make code faster.
+- Do not weaken tests, remove assertions, or loosen exact deterministic expectations as a performance fix.
+- Do not add new global managers, event buses, worker systems, object pools, or cache services unless an owner PRD requires them or the user explicitly approves PRD maintenance.
+
+## Required checks
+
+For performance-sensitive changes, verify as relevant:
+
+- Profiler/timing/static evidence exists for the bottleneck or `not run` is reported.
+- `_process`, `_physics_process`, and `_draw` do not perform gameplay mutation or random consumption.
+- UI refresh remains event-driven and selector/facade-based.
+- Large collections and rendered logs have bounded work without truncating canonical gameplay state.
+- Caches do not become authoritative gameplay state and have explicit invalidation.
+- Deterministic random step counts and replay output remain unchanged.
+- Unit, integration, static, and replay tests are run according to the risk of the touched path.
+
+## Output requirements
+
+When implementing or reviewing performance changes, report:
+
+- Owner PRD sections used.
+- Performance concern and evidence gathered.
+- Files and hot paths changed.
+- Whether gameplay semantics, random order, event order, or replay output could be affected.
+- Tests and profiling/checks run, including explicit `not run` items with the reason.

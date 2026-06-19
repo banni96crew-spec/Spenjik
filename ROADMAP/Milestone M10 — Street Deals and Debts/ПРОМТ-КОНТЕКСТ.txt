@@ -1,0 +1,164 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Игра строится вокруг детерминированных фаз, экономики, рынка и конфликтов.
+
+Текущий этап: Milestone M10 — Street Deals and Debts.
+Он выполняется строго после завершённых M0–M9.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: Street Deal и debt rules находятся в logic layer.
+- Data-driven: IDs, eligibility и option data централизованы.
+- UI является только view/input layer.
+- Gameplay не парсит Resource descriptions.
+- Validation выполняется до mutation.
+- Failed choices не изменяют входной state.
+- Selectors не мутируют state и не расходуют RNG.
+- Gameplay RNG проходит только через M3 `SeededPicker`.
+- Human выбирает A/B; AI получает только явно заданные side effects.
+- Global Street Deal state принадлежит `state["street_deals"]`.
+- Debts принадлежат конкретному `player["debts"]`.
+- Owner modules вызываются через явные hooks.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/street_deals/`
+- `res://logic/random/`
+- `res://logic/economy/`
+- `res://logic/contracts/`
+- `res://logic/game_state/`
+- `res://data/ids/`
+- `res://data/resources/street_deals/`
+- `res://tests/unit/`
+- `res://tests/integration/`
+- `res://tests/fixtures/`
+
+Источники истины:
+
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0 — Project Bootstrap:
+
+- создан проект, GUT, folder structure и static scan.
+
+M1 — Constants and IDs:
+
+- созданы `StreetDealIds`, card/player IDs и errors;
+- ad hoc IDs запрещены.
+
+M2 — Resource Schemas and Catalogs:
+
+- созданы `StreetDealDefinition`, шесть Resources и catalog;
+- descriptions не являются gameplay rules.
+
+M3 — Deterministic Random:
+
+- созданы `SeededRandom` и `SeededPicker`;
+- weighted selection и random AI target используют общий random state.
+
+M4 — Game State Schema:
+
+- определены global Street Deal state, player debts и modifiers;
+- resolved fix требует `player["debts"]` как единственный debt source.
+
+M5 — Core Loop and Phases:
+
+- Street Deal phase наступает после Action в раундах 4, 8 и 12;
+- StreetDealLogic не продвигает phase самостоятельно.
+
+M6 — Economy and Market:
+
+- реализованы Income, Cops upkeep, PriceLogic и temporary modifiers;
+- debts обрабатываются после income и Cops upkeep;
+- matching modifiers расходуются через purchase flow.
+
+M7 — Combat System:
+
+- M10 не изменяет combat rules.
+
+M8 — Roles:
+
+- M10 не изменяет role modifiers.
+
+M9 — Contracts:
+
+- доступен `ContractLogic.on_state_changed`;
+- успешные deal/debt изменения вызывают contract hook.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M9.
+
+## Что сейчас делаю
+
+Реализую M10 — Street Deals and Debts:
+
+- `res://logic/street_deals/StreetDealLogic.gd`;
+- `res://logic/street_deals/DebtLogic.gd`;
+- generation в раундах 4/8/12;
+- used deal exclusion;
+- human-only A/B choices;
+- шесть наборов option effects;
+- deterministic AI side effects;
+- player-level debt lifecycle;
+- Income integration;
+- M11/M12-safe hook placeholders;
+- GUT tests и static scan.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Используй existing IDs, Resources, state и result conventions.
+- Used deal не повторяется в течение run.
+- Active debt блокирует только `loan_shark`.
+- Turf Level 8 placeholder повышает только direct upfront payments.
+- Dirty Tip B использует deterministic random AI target.
+- Risky Contract B использует stable AI order без RNG.
+- Failed choice/debt validation не мутирует state.
+- Nal и VP не становятся отрицательными.
+- Debt processing: income → Cops upkeep → debts → contract hooks.
+- Manual debt repayment не входит в MVP.
+- M10 не реализует ContactLogic или TurfLevelLogic заранее.
+- Inside Contact создаёт pending handoff для M11.
+- DebtLogic предоставляет safe Street Medic hook boundary для M11.
+- Resolved fixes имеют приоритет.
+- Нерешённый вопрос фиксируй как `OQ-*`.
+- Ориентиры объёма промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Изменение Street Deal effects, debts или penalties.
+- Contact offers/unlocks/effects из M11.
+- Полная Turf Level system из M12.
+- AI decision-making из M13.
+- GameStateManager facade из M14.
+- Save/load orchestration из M15.
+- Street Deal UI из M16.
+- Combat, contract condition или purchase resolution.
+- AI Street Deal choices.
+- Manual debt repayment.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

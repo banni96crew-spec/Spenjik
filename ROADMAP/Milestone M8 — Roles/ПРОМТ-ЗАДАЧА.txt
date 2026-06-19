@@ -1,0 +1,404 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Ты реализуешь logic-first, data-driven системы на typed GDScript,
+пишешь GUT tests и строго соблюдаешь PRD.
+
+Сначала изучи репозиторий и contracts M0–M7.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources;
+- Windows/Linux;
+- без web stack.
+
+Архитектура:
+
+- logic-first и data-driven;
+- UI только view/input layer;
+- Dictionary state snapshots;
+- централизованные IDs и catalogs;
+- preview и validation read-only;
+- deterministic behavior.
+
+M0–M7 считаются выполненными, но проверь фактические:
+
+- constants, IDs, Resources и catalogs;
+- state factory, validator и fixtures;
+- phase/round lifecycle;
+- `PriceLogic`, `MarketLogic` и rebuild flow;
+- combat defense schema.
+
+Источники истины:
+
+- `docs/prd/08_ROLES.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализовать Milestone M8 — Roles:
+
+- `RoleLogic.gd`;
+- role setup только для human player;
+- pure role price modifiers;
+- Accountant requirement и Gray Cardinal bypass;
+- role flag consumption и reset;
+- District Boss rebuild modifier;
+- integration с M4–M6;
+- targeted GUT tests и static scan.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+- `res://logic/roles/RoleLogic.gd`
+- `res://tests/unit/test_role_logic.gd`
+
+Проверь и точечно обнови при необходимости:
+
+- `res://data/ids/RoleIds.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/resources/roles/RoleDefinition.gd`
+- четыре role `.tres`;
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/economy/MarketLogic.gd`
+- round-start owner M5;
+- fixtures и связанные tests.
+
+Не пересоздавай корректные M1/M2 artifacts.
+Каждый `.gd` файл должен быть меньше 250 строк.
+Helpers создавай только при реальной необходимости.
+
+ROLE IDS И RESOURCES:
+
+Используй только:
+
+- `merchant`;
+- `enforcer`;
+- `gray_cardinal`;
+- `district_boss`.
+
+IDs бери из `RoleIds`.
+Пустой или unknown ID отклоняй через `INVALID_ROLE_ID`.
+Fallback `REQUIREMENT_NOT_MET` допустим только при отсутствии
+этого error ID в фактическом constants contract.
+
+`RoleDefinition` хранит display data, но gameplay не должен
+парсить `effect_summary` или `limitation_summary`.
+
+ОБЯЗАТЕЛЬНЫЙ ROLELOGIC API:
+
+Предоставь проектные эквиваленты:
+
+- `create_empty_role_flags()`
+- `is_valid_role_id(role_id)`
+- `apply_role_setup(state, selected_role_id)`
+- `get_starting_nal_for_role(role_id)`
+- `get_role_price_modifiers(state, player, card_def)`
+- `can_bypass_purchase_requirement(state, player, card_id, requirement_id)`
+- `consume_role_flags_after_purchase(...)`
+- `get_district_rebuild_price(state, player)`
+- `consume_role_flags_after_rebuild(...)`
+- `reset_round_role_flags(player, selected_role_id)`
+
+Сохрани existing API conventions, обеспечив указанное поведение.
+
+ROLE FLAGS:
+
+Обязательные M8 flags:
+
+- `merchant_first_engine_discount_used`;
+- `merchant_first_war_tax_applied_this_round`;
+- `enforcer_first_war_discount_used`;
+- `gray_cardinal_first_accountant_bypass_used`;
+- `gray_cardinal_first_saboteur_discount_used`;
+- `gray_cardinal_first_stash_tax_used`;
+- `district_boss_first_stash_discount_used`;
+- `district_boss_first_laundry_tax_used`;
+- `district_boss_rebuild_discount_used`.
+
+Сохрани shared/contact flags M4:
+
+- `used_first_card_discount`;
+- `used_emergency_protection`;
+- `used_one_time_contact_bonus`.
+
+`08_ROLES.md` требует два поля, которых может не быть в ранней M4-схеме:
+
+- `gray_cardinal_first_stash_tax_used`;
+- `district_boss_first_laundry_tax_used`.
+
+Добавь их согласованно в factory, validator, fixtures
+и serializer/migration conventions, если они уже существуют.
+Не переиспользуй чужой или shared flag.
+
+SETUP CONTRACT:
+
+Ровно одна валидная роль хранится в `state["selected_role_id"]`
+и применяется только к `GameIds.PLAYER_HUMAN`.
+AI не получает role effects.
+
+Порядок setup:
+
+1. Проверить role ID.
+2. Создать base state и players.
+3. Найти human player.
+4. Инициализировать полный `role_flags`.
+5. Записать `selected_role_id`.
+6. Применить starting Nal и defense.
+7. Оставить Turf Level и strong AI setup владельцам M12/M13.
+8. Провалидировать итоговый state.
+
+Starting Nal до Turf modifiers:
+
+- Merchant: 7;
+- Enforcer: 5;
+- Gray Cardinal: 4;
+- District Boss: 5.
+
+Enforcer дополнительно получает:
+
+- `cops_active = true`;
+- `cops_timer = 0`.
+
+Не добавляй Cops в hand или `purchased_this_round`.
+Cops upkeep остаётся в M6.
+
+Setup отклоняет invalid role, missing human и incomplete flags.
+Failed setup не мутирует входной state.
+
+FIRST-EFFECT CONTRACT:
+
+Once-per-run:
+
+- Merchant first Engine discount;
+- Enforcer first War discount;
+- Gray Cardinal Accountant bypass;
+- Gray Cardinal first Saboteur discount;
+- Gray Cardinal first Stash tax;
+- District Boss first Stash discount;
+- District Boss first Laundry tax;
+- District Boss first eligible rebuild discount.
+
+Once-per-round:
+
+- Merchant first War tax.
+
+В начале раунда до Market сбрасывай только:
+
+- `merchant_first_war_tax_applied_this_round = false`.
+
+ROLE RULES:
+
+Merchant:
+
+- starts with 7 Nal;
+- first Engine purchase in run: -1;
+- first War purchase each round: +1.
+
+Enforcer:
+
+- starts with 5 Nal и active Cops;
+- first War purchase in run: -1;
+- every Laundry purchase: +1 без usage flag.
+
+Gray Cardinal:
+
+- starts with 4 Nal;
+- first needed Accountant bypass once per run;
+- first Saboteur purchase: -1;
+- first Stash purchase: +1.
+
+District Boss:
+
+- starts with 5 Nal;
+- first Stash purchase: -2;
+- first Laundry purchase: +1;
+- first eligible District Control rebuild: 7 вместо 8.
+
+Engine и War membership определяй через existing card types/catalog,
+а не через новую дублирующую классификацию.
+
+PRICE И FLAG CONSUMPTION:
+
+RoleLogic возвращает pure structured modifiers и не:
+
+- списывает Nal;
+- размещает карты;
+- меняет market;
+- hardcode-ит base prices.
+
+Modifier должен содержать source, role ID, flag при наличии,
+type, delta/override, applicability и `consume_on_success`.
+
+Порядок расчёта:
+
+1. Base или scaled price.
+2. Rebuild override.
+3. Role modifiers.
+4. Turf Level modifiers.
+5. Temporary modifiers.
+6. Clamp к minimum 1.
+
+Price preview включает role modifiers и не мутирует state.
+
+Flag расходуется только после полного success:
+
+1. Purchase/rebuild validation прошла.
+2. Final price рассчитана и оплачена.
+3. Card/building placement завершён.
+4. Existing purchase fields обновлены.
+5. RoleLogic consume-ит matching flag.
+
+Failed action или preview flag не расходует.
+
+ACCOUNTANT REQUIREMENT:
+
+Базовое требование Accountant:
+
+- `player["vp"] >= 1`.
+
+Gray Cardinal обходит его, только если:
+
+- покупается Accountant;
+- `vp < 1`;
+- bypass flag false;
+- остальные purchase checks прошли.
+
+После успешной покупки с реально использованным bypass
+установи `gray_cardinal_first_accountant_bypass_used = true`.
+
+При `vp >= 1` обычное requirement выполнено,
+поэтому bypass не используется и flag не расходуется.
+
+Другой role с `vp < 1` получает `REQUIREMENT_NOT_MET`.
+
+DISTRICT REBUILD:
+
+Rebuild flow остаётся владельцем M6.
+M8 предоставляет только price modifier/result.
+
+District Boss получает цену 7, если rebuild разрешён
+и `district_boss_rebuild_discount_used == false`.
+
+После успешного rebuild flag становится true.
+Failed rebuild flag не меняет.
+Следующий rebuild использует default 8.
+
+MUTATION И OWNERSHIP:
+
+- Preview helpers и failed validation не мутируют state.
+- Failed purchase/rebuild не меняет role flags.
+- Roles не применяются к AI.
+- RoleLogic не меняет hand, market или combat state.
+- RoleLogic не использует и не изменяет RNG.
+- RoleLogic не продвигает phase.
+
+TESTS:
+
+Добавь targeted GUT tests для:
+
+- valid/invalid role IDs;
+- selected role и human-only setup;
+- starting Nal всех ролей;
+- Enforcer Cops и timer;
+- полного flags shape и двух новых flags;
+- всех discounts/taxes;
+- once-per-run и Merchant once-per-round behavior;
+- reset только Merchant round flag;
+- failed action не consumes flags;
+- price preview, order и minimum clamp;
+- Accountant requirement и все bypass cases;
+- District Boss first/next rebuild;
+- immutable previews и failures;
+- AI isolation;
+- отсутствие RNG/UI dependencies.
+
+Используй existing fixtures/helpers.
+Обнови schema tests и запусти relevant GUT suites/static scan.
+
+STATIC SCAN:
+
+Role logic не должна содержать:
+
+- forbidden random APIs;
+- UI/scene access;
+- parsing Resource summaries;
+- hardcoded base prices;
+- purchase placement;
+- combat resolution;
+- phase advancement;
+- AI profile assignment;
+- AI role mutation;
+- web stack.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй role IDs, effects, base prices или card effects.
+- Не реализуй M9–M17 заранее.
+- Не переписывай M5–M7 вне нужных integration points.
+- Не применяй роли к AI.
+- Не добавляй randomness, UI или backend.
+- Не выполняй unrelated refactor.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительны.
+
+При противоречии сначала проверь resolved fixes документа 21.
+Конкретные technical fixes `08_ROLES.md` имеют приоритет
+над неполной ранней role flags shape.
+Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи M8 PRD, M4/M6 contracts, tests и fixes.
+2. Проинспектируй M0–M7 и integration points.
+3. Сопоставь фактический flags shape с M8.
+4. Выяви blockers и минимальные edits.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» реализуй RoleLogic и integrations.
+7. Добавь и запусти tests/static scan.
+8. Исправь M8 errors и представь итог.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Укажи зависимости, blockers и OQ.
+3. Дождись моего «ок».
+4. До «ок» не изменяй файлы.
+5. После «ок» показывай изменения по файлам с путями `res://...`.
+6. Перечисли проверки и их результаты.
+7. В конце дай заполненный M8 gate checklist.
+
+Не пиши общие советы и не подменяй реализацию псевдокодом.
+Не отмечай gate пройденным без успешных проверок.
+
+M8 GATE CHECKLIST:
+
+- [ ] Все четыре role IDs и Resources валидны.
+- [ ] Role setup применяется только к human.
+- [ ] Все starting effects работают.
+- [ ] Полный flags shape создаётся и валидируется.
+- [ ] Все price modifiers работают в правильном порядке.
+- [ ] Accountant requirement и Gray Cardinal bypass работают.
+- [ ] Failed actions не расходуют flags.
+- [ ] Merchant round flag сбрасывается, остальные — нет.
+- [ ] District Boss rebuild discount работает once-per-run.
+- [ ] Price previews read-only и содержат modifiers.
+- [ ] AI не получает role effects.
+- [ ] GUT tests и static scan проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M8 и web stack не добавлены.

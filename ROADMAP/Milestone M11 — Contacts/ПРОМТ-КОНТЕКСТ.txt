@@ -1,0 +1,173 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Игра строится вокруг детерминированных фаз, экономики, рынка и конфликтов.
+
+Текущий этап: Milestone M11 — Contacts.
+Он выполняется строго после завершённых M0–M10.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: contact rules находятся в logic layer.
+- Data-driven: IDs и display data централизованы.
+- UI является только view/input layer.
+- Gameplay не парсит Resource descriptions.
+- Validation выполняется до mutation.
+- Failed offer/selection не изменяет state или RNG.
+- Selectors не мутируют state и не расходуют RNG.
+- Contact offers используют M3 `SeededPicker`.
+- Owned contacts хранятся только у player.
+- Pending offer хранится только в global contact state.
+- Human может иметь максимум один контакт без replacement.
+- Contact effects подключаются к owner modules через явные hooks.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/contacts/`
+- `res://logic/random/`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/street_deals/`
+- `res://logic/game_state/`
+- `res://data/ids/`
+- `res://data/resources/contacts/`
+- `res://tests/unit/`
+- `res://tests/integration/`
+- `res://tests/fixtures/`
+
+Источники истины:
+
+- `docs/prd/11_CONTACTS.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/07_COMBAT_SYSTEM.md`
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/12_TURF_LEVELS.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0 — Project Bootstrap:
+
+- создан проект, GUT, folder structure и static scan.
+
+M1 — Constants and IDs:
+
+- созданы `ContactIds`, player/card IDs и errors;
+- ad hoc IDs запрещены.
+
+M2 — Resource Schemas and Catalogs:
+
+- созданы `ContactDefinition`, три Resources и catalog;
+- description является только display text.
+
+M3 — Deterministic Random:
+
+- `SeededPicker.pick_unique` создаёт replay-safe offers;
+- расходуется один RNG step на каждый выбранный contact.
+
+M4 — Game State Schema:
+
+- существуют player contact state и one-time flags;
+- resolved fixes требуют global pending/owned split без дублирования.
+
+M5 — Core Loop and Phases:
+
+- round-start owner сбрасывает только `used_this_round`;
+- pending offer не очищается молча.
+
+M6 — Economy and Market:
+
+- Income поддерживает Brothel bonus;
+- PriceLogic/MarketLogic поддерживают contact modifiers и success consume.
+
+M7 — Combat System:
+
+- combat result содержит strong-AI и destroyed Status metadata;
+- ContactLogic подключается после valid resolved attack.
+
+M8 — Roles:
+
+- созданы `used_emergency_protection`
+  и `used_one_time_contact_bonus`;
+- gameplay owner этих flags в M11.
+
+M9 — Contracts:
+
+- M11 не меняет contract conditions.
+
+M10 — Street Deals and Debts:
+
+- Inside Contact создаёт handoff для offer из двух контактов;
+- DebtLogic предоставляет hook перед VP debt penalty.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M10.
+
+## Что сейчас делаю
+
+Реализую M11 — Contacts:
+
+- `res://logic/contacts/ContactLogic.gd`;
+- deterministic offers из двух unlock sources;
+- selection и max-one validation;
+- `black_cash`;
+- `corrupt_clerk`;
+- `street_medic`;
+- Inside Contact integration;
+- strong-AI victory combat hook;
+- Income, Price, Market, Debt и round-reset integrations;
+- GUT tests и static scan.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Используй existing IDs, Resources, state и result conventions.
+- Contacts принадлежат только human player.
+- Максимум один contact, replacement запрещён.
+- Inside Contact всегда предлагает до 2 contacts.
+- Strong-AI victory предлагает до 3, а при Turf 7+ — до 2.
+- Если available меньше requested, предложи все available.
+- Zero available не создаёт pending offer.
+- Offer RNG tag: `contact_offer_%s`.
+- Black Cash и Corrupt Clerk пассивны.
+- Street Medic срабатывает только через debt penalty hook.
+- Failed purchase не расходует Corrupt Clerk.
+- Street Medic не расходуется при effective VP loss 0.
+- Не реализуй M12/M13 целиком.
+- Resolved fixes `FIX-007`–`FIX-012` и `FIX-030` обязательны.
+- Нерешённый вопрос фиксируй как `OQ-*`.
+- Ориентиры объёма промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Новые contacts или изменение их effects.
+- Contact replacement.
+- Contacts для AI.
+- Street Deal, debt, combat или purchase resolution.
+- TurfLevelLogic из M12.
+- Strong AI assignment/behavior из M13.
+- GameStateManager facade из M14.
+- Save/load orchestration из M15.
+- Contact UI из M16.
+- Manual activation Street Medic перед penalty.
+- Gameplay randomness вне contact offer generation.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

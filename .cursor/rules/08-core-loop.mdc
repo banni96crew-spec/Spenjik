@@ -1,0 +1,234 @@
+---
+description: Critical match structure, phase state machine, advance_phase atomicity, action order, flags, winner resolution, and tie-break rules.
+globs:
+  - "autoload/**/*.gd"
+  - "logic/**/*.gd"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Core Loop and Game Design
+
+## Applies when
+
+Apply when creating, reviewing, or modifying setup flow, phase transitions, `advance_phase`, phase flags, action order, round changes, Game Over, winner resolution, phase UI wiring, or phase-related tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md` owns match structure, player count, phase IDs, transition rules, action order, round timing, Street Deal timing, winner entry, and tie-break rules.
+- `docs/prd/04_GAME_STATE_SCHEMA.md` owns canonical state fields, phase-specific validation, reset rules, `GameResult`, `TieBreakStep`, and mutation boundaries.
+- `docs/prd/16_GAME_STATE_MANAGER_API.md` owns facade phase API, result shapes, commit behavior, signals, and `advance_phase` facade flow.
+
+## Fixed match contract
+
+- A match has exactly four participants: `player_1`, `ai_1`, `ai_2`, and `ai_3`.
+- There is exactly one human player: `player_1`.
+- There are exactly three local AI players: `ai_1`, `ai_2`, and `ai_3`.
+- Required player order is always:
+
+```text
+player_1
+ai_1
+ai_2
+ai_3
+```
+
+- A match lasts exactly 15 rounds.
+- `state["round"]` must stay in `1..15`.
+- The game must never create round 16.
+- The match ends after the Action Phase of round 15 is fully resolved.
+
+## Phase IDs and core loop
+
+Only these MVP phase IDs are allowed:
+
+```text
+setup
+income
+market
+action
+street_deal
+game_over
+```
+
+The round flow is:
+
+```text
+Round Start
+-> Income
+-> Market
+-> Action
+-> Street Deal only after rounds 4, 8, and 12
+-> next round or Game Over
+```
+
+- Do not add new phases.
+- Do not add `round_end`, `ROUND_END`, cleanup, upkeep, AI, event, reward, or winner phases as separate PRD phases.
+- If helper functions need internal names, they must not appear in `state["current_phase"]` or `PhaseIds.ALL`.
+
+## Exact transition table
+
+Use this transition table exactly:
+
+| Current phase | Condition | Next phase | Side effects |
+| --- | --- | --- | --- |
+| `setup` | Setup complete and state valid | `income` | Set round to 1, reset phase flags |
+| `income` | `advance_phase` can resolve all four players successfully | `market` | Resolve Income atomically, generate market, reset purchase flags |
+| `market` | All players have `ready_for_action == true` | `action` | Build action order, set first active player |
+| `action` | All players done and round is 4, 8, or 12 | `street_deal` | Generate or offer Street Deal |
+| `action` | All players done, round < 15, not Street Deal round | `income` | Increment round, reset phase flags |
+| `action` | All players done and round == 15 | `game_over` | Resolve winner and game result |
+| `street_deal` | Street Deal resolved and round < 15 | `income` | Increment round, reset phase flags |
+| `game_over` | `start_new_game` requested | `income` | Replace the complete match state; this is not an `advance_phase` transition |
+
+- Invalid transitions must return a canonical validation error and must not mutate state.
+- `start_new_game` is the setup replacement flow; do not implement `game_over -> income` through `advance_phase`.
+
+## Phase ownership and facade flow
+
+- `GamePhaseController.gd` owns transition decisions.
+- `GameStateManager.advance_phase()` is the public entry point.
+- UI must not directly change `state["current_phase"]`, `state["round"]`, `state["action_order"]`, `state["active_action_player_id"]`, `player["ready_for_action"]`, or `player["action_done"]`.
+- `GameStateManager.advance_phase()` must deep-copy active state, delegate to `GamePhaseController.advance_phase`, validate the complete candidate with `GameStateValidator`, commit once only on success, then emit success signals.
+- `GamePhaseController.advance_phase(state)` receives a working state and must never read or commit `GameStateManager.state`.
+- Advancing from one active Action player to the next is owned by `end_action_for_player` plus `GamePhaseController.advance_action_player`; it is not a phase transition and must not call public `advance_phase`.
+
+## Atomic advance_phase contract
+
+`advance_phase` performs exactly one legal phase transition.
+
+- Before mutation, validate active committed GameState and phase invariants.
+- Return `GAME_NOT_STARTED` for empty active state.
+- Return `GAME_ALREADY_OVER` when `advance_phase` is called during Game Over.
+- Return `PHASE_NOT_READY` when Market, Action, or Street Deal completion conditions are not satisfied.
+- Return `INVALID_PHASE`, `INVALID_ROUND`, `INVALID_ACTION_ORDER`, `INVALID_ACTIVE_ACTION_PLAYER`, `INVALID_STATE`, or delegated owner errors unchanged when those conditions apply.
+- Income -> Market invokes owner-defined Income, Cops, debt, contract hook, and Market entry flows in the exact PRD-defined order, inside one candidate-state transaction.
+- Any delegated error, random error, hook error, market generation error, or final schema failure must discard the complete candidate.
+- Failed transitions must leave active state, random step, logs, phase fields, readiness flags, action flags, winner fields, and winner result unchanged.
+- Failed transitions may emit `action_failed` only when allowed by `16_GAME_STATE_MANAGER_API.md`, using the exact canonical result/error payload.
+- Do not commit sub-results from Income, Market entry, Street Deal entry, or Game Over separately.
+- Do not repair a partial phase candidate after a delegated failure.
+
+## Phase flags and action order
+
+- `player["ready_for_action"]` tracks Market participation completion.
+- Market -> Action is legal only when all four players have `ready_for_action == true`.
+- `player["action_done"]` tracks Action participation completion.
+- Action -> Street Deal, Income, or Game Over is legal only when all four players have `action_done == true`.
+- `player["skip_next_action"]` is consumed when that player becomes active during Action Phase.
+- A skipped player cannot play, discard, modify, or trigger attack progress; skip resolution sets `skip_next_action = false`, sets `action_done = true`, writes the canonical skip event, and advances the active player.
+- `state["action_order"]` must be exactly `["player_1", "ai_1", "ai_2", "ai_3"]` when Action begins.
+- `state["active_action_player_id"]` is `""` outside Action Phase and a valid current action player during active Action turns.
+- When no next action player exists, set `active_action_player_id = ""` and then check Action Phase completion.
+
+## Round increment rules
+
+- Increment round only when moving from a completed round to the next round.
+- Increment after Action only when no Street Deal occurs and `round < 15`.
+- Increment after Street Deal only when `round < 15`.
+- Do not increment during Setup, Income, Market, incomplete Action, after round 15, or after entering Game Over.
+- Rounds 4, 8, and 12 must enter Street Deal after Action completion before incrementing.
+- Round 15 Action completion must enter Game Over and keep `round == 15`.
+
+## Winner resolution and tie-breaks
+
+- Winner resolution is owned by `WinnerResolver.gd`.
+- `GamePhaseController` calls `WinnerResolver` only when entering `game_over`.
+- Winner resolution must be deterministic and must not use random.
+- Primary win condition is highest Victory Points.
+- Below Turf Level 10, apply tie-breaks in this order:
+
+```text
+1. Highest Victory Points
+2. Highest Nal
+3. Highest total Status building VP value
+4. Highest number of Status buildings
+5. Fixed player order: player_1, ai_1, ai_2, ai_3
+```
+
+- At Turf Level 10, if the human and at least one AI are tied for highest Victory Points, an AI wins.
+- If multiple AI players are tied with the human at Turf Level 10, use fixed AI order: `ai_1`, `ai_2`, `ai_3`.
+- If only AI players are tied with each other at Turf Level 10, use the normal tie-break order.
+- Status building VP value for tie-breaks is `stash = 1`, `workshop = 2`, `district_control = 3`; this must not create additional VP.
+- `state["game_result"]` must use the exact `GameResult` and `TieBreakStep` shapes from `04_GAME_STATE_SCHEMA.md`.
+
+## Canonical events
+
+- Use canonical `LogEventTypes` constants and exact payload contracts.
+- `MATCH_STARTED` is appended by successful setup.
+- `ROUND_STARTED` is appended only when `advance_phase` increments to round 2..15.
+- Income resolution appends canonical Income, Cops, debt, and contract events in owner-defined execution order.
+- `MARKET_STARTED` mirrors committed Market entry.
+- `MARKET_ENDED_FOR_PLAYER` mirrors `ready_for_action == true`.
+- `ACTION_STARTED` mirrors committed action order and active player.
+- `ACTION_SKIPPED` mirrors skip resolution.
+- `ACTION_ENDED_FOR_PLAYER` mirrors action completion.
+- Street Deal entry and resolution append their canonical owner events.
+- `GAME_OVER_REACHED` and `WINNER_RESOLVED` are appended when entering Game Over.
+- `PHASE_CHANGED` is the final event appended by every successful `advance_phase` transaction.
+- Failed transitions append no active-state events.
+- Do not invent event payloads in this rule; payload shapes come from the owner event, state, and facade API PRDs.
+
+## Forbidden behavior
+
+- Do not implement a 10-round loop or any non-15-round match length.
+- Do not add new participants, remote players, additional AI slots, or multiplayer turn order.
+- Do not create new PRD phases or store helper states as `state["current_phase"]`.
+- Do not implement `ROUND_END` as a separate PRD phase.
+- Do not let UI mutate phase, round, readiness, action, winner, or game result fields.
+- Do not use random in `WinnerResolver`.
+- Do not create random winner selection, random fixed-order replacement, or random tie-breaks.
+- Do not partially commit phase transitions.
+- Do not commit Income for some players if later Income, hooks, market generation, or validation fails.
+- Do not advance to Street Deal except after completed Action in rounds 4, 8, and 12.
+- Do not create round 16.
+- Do not let GamePhaseController own economy formulas, combat resolution details, AI scoring, contact effects, or Street Deal option effects.
+
+## Required tests
+
+Phase and facade tests must cover:
+
+- valid setup commits to round 1 Income;
+- Income -> Market resolves all four players atomically;
+- rollback when any Income player, random call, hook, market generation, or final validation fails;
+- Market stays in Market with `PHASE_NOT_READY` until all players are ready;
+- Market -> Action builds exact action order and first active player;
+- Action stays in Action with `PHASE_NOT_READY` until all players are done;
+- skip action consumes `skip_next_action`, sets `action_done`, advances active player, and logs event;
+- Action round 4, 8, and 12 transitions to Street Deal;
+- non-Street-Deal Action rounds below 15 increment round and transition to Income;
+- Street Deal -> Income increments round and resets flags;
+- round 15 Action completion transitions to Game Over without creating round 16;
+- WinnerResolver highest VP, normal tie-breaks, and Turf Level 10 AI tie-break;
+- invalid transitions and failed transitions do not mutate active state, random, logs, or signals;
+- successful `advance_phase` appends canonical events with `PHASE_CHANGED` last.
+
+## Output requirements
+
+For core-loop or phase changes, report:
+
+- Owner PRD:
+- Current phase and target transition:
+- Transition table row:
+- Readiness/action flags affected:
+- Round before/after:
+- Atomic rollback behavior:
+- Winner/tie-break impact:
+- Canonical events and order:
+- Phase tests run:
+
+## Verification checklist
+
+- Match remains exactly four participants and 15 rounds.
+- Only canonical phase IDs are used.
+- Transition table matches `02_CORE_LOOP_AND_PHASES.md`.
+- `advance_phase` performs exactly one legal transition.
+- Income -> Market is atomic for all four players and Market entry.
+- Phase flags and action order match the PRD.
+- Street Deals occur only after rounds 4, 8, and 12.
+- Game Over occurs after round 15 Action completion.
+- Winner resolution is deterministic and non-random.
+- Failed transitions roll back completely.
+- Canonical events are appended in owner order with `PHASE_CHANGED` last.
+- UI cannot mutate phase fields directly.

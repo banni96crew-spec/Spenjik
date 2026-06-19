@@ -1,0 +1,150 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+В матче участвуют один human player и три local AI.
+Партия длится 15 раундов и проходит от Setup до Game Over.
+
+Текущий этап: Milestone M16 — UI / UX.
+Он выполняется строго после завершённых M0–M15.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript со статической типизацией, где это практично.
+- Godot Control nodes, Containers и Theme.
+- GUT.
+- `.tres` Resources для static definitions.
+- Dictionary snapshots для runtime state.
+- GameStateManager как Autoload facade.
+- Windows/Linux desktop first.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first, data-driven.
+- UI является view/input layer, а не gameplay owner.
+- Весь gameplay state принадлежит GameStateManager.
+- UI получает data через `get_view()` и public selectors.
+- UI вызывает gameplay mutators только через GameStateManager.
+- UI не вызывает low-level logic modules для mutation.
+- UI хранит только temporary selection/presentation state.
+- После любого command UI refresh-ится из authoritative view.
+- Disabled reasons приходят из facade selectors.
+- Complex actions используют read-only previews.
+- Stable error codes переводятся в readable UI text.
+- Signals управляют refresh и screen/phase visibility.
+- Gameplay random в UI запрещён.
+- Resources и snapshots не мутируются UI scripts.
+- M15 integration/replay flow является уже проверенной основой.
+
+## Структура проекта
+
+Релевантные пути:
+
+- `res://scenes/main/`
+- `res://scenes/game/`
+- `res://scenes/ui/screens/`
+- `res://scenes/ui/panels/`
+- `res://scenes/ui/widgets/`
+- `res://scenes/ui/helpers/`
+- `res://autoload/GameStateManager.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://tests/unit/test_ui_payloads.gd`
+- `res://tests/static/test_ui_static_boundaries.gd`
+
+Главные источники истины:
+
+- `docs/prd/17_UI_UX_SPEC.md`
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- owner PRD-файлы M5–M13
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+
+M0–M4:
+
+- созданы Godot project, IDs, Resources/catalogs и state schema;
+- реализованы deterministic RNG, factory, validator и fixtures.
+
+M5–M13:
+
+- реализованы phases, Market/Economy и Combat;
+- реализованы Roles, Contracts, Street Deals/Debts и Contacts;
+- реализованы Turf Levels и deterministic AI.
+
+M14:
+
+- GameStateManager зарегистрирован как gameplay Autoload;
+- facade предоставляет setup, phase, market, combat, contract,
+  Street Deal, contact, AI APIs, selectors и signals;
+- mutators commit-ят state только на success;
+- selectors возвращают safe views и не consume random.
+
+M15:
+
+- существуют integration и replay tests;
+- full-round и full 15-round flows проходят через GameStateManager;
+- одинаковый seed/script даёт одинаковый snapshot/random step;
+- static scans являются частью gate.
+
+Перед M16 coding-agent обязан проверить фактические scene folders,
+M14 API/view shapes, ValidationErrors, assets/Theme и M15 gate.
+
+## Что сейчас делаю
+
+Реализую M16 — UI / UX:
+
+- Main и GameRoot composition;
+- Setup, Game и Game Over screens;
+- PlayerBoard, Market, Action, Street Deal, Contact,
+  Contract и Game Log panels;
+- Card/defense/resource/error widgets;
+- UI-only selection state;
+- signal-driven refresh;
+- previews, disabled reasons и payload construction;
+- UI payload/scene tests;
+- static UI boundary scan.
+
+## Договорённости по коду
+
+- Каждый UI `.gd` файл меньше 250 строк.
+- Gameplay mutations идут только через GameStateManager.
+- UI не читает `GameStateManager.state` напрямую.
+- UI не меняет Nal, VP, cards, logs, flags или phase fields.
+- UI не рассчитывает price, block, rewards или AI decisions.
+- UI validation ограничена completeness user input.
+- Button-based core actions обязательны; drag-and-drop не требуется.
+- Desktop landscape baseline: минимум 1280x720, target 1920x1080.
+- При недостатке места core controls остаются доступны через Containers/Scroll.
+- IDs передаются без преобразования display text.
+- ErrorTextMap форматирует только known stable codes.
+- UI helpers не содержат gameplay logic.
+- Selection очищается при success, cancel или relevant phase/state change.
+- AI activity показывается через summaries/logs, без обязательных animations.
+- Existing Theme/assets переиспользуются; отсутствие art direction
+  не является разрешением изобретать gameplay meaning.
+- Все resolved FIX-001–FIX-030 обязательны.
+- Неясность фиксируется как `OQ-*`.
+- Ориентиры длины промтов приблизительные.
+
+## Что НЕ входит в текущий milestone
+
+- Изменение gameplay rules, state schema, balance или AI behavior.
+- Прямые вызовы MarketLogic, CombatEngine и других owner mutators.
+- Gameplay data store внутри UI.
+- Автоматические скрытые покупки, атаки, claims или choices.
+- Полноценная локализация, accessibility overhaul и art production.
+- Сложные AI animations и cinematic transitions.
+- Save/load, campaign persistence или networking.
+- M17 production polish, analytics и final hardening.
+- Mobile-first layout или обязательный drag-and-drop.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

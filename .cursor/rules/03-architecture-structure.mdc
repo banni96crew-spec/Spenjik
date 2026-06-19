@@ -1,0 +1,100 @@
+---
+description: Critical Godot architecture, project structure, dependency direction, path, and naming rules for project files.
+globs:
+  - "project.godot"
+  - "**/*.gd"
+  - "**/*.tscn"
+  - "**/*.tres"
+alwaysApply: false
+---
+
+# Architecture, Structure and Naming
+
+## Applies when
+
+Apply when creating, moving, reviewing, or modifying Godot project files matched by this rule. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/15_GODOT_ARCHITECTURE.md` owns folder layout, module placement, dependency direction, Autoload boundaries, and current path examples.
+- `docs/prd/03_IDS_AND_CONSTANTS.md` owns IDs, constants, validation errors, and their naming.
+- Preserve exact canonical filenames and paths explicitly listed by the owner PRDs.
+
+## Required structure
+
+- `res://autoload/` contains `GameStateManager.gd` and only the non-gameplay Autoloads explicitly allowed by `15_GODOT_ARCHITECTURE.md`.
+- `res://logic/<domain>/` contains domain logic such as `game_state/`, `economy/`, `combat/`, `roles/`, `contracts/`, `street_deals/`, `contacts/`, `turf_levels/`, `ai/`, and `random/`.
+- `res://logic/catalog/` contains Resource catalogs.
+- `res://data/ids/` contains stable IDs, constants, and validation errors.
+- `res://data/resources/<domain>/` contains Resource schemas and `.tres` configuration data.
+- `res://scenes/` contains main, game, screen, panel, and widget scenes with their UI scripts.
+- `res://tests/` contains unit, integration, static, replay, and fixture code organized by responsibility.
+- `res://themes/` contains Godot Theme Resources.
+- `res://assets/` contains fonts, icons, audio, and other presentation assets.
+
+## Dependency direction
+
+Use this direction:
+
+```text
+UI -> GameStateManager -> logic -> catalogs/resources/constants
+```
+
+- The dependency direction applies to runtime production code.
+- Tests may import the units they verify, fixtures, and test helpers, but must not become runtime dependencies.
+- UI sends commands only through `GameStateManager.gd` and reads selectors or safe views.
+- `GameStateManager.gd` owns active state, delegates rules to logic, validates candidate state, and commits successful results.
+- Logic operates on explicit input and working-state data.
+- Catalogs load and validate static `.tres` Resources.
+- Resources contain static data only; runtime state remains in Dictionary snapshots.
+
+## Naming and paths
+
+- Use exact canonical filenames, directory names, extensions, and paths from `03_IDS_AND_CONSTANTS.md` and `15_GODOT_ARCHITECTURE.md`.
+- Keep canonical GDScript and scene filenames in their documented form, including `GameStateManager.gd`, `MarketLogic.gd`, and `Main.tscn`.
+- Keep canonical `.tres` filenames and test filenames in their documented `snake_case` form.
+- Use `snake_case` for Dictionary keys and string IDs.
+- Keep string IDs lowercase, stable, untranslated, and free of spaces or hyphens.
+- Use `PascalCase` for `class_name` declarations.
+- Use `UPPER_SNAKE_CASE` for constants.
+- Reference project files from GDScript with `res://` paths.
+- Use the current examples from `03_IDS_AND_CONSTANTS.md` and `15_GODOT_ARCHITECTURE.md`; do not copy legacy paths from old PRDs, roadmaps, or skills.
+- If a required canonical architecture file, public API file, Resource schema, catalog, or PRD-owned path is not defined by the PRD, stop and request clarification.
+- For implementation-local files, tests, fixtures, and private helpers, use the documented folder ownership and naming conventions. Report every new path in the final output.
+
+## Forbidden behavior
+
+- Do not create or use the legacy `res://systems/` structure.
+- Do not create or use a root `res://resources/` directory; use `res://data/resources/`.
+- Do not create or use `PhaseCoordinator`; use the phase ownership and files defined by the current PRDs.
+- Do not implement `PlayerState` as a mutable `Resource`; runtime player state is a `Dictionary`.
+- Do not add new Autoloads unless explicitly allowed by `15_GODOT_ARCHITECTURE.md` or approved by the user.
+- Do not introduce circular dependencies between logic domains, catalogs, resources, UI scripts, or Autoloads.
+- Do not make logic modules import, call, or read `GameStateManager`.
+- Do not make logic modules depend on UI scenes, Controls, nodes, or UI scripts.
+- Do not let UI call low-level logic mutators directly.
+- Do not place runtime state in `.tres` Resources or catalogs.
+- Do not introduce alternative folders, aliases, duplicate managers, or competing source-of-truth modules.
+- Do not rename canonical PRD files to enforce a different naming convention.
+- Do not use filesystem-relative paths in GDScript when a project Resource path is required.
+
+## Output requirements
+
+For architecture-affecting changes, report:
+
+- Canonical target path:
+- Owning layer and domain:
+- Dependency direction:
+- Naming validation:
+- Legacy paths or patterns removed or avoided:
+
+## Verification checklist
+
+- Every changed file is in the PRD-owned folder.
+- Dependencies follow `UI -> GameStateManager -> logic -> catalogs/resources/constants`.
+- Logic does not depend on the facade or UI.
+- Runtime player state remains Dictionary-based.
+- Canonical filenames and paths match the PRD exactly.
+- Dictionary keys, IDs, classes, and constants follow their documented naming convention.
+- GDScript project references use `res://`.
+- No `systems/`, root `resources/`, or `PhaseCoordinator` legacy pattern was introduced.

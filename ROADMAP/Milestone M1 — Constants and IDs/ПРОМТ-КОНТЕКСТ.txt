@@ -1,0 +1,201 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Проект строится по milestone-подходу: от инфраструктуры и стабильных идентификаторов к данным, gameplay logic, facade и только затем к UI.
+
+Игровое ядро должно быть:
+
+- детерминированным;
+- тестируемым без UI;
+- data-driven;
+- разделённым на небольшие модули;
+- защищённым от неявного изменения правил.
+
+Основные требования находятся в `res://docs/prd/`. Coding-agent обязан использовать соответствующий owner PRD как источник истины и не должен реализовывать правила по памяти.
+
+Если правило отсутствует, противоречиво или требует нового ID/error code, нельзя угадывать решение. Нужно остановить затронутую часть работы и зарегистрировать вопрос `OQ-*` в `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`.
+
+## Стек
+
+- Engine: Godot 4.6.2 stable.
+- Language: GDScript.
+- Tests: GUT.
+- Config data: `.tres` Resources, начиная с будущих milestone.
+- Runtime state: Dictionary snapshots, начиная с будущих milestone.
+- Gameplay facade: `GameStateManager.gd` Autoload, реализуется позже.
+- Architecture: logic-first, data-driven, UI as view layer.
+- Export targets: Windows и Linux в первую очередь.
+- No web stack.
+- No gameplay persistence в MVP.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+Архитектурные правила:
+
+- UI не владеет gameplay logic.
+- Gameplay logic не должна находиться в сценах.
+- Стабильные ID и validation error codes принадлежат `res://data/ids/`.
+- Повторяемые gameplay-строки не должны быть захардкожены в logic modules, если ими владеет constants module.
+- `.tres` Resources в будущем должны ссылаться на стабильные ID.
+- Runtime state в будущем должен использовать те же стабильные ID.
+- Failed validation в будущих mutators не должна изменять активное состояние.
+- Gameplay random в будущем разрешён только через `SeededRandom.gd` и `SeededPicker.gd`.
+- Каждый `.gd` файл должен содержать менее 250 строк.
+- Использовать static typing там, где это практично.
+- Не создавать god-object files.
+
+## Структура проекта
+
+Структура проекта определяется:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+
+Для M1 основная рабочая область:
+
+- `res://data/ids/`
+- `res://tests/unit/`
+- `res://tests/static/`
+- существующая инфраструктура GUT;
+- существующие static scan helpers.
+
+Обязательные constants-файлы M1:
+
+- `res://data/ids/GameIds.gd`
+- `res://data/ids/PhaseIds.gd`
+- `res://data/ids/AttackModes.gd`
+- `res://data/ids/ValidationErrors.gd`
+
+Также должны быть реализованы рекомендуемые архитектурой domain ID-файлы:
+
+- `res://data/ids/RoleIds.gd`
+- `res://data/ids/ContractIds.gd`
+- `res://data/ids/ContactIds.gd`
+- `res://data/ids/StreetDealIds.gd`
+- `res://data/ids/AIProfileIds.gd`
+- `res://data/ids/TurfLevelIds.gd`
+- `res://data/ids/DefenseStates.gd`
+
+Точные значения, состав и naming берутся из owner PRD и связанных gameplay PRD. Нельзя придумывать дополнительные ID.
+
+## Что уже сделано
+
+Milestone `M0 — Project Bootstrap` завершён и является обязательным prerequisite для M1.
+
+После M0 в проекте должны существовать:
+
+- корректный `res://project.godot` для Godot 4.6.2;
+- рабочий Godot-проект;
+- архитектурный каркас каталогов;
+- `res://addons/gut/` с рабочим GUT addon;
+- тестовые каталоги;
+- минимальный GUT smoke test;
+- static scan helper shell;
+- подтверждённый запуск проекта;
+- подтверждённый запуск smoke test;
+- отсутствие gameplay logic;
+- отсутствие запрещённых web-stack artifacts.
+
+Перед началом M1 coding-agent должен проверить фактическое состояние M0. Нельзя считать prerequisite выполненным только на основании этого текста.
+
+Если M0 gate не проходит, нужно сначала восстановить M0 и не начинать реализацию M1.
+
+## Что сейчас делаю
+
+Реализую только `Milestone M1 — Constants and IDs`.
+
+Цель M1:
+
+- создать стабильные ID для будущих Resources, state и gameplay modules;
+- создать стабильные validation error codes;
+- исключить дубликаты;
+- добавить GUT-тесты constants layer;
+- запустить file-length static scan;
+- запустить open-question marker scan;
+- подтвердить прохождение M1 gate.
+
+Owner PRD:
+
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`
+
+Implementation order:
+
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`, раздел `Milestone M1 — Constants and IDs`.
+
+Supporting PRDs:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Связанные gameplay PRD разрешено читать только для проверки требуемых ID и error codes. Реализовывать gameplay из них в M1 запрещено.
+
+## Договорённости по коду
+
+- Использовать Godot 4.6.2 и GDScript.
+- До изменений проверить M0 gate и текущее состояние репозитория.
+- Сохранять существующие пользовательские изменения.
+- Точные ID брать из `03_IDS_AND_CONSTANTS.md` и owner modules.
+- Не переименовывать и не изменять защищённые PRD ID.
+- Не добавлять ID “на будущее”, если они не определены PRD.
+- Не возвращать ad-hoc error strings.
+- Validation error codes должны быть стабильными константами.
+- Не дублировать одно значение в разных owner-файлах.
+- Использовать `StringName` или тип, прямо установленный owner PRD; не менять тип самостоятельно.
+- Использовать `class_name`, если это соответствует архитектуре owner PRD.
+- Использовать static typing там, где это практично.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Добавлять GUT-тесты одновременно с constants.
+- Тесты должны проверять наличие обязательных constants и отсутствие дубликатов.
+- Не ослаблять тесты для получения формального pass.
+- Не заявлять, что тесты прошли, если они не запускались.
+- Не оставлять `TODO`, `TBD`, `FIXME` или `???` без ссылки на `OQ-*`.
+- При неясности зарегистрировать `OQ-*`, а не придумывать значение.
+
+## Что НЕ входит в текущий milestone
+
+В M1 запрещено реализовывать:
+
+- `.tres` Resources;
+- Resource schemas;
+- catalogs;
+- deterministic random;
+- GameStateFactory и GameStateValidator;
+- phases и core loop;
+- economy и market;
+- combat;
+- roles logic;
+- contracts logic;
+- Street Deals и debts logic;
+- contacts logic;
+- Turf Levels logic;
+- AI;
+- `GameStateManager.gd`;
+- gameplay runtime state;
+- gameplay scenes;
+- финальный UI;
+- save/load;
+- новые gameplay rules.
+
+Запрещено добавлять:
+
+- React;
+- TypeScript;
+- JavaScript gameplay runtime;
+- Tailwind;
+- Zustand;
+- Docker;
+- backend;
+- web routing;
+- browser-first architecture;
+- C#-реализацию;
+- новые random systems;
+- `randf()`, `randi()`, `randomize()` или `RandomNumberGenerator` в gameplay logic.

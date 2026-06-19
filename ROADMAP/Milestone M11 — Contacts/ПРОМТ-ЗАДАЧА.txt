@@ -1,0 +1,448 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Ты реализуешь logic-first, data-driven системы на typed GDScript,
+пишешь GUT tests и строго соблюдаешь PRD.
+
+Сначала изучи репозиторий и contracts M0–M10.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources;
+- Windows/Linux;
+- без web stack.
+
+Архитектура:
+
+- logic-first и data-driven;
+- UI только view/input layer;
+- Dictionary state snapshots;
+- validation before mutation;
+- deterministic RNG через M3;
+- explicit owner-module hooks.
+
+Проверь фактические contracts M0–M10:
+
+- IDs, Resources, catalog и state schema;
+- `SeededPicker.pick_unique`;
+- Income Brothel flow;
+- PriceLogic/MarketLogic modifier flow;
+- CombatEngine attack event;
+- Inside Contact handoff;
+- DebtLogic pre-penalty hook;
+- round-start reset.
+
+Источники истины:
+
+- `docs/prd/11_CONTACTS.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/07_COMBAT_SYSTEM.md`
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/12_TURF_LEVELS.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализовать Milestone M11 — Contacts:
+
+- `ContactLogic.gd`;
+- deterministic contact offers;
+- contact selection;
+- max one contact без replacement;
+- `black_cash`, `corrupt_clerk`, `street_medic`;
+- Inside Contact и strong-AI victory sources;
+- integrations с Income, Price, Market, Combat, Debt и round reset;
+- GUT tests и static scan.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+- `res://logic/contacts/ContactLogic.gd`
+- `res://tests/unit/test_contact_logic.gd`
+- `res://tests/integration/test_street_deal_contact_flow.gd`
+
+Проверь и точечно обнови при необходимости:
+
+- `res://data/ids/ContactIds.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/resources/contacts/ContactDefinition.gd`
+- три contact `.tres`;
+- `res://logic/catalog/ContactCatalog.gd`
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/economy/IncomeLogic.gd`
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/economy/MarketLogic.gd`
+- `res://logic/combat/CombatEngine.gd`
+- `res://logic/street_deals/StreetDealLogic.gd`
+- `res://logic/street_deals/DebtLogic.gd`
+- fixtures и связанные tests.
+
+Не пересоздавай корректные M1/M2 artifacts.
+Каждый `.gd` файл должен быть меньше 250 строк.
+Helpers создавай только при реальной необходимости.
+
+CONTACT DATA:
+
+Используй только:
+
+- `black_cash` — passive;
+- `corrupt_clerk` — passive;
+- `street_medic` — active.
+
+IDs бери из `ContactIds`.
+Не меняй effects и не парси Resource description.
+
+Используй существующие contact errors и PRD fallbacks:
+
+- `INVALID_CONTACT_ID`;
+- `CONTACT_LIMIT_REACHED`;
+- `CONTACT_OFFER_UNAVAILABLE`;
+- `CONTACT_ALREADY_UNLOCKED`;
+- `CONTACT_ALREADY_USED`;
+- `CONTACT_LOCKED`;
+- `CONTACT_ON_COOLDOWN`;
+- `INVALID_TARGET`.
+
+Не создавай ad hoc error strings.
+
+STATE OWNERSHIP:
+
+Owned state:
+
+```gdscript
+player["contacts"] = {
+    "unlocked": [],
+    "cooldowns": {},
+    "used_this_round": []
+}
+```
+
+Global pending state:
+
+```gdscript
+state["contacts"] = {
+    "pending_offer": {}
+}
+```
+
+Pending offer хранит player ID, source, IDs, resolved и created round.
+Allowed sources:
+
+- `inside_contact`;
+- `strong_ai_victory`.
+
+Используй только этот split ownership.
+Ранние `contact_offer`/duplicated схемы не являются вторым source of truth.
+Обнови factory, validator, serializer и fixtures согласованно.
+
+One-time contact flags уже находятся в `role_flags`:
+
+- `used_emergency_protection`;
+- `used_one_time_contact_bonus`.
+
+Они не сбрасываются во время run.
+
+ОБЯЗАТЕЛЬНЫЙ API:
+
+Предоставь проектные эквиваленты:
+
+- `create_empty_state()`
+- `create_empty_global_state()`
+- `has_contact(player, contact_id)`
+- `is_valid_contact_id(contact_id)`
+- `get_available_contact_ids(state, player_id)`
+- `generate_contact_offer(state, player_id, count, source)`
+- `validate_contact_selection(state, payload)`
+- `select_contact(state, payload)`
+- `get_contact_price_modifiers(state, player, card_def)`
+- `consume_contact_flags_after_purchase(...)`
+- `before_debt_penalty_applied(state, player_id, debt)`
+- `on_attack_resolved(state, event)`
+- `reset_round_contact_usage(player)`
+
+Соблюдай existing result conventions.
+Selectors и previews должны быть read-only.
+
+CORE OWNERSHIP RULES:
+
+- Contacts получает только human.
+- AI не получает offers и contacts.
+- Human владеет максимум одним contact.
+- Replacement запрещён.
+- При owned contact новый offer недоступен.
+- Existing unresolved offer нельзя молча перезаписать.
+
+OFFER GENERATION:
+
+1. Проверить human, source, count и max-one limit.
+2. Построить available valid IDs.
+3. Исключить owned и duplicates.
+4. Выбрать до count через `SeededPicker.pick_unique`.
+5. Использовать tag `contact_offer_%s`.
+6. Сохранить returned random и pending offer.
+7. Вернуть structured result.
+
+RNG расходует один step на каждый реально выбранный contact.
+Если available меньше count, предложи все available.
+При zero available верни `CONTACT_OFFER_UNAVAILABLE`
+без pending offer и mutation random.
+
+Same seed/state даёт тот же ordered offer.
+Failed generation полностью сохраняет input snapshot.
+
+OFFER SOURCES:
+
+Inside Contact:
+
+- всегда запрашивает до 2 contacts;
+- не зависит от Turf Level;
+- StreetDealLogic вызывает ContactLogic после valid Option A;
+- unlock происходит только через `select_contact`.
+
+Strong-AI victory:
+
+- до 3 contacts при Turf Level 0–6;
+- до 2 contacts при Turf Level 7–10.
+
+M12 ещё не реализован.
+Не создавай `TurfLevelLogic.gd`.
+При отсутствии helper вычисли только этот required count
+из `state["turf_level"]` внутри ContactLogic/узкого helper.
+
+CONTACT SELECTION:
+
+Payload:
+
+```gdscript
+{
+    "player_id": "player_1",
+    "contact_id": "black_cash"
+}
+```
+
+Валидируй pending offer, human/player match, unresolved status,
+valid ID, membership in offer и max-one limit.
+
+Success:
+
+- добавляет ровно один contact в `unlocked`;
+- инициализирует cooldown при необходимости;
+- очищает/resolves pending offer;
+- создаёт structured result/log;
+- валидирует resulting state.
+
+Passive contacts не требуют activation.
+Failed selection не меняет contacts, offer, flags, random или logs.
+
+STRONG AI VICTORY:
+
+`on_attack_resolved` создаёт offer только когда:
+
+- attacker — human;
+- target — AI и `is_strong_ai == true`;
+- attack successful и unblocked;
+- уничтожен Status building.
+
+Допустимы:
+
+- Bruiser destroys Stash;
+- Cleaner destroys Workshop;
+- Federal Raid destroys District Control.
+
+Не подходят blocked/failed attacks, steals, Saboteur Engine destruction,
+non-strong target, AI attacker, owned contact или unresolved offer.
+
+M11 не назначает strong AI и не реализует M13 AI behavior.
+Он читает structured event/state flag.
+
+BLACK CASH:
+
+Passive effect:
+
+- Brothel double без contact даёт +5 Nal;
+- Brothel double с Black Cash даёт +6 Nal.
+
+Нет эффекта без Brothel или без double.
+IncomeLogic остаётся владельцем income и dice RNG.
+
+CORRUPT CLERK:
+
+Passive effect:
+
+- первый successful Status purchase после unlock получает -1;
+- final price clamp остаётся в PriceLogic;
+- success устанавливает `used_one_time_contact_bonus = true`.
+
+Status: Stash, Workshop, District Control.
+
+Structured modifier:
+
+- source contact;
+- contact ID;
+- owner flag;
+- `NEXT_STATUS_CARD_PRICE_DELTA`;
+- delta -1;
+- applies to status;
+- consume on success.
+
+Failed или non-Status purchase не расходует bonus.
+Preview показывает modifier без mutation.
+После consumption повторный discount не применяется.
+
+STREET MEDIC:
+
+Active contact срабатывает автоматически через DebtLogic hook.
+
+Условия:
+
+- contact unlocked;
+- `used_emergency_protection == false`;
+- debt penalty имеет effective VP loss минимум 1.
+
+Effect:
+
+- предотвратить ровно 1 VP loss;
+- установить one-time flag;
+- вернуть structured prevention result.
+
+Не предотвращает Nal loss, debt closure или penalty log.
+Не действует второй раз и на VP loss вне debt penalty.
+При VP = 0 effective loss отсутствует, поэтому contact не расходуется.
+
+INTEGRATIONS:
+
+- StreetDealLogic вызывает offer generation для Inside Contact A.
+- CombatEngine вызывает strong-AI hook после valid resolution.
+- IncomeLogic использует Black Cash helper.
+- PriceLogic включает Corrupt Clerk modifier.
+- MarketLogic consumes его только после successful purchase.
+- DebtLogic вызывает Medic hook до VP penalty.
+- Round-start owner очищает только `used_this_round`.
+
+Не очищай unlocked, one-time flags или unresolved pending offer.
+ContactLogic не повторяет owner action resolution.
+
+MUTATION И RESULT:
+
+- Public mutators работают с deep copy.
+- Failed validation не меняет contacts, flags, modifiers, RNG или logs.
+- Offer result содержит player, source, IDs, random и state.
+- Selection result содержит player, contact, source, state и logs.
+- Medic result содержит prevented и VP loss prevented.
+- Log text не является gameplay source of truth.
+
+TESTS:
+
+Добавь targeted GUT tests для:
+
+- IDs, Resources, types и state ownership;
+- deterministic offers и exact RNG steps;
+- Inside Contact count 2;
+- strong-AI count 3/2 по Turf 7;
+- fewer/zero available;
+- max-one/no-replacement;
+- selection validation и deep immutability;
+- Black Cash income cases;
+- Corrupt Clerk preview/consume/failure cases;
+- Street Medic once-per-run, Nal loss и VP 0;
+- strong-AI positive/negative events;
+- round reset;
+- M6/M7/M10 integrations;
+- отсутствие UI и forbidden RNG.
+
+Используй existing fixtures/helpers.
+Обнови state/schema/catalog tests.
+Запусти relevant unit, integration, random и static suites.
+
+STATIC SCAN:
+
+Contact implementation не должна содержать:
+
+- forbidden Godot RNG APIs;
+- UI/scene access;
+- description parsing;
+- hardcoded base prices;
+- purchase, income, combat или debt resolution;
+- contract completion или phase advancement;
+- AI contact ownership;
+- replacement logic;
+- web stack.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй contact IDs, types или effects.
+- Не добавляй contacts, replacement или AI ownership.
+- Не реализуй M12–M17 заранее.
+- Не создавай TurfLevelLogic или AI system.
+- Не дублируй M5–M10 owner logic.
+- Не выполняй unrelated refactor.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительны.
+
+Обязательные resolved fixes:
+
+- `FIX-007` — Inside Contact вызывает ContactLogic;
+- `FIX-008` — split contact ownership;
+- `FIX-009` — max one, no replacement;
+- `FIX-010` — strong-AI victory definition;
+- `FIX-011` — offer count 3/2;
+- `FIX-012` — Corrupt Clerk consume timing;
+- `FIX-030` — no duplicate runtime source.
+
+Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи M11 PRD, state/RNG contracts, tests и fixes.
+2. Проинспектируй M0–M10 и hook boundaries.
+3. Сопоставь ownership, flags, APIs и Resources.
+4. Выяви placeholders и минимальные integration edits.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» реализуй ContactLogic и integrations.
+7. Добавь и запусти tests/static scan.
+8. Исправь M11 errors и представь итог.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Укажи зависимости, placeholders, blockers и OQ.
+3. Дождись моего «ок».
+4. До «ок» не изменяй файлы.
+5. После «ок» показывай изменения с путями `res://...`.
+6. Перечисли проверки и результаты.
+7. В конце дай заполненный M11 gate checklist.
+
+Не пиши общие советы и не подменяй реализацию псевдокодом.
+Не отмечай gate пройденным без успешных проверок.
+
+M11 GATE CHECKLIST:
+
+- [ ] Три Contact Resources и IDs валидны.
+- [ ] Owned/pending state разделён без duplication.
+- [ ] Offers deterministic, RNG steps корректны.
+- [ ] Inside Contact предлагает до 2 contacts.
+- [ ] Strong-AI victory предлагает до 3/2 contacts.
+- [ ] Strong-AI hook фильтрует outcomes по PRD.
+- [ ] Human unlocks ровно один offered contact.
+- [ ] Max-one/no-replacement и AI rejection работают.
+- [ ] Black Cash, Corrupt Clerk и Street Medic работают.
+- [ ] Failed offers/selections не мутируют state.
+- [ ] M6, M7 и M10 integrations работают.
+- [ ] Tests и static scan проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M11 и web stack не добавлены.

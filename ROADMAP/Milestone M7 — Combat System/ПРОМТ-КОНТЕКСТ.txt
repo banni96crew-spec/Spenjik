@@ -1,0 +1,147 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Игра строится вокруг детерминированных фаз, экономики, рынка и конфликтов.
+
+Текущий этап: Milestone M7 — Combat System.
+Он выполняется строго после завершённых M0–M6.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: правила находятся в чистых logic-модулях.
+- Data-driven: ID, схемы и каталоги централизованы.
+- UI является только view/input layer.
+- State изменяется только после успешной validation.
+- Resolution работает с глубокой копией state.
+- Validation, preview и selectors не мутируют state.
+- Randomness разрешена только через RNG contract из M3.
+- Combat MVP RNG не использует и RNG state/step не изменяет.
+- Ошибки возвращаются через существующие централизованные ID.
+- Будущие интеграции используют структурированные result/hook contracts.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/combat/`
+- `res://logic/economy/`
+- `res://logic/state/`
+- `res://logic/constants/`
+- `res://data/`
+- `res://tests/unit/combat/`
+- `res://tests/fixtures/`
+- `res://tests/helpers/`
+
+Источники истины:
+
+- `docs/prd/07_COMBAT_SYSTEM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Используй фактические repository paths документов.
+Формат `res://` применяй только к файлам Godot project.
+
+## Что уже сделано
+
+M0 — Project Bootstrap:
+
+- создан проект, folder structure, GUT и static scan helper.
+
+M1 — Constants and IDs:
+
+- созданы централизованные IDs и enums;
+- ad hoc IDs запрещены.
+
+M2 — Resource Schemas and Catalogs:
+
+- созданы Resource schemas и каталоги;
+- War-карты читаются через существующий data layer.
+
+M3 — Deterministic Random:
+
+- создан сериализуемый RNG contract;
+- M7 не использует и не изменяет RNG.
+
+M4 — Game State Schema:
+
+- определены state schema, validator, serializer и fixtures;
+- M7 не вводит новые state keys самовольно.
+
+M5 — Core Loop and Phases:
+
+- реализованы phases и action order;
+- combat разрешён только в Action phase;
+- атакует только `active_action_player_id`;
+- combat не завершает action и не продвигает phase.
+
+M6 — Economy and Market:
+
+- реализованы Nal, цены, рынок и protected Nal;
+- M7 использует единый protected Nal API из `PriceLogic`.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M6.
+
+## Что сейчас делаю
+
+Реализую M7 — Combat System:
+
+- `res://logic/combat/CombatEngine.gd`
+- `res://logic/combat/AttackValidator.gd`
+- `res://logic/combat/DefenseResolver.gd`
+- `res://logic/combat/CombatLogBuilder.gd`
+
+Система покрывает:
+
+- Thug, Bruiser, Cleaner, Saboteur и Federal Raid;
+- Cops, Cartel и Judge;
+- Insider только как modifier для Thug;
+- attacker-selected engine target для Saboteur;
+- validation, resolution, preview и discard;
+- безопасные result/hook boundaries для будущих модулей.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Соблюдай existing conventions и typed GDScript.
+- Не дублируй constants, catalogs, state keys и economy formulas.
+- Failed validation не мутирует state и не расходует карты.
+- Валидная blocked attack расходует карты.
+- Primary card удаляется из hand ровно один раз.
+- Insider никогда не является primary attack.
+- Blocked destroy не переключается на steal.
+- VP и Nal не становятся отрицательными.
+- Не создавай compile-time dependency на будущие модули.
+- Используй targeted GUT tests и static scan.
+- Resolved fixes из документа 21 имеют приоритет.
+- Нерешённый вопрос фиксируй как `OQ-*`, не изобретая правило.
+- Рекомендуемый объём промтов приблизительный, не жёсткий.
+
+## Что НЕ входит в текущий milestone
+
+- Role abilities из M8.
+- Contract logic из M9.
+- Contact offers и ContactLogic из M11.
+- AI decisions из M13.
+- GameStateManager orchestration из M14.
+- Save/load orchestration из M15.
+- Combat UI и animations из M16.
+- Новые карты, режимы, защиты или правила.
+- Market, economy и phase refactors.
+- Gameplay randomness.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

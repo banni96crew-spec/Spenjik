@@ -1,0 +1,280 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Реализуй только `M4 — Game State Schema`. Не переходи к M5 и последующим gameplay-модулям.
+
+КОНТЕКСТ ПРОЕКТА:
+
+M4 выполняется только после успешных M0–M3.
+
+До изменений изучи:
+
+- `res://docs/prd/04_GAME_STATE_SCHEMA.md` — owner PRD;
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`;
+- relevant schema sections в gameplay owner PRD;
+- `res://docs/prd/14_DETERMINISTIC_RANDOM.md`;
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`;
+- `res://docs/prd/18_TEST_PLAN.md`;
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`;
+- `res://docs/prd/20_LLM_AGENT_RULES.md`;
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`.
+
+Используй PRD как source of truth. Resolved `FIX-*` имеют приоритет над устаревшими примерами.
+
+Особое правило: не создавай одновременно `active_debts` и `debts`. Используй canonical ownership/key из `FIX-002` и согласованных owner docs.
+
+M4 создаёт полную schema foundation, но не выполняет gameplay setup и resolution.
+
+ЗАДАЧА:
+
+1. Проверь repository state и сохрани пользовательские изменения.
+2. Фактически проверь M0–M3 gates.
+3. Проведи schema audit: shapes, owners, defaults, constants и resolved fixes.
+4. Оформи unresolved противоречия как `OQ-*` до реализации спорной части.
+5. Реализуй Factory, Validator, четыре fixtures и focused tests.
+6. Добавь или обнови architecture static scan.
+7. Проверь JSON compatibility и отсутствие runtime Object references.
+8. Запусти M4 tests, prerequisite regressions и static scans.
+9. Проверь scope и итоговый diff.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ:
+
+Production:
+
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+
+Fixtures:
+
+- `res://tests/fixtures/TestGameStateFactory.gd`
+- `res://tests/fixtures/TestPlayers.gd`
+- `res://tests/fixtures/TestCards.gd`
+- `res://tests/fixtures/TestStates.gd`
+
+Tests:
+
+- `res://tests/unit/test_game_state_factory.gd`
+- `res://tests/unit/test_game_state_validator.gd`
+- architecture static scan в существующем test layout.
+
+Разделяй helpers/tests, если файл приближается к 250 строкам. Не создавай новый source of truth.
+
+REQUIRED FACTORY API:
+
+```gdscript
+class_name GameStateFactory
+
+static func create_new_game_state(game_seed: String, turf_level: int) -> Dictionary
+static func create_player_state(player_id: String, is_ai: bool, turf_level: int) -> Dictionary
+static func create_random_state(game_seed: String) -> Dictionary
+static func create_market_state() -> Dictionary
+static func create_street_deal_state() -> Dictionary
+static func create_contact_offer_state() -> Dictionary
+static func create_contract_runtime(contract_id: String, deadline: int) -> Dictionary
+static func create_role_flags() -> Dictionary
+static func create_game_result() -> Dictionary
+```
+
+REQUIRED VALIDATOR API:
+
+```gdscript
+class_name GameStateValidator
+
+static func validate_game_state(state: Dictionary) -> Dictionary
+static func validate_player_state(player: Dictionary) -> Dictionary
+static func validate_market_state(market: Dictionary, round: int) -> Dictionary
+static func validate_random_state(random_state: Dictionary) -> Dictionary
+static func validate_contract_runtime(contract: Dictionary) -> Dictionary
+static func validate_contact_state(contact_state: Dictionary) -> Dictionary
+static func validate_street_deal_state(street_deals: Dictionary) -> Dictionary
+static func validate_ai_bosses(state: Dictionary) -> Dictionary
+```
+
+Validator result:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"details": {}
+}
+```
+
+Используй documented validation constants. `details` должен объяснять invalid path/condition без добавления gameplay rules.
+
+FACTORY CONTRACT:
+
+`create_new_game_state` создаёт полный root shape из owner PRD:
+
+- round, phase, seed и RandomState;
+- ровно 4 players: `player_1`, `ai_1`, `ai_2`, `ai_3`;
+- turf level и selection fields;
+- market, Street Deal и contact-offer defaults;
+- contract, debt, role и documented turf shapes;
+- AI boss placeholder;
+- action fields, combat log, winner/result placeholders;
+- debug schema version.
+
+PlayerState должен содержать полный nested schema owner PRD. Nested Dictionaries и Arrays разных players не должны разделять mutable references.
+
+Factory использует M3 для initial RandomState со step 0, но не:
+
+- выбирает role, contract, strong AI или AI profiles;
+- генерирует market/offers;
+- применяет Turf effects;
+- разрешает phases, economy, combat или другие effects;
+- обращается к UI/scene tree.
+
+VALIDATION CONTRACT:
+
+Проверяй:
+
+- required keys, types и ranges;
+- IDs через constants/catalogs;
+- ровно 4 unique player IDs и human/AI consistency;
+- nested schema completeness;
+- seed/RandomState consistency;
+- duplicate restrictions;
+- contract status invariants;
+- contact limit и debt ownership;
+- Street Deal participant ownership;
+- AI metadata consistency, когда placeholder заполнен;
+- winner/game-result consistency;
+- только JSON-compatible runtime values.
+
+Validation является read-only: не исправляет defaults, не сортирует arrays, не потребляет random и не мутирует state/Resources.
+
+PLACEHOLDER RULE:
+
+`19_IMPLEMENTATION_ORDER.md` требует AI boss placeholder shape, но AI setup принадлежит M13.
+
+Не выбирай strong AI и profiles. Если validator должен различать setup placeholder и fully initialized AI state, используй только documented phase/readiness rule; при отсутствии правила создай `OQ-*`.
+
+`19_IMPLEMENTATION_ORDER.md` также требует turf flags. Если owner schema не определяет canonical shape/key, не изобретай Dictionary: зарегистрируй schema `OQ-*` и продолжи однозначные части M4.
+
+FIXTURE CONTRACT:
+
+- `TestGameStateFactory.gd`: valid reusable base/market/action/street-deal states через production factory.
+- `TestPlayers.gd`: targeted player builders/overrides.
+- `TestCards.gd`: documented card IDs/helpers без effects.
+- `TestStates.gd`: deep clone, mutation assertions и targeted invalid states.
+
+Fixtures не дублируют production schema целиком, не обходят validator и не содержат test-only gameplay behavior.
+
+МИНИМАЛЬНЫЕ ТЕСТЫ:
+
+Factory:
+
+- полный root и PlayerState key sets;
+- round, phase, seed, schema version;
+- ровно 4 unique players;
+- independent nested structures;
+- valid initial RandomState со step 0;
+- deterministic calls без random consumption;
+- отсутствие Node/Resource/Object references.
+
+Validator:
+
+- valid base state проходит;
+- missing fields, wrong types/ranges и invalid IDs fail;
+- invalid player count/duplicates fail;
+- invalid nested, random, contract, contact, debt и Street Deal states fail;
+- inconsistent populated AI metadata fails;
+- invalid winner/result combination fails;
+- validation не мутирует input.
+
+Architecture scan:
+
+- runtime state содержит только JSON-compatible values;
+- logic не зависит от UI;
+- Resources не используются как runtime state;
+- forbidden random APIs и web-stack artifacts отсутствуют;
+- file-length и ambiguity-marker rules соблюдены.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинай M4 при проваленном prerequisite gate.
+- Не fake-stubь Factory или Validator.
+- Не добавляй undocumented state fields.
+- Не создавай duplicate ownership.
+- Не храни Resource/Node/Object instances в state.
+- Не мутируй input при validation.
+- Не меняй IDs, Resource data или M3 random contract.
+- Не реализуй M5 phase transitions/reset execution.
+- Не реализуй economy, market generation, combat или domain effects.
+- Не выбирай strong AI/profiles и не выполняй AI logic.
+- Не реализуй WinnerResolver, GameStateManager, UI или save/load.
+- Не добавляй web stack или новый random system.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Ориентиры длины prompt-файлов примерные; это не acceptance criteria.
+- Не ослабляй tests и не скрывай failed/not-run checks.
+- Не откатывай несвязанные пользовательские изменения.
+- Не оставляй ambiguity markers без `OQ-*`.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь prerequisites, repository state и open questions.
+2. Составь schema matrix: shape → owner → default → validation → test.
+3. Отдельно перечисли doc conflicts и применённые `FIX-*`.
+4. Дай план без кода и дождись моего `ок`.
+5. После `ок` сначала добавь fixtures и focused tests.
+6. Реализуй и проверь Factory.
+7. Реализуй и проверь Validator.
+8. Добавь architecture scan.
+9. Запусти полный M4 test group.
+10. Запусти M0–M3 regressions и все static scans.
+11. Проверь serialization, file length, scope и diff.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Не изменяй файлы до моего `ок`.
+3. После `ок` работай непосредственно в репозитории.
+4. Указывай пути в формате `res://...`.
+5. Не скрывай failed или not-run проверки.
+6. Не отмечай M4 завершённым при непрошедшем gate.
+
+Финальный отчёт:
+
+```text
+Prerequisites:
+- M0–M3: PASS/FAIL/NOT RUN
+
+Implemented:
+- ...
+
+Changed files:
+- res://...
+
+Schema decisions:
+- applied FIX-* / none
+
+Tests and scans:
+- command
+- passed/failed
+
+Open questions:
+- none / OQ-*
+
+M4 gate:
+- PASS/FAIL/NOT RUN
+```
+
+M4 GATE CHECKLIST:
+
+- [ ] M0–M3 gates проходят.
+- [ ] Factory, Validator и четыре fixtures существуют.
+- [ ] Base state validates.
+- [ ] Root и PlayerState содержат required fields.
+- [ ] Ровно 4 valid unique players.
+- [ ] Nested structures независимы.
+- [ ] RandomState соответствует M3.
+- [ ] Required default/placeholder shapes существуют.
+- [ ] Invalid states fail без mutation.
+- [ ] Runtime state JSON-compatible.
+- [ ] Resolved fixes применены; duplicate ownership отсутствует.
+- [ ] Architecture scan и regressions проходят.
+- [ ] Все `.gd` files меньше 250 строк.
+- [ ] M5+ gameplay и web stack не добавлены.
+- [ ] Пользовательские изменения сохранены.

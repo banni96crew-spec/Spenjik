@@ -1,0 +1,347 @@
+---
+description: Critical economy, market, card database, purchase, Income, price modifier, upkeep, rebuild, and human-only role rules.
+globs:
+  - "autoload/GameStateManager.gd"
+  - "logic/economy/**/*.gd"
+  - "logic/catalog/**/*.gd"
+  - "logic/roles/**/*.gd"
+  - "logic/game_state/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Economy, Market, Cards and Roles
+
+## Applies when
+
+Apply when creating, reviewing, or modifying card data, card catalogs, economy logic, market generation, price previews, purchases, Income, Cops upkeep, District Control rebuild, role setup, role price modifiers, role flags, UI economy calls, or related tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/05_CARDS_DATABASE.md` owns the fixed MVP card database, card IDs, card types, destinations, base prices, requirements, runtime placement, limits, and card Resource data.
+- `docs/prd/06_ECONOMY_AND_MARKET.md` owns starting resources, Income formula/order, price scaling, modifier order, market composition, purchase validation/resolution, rebuild, Cops upkeep, and economy tests.
+- `docs/prd/08_ROLES.md` owns human role IDs, role setup effects, role modifiers, role flags, role validation, and role tests.
+- Adjacent owner PRDs own their hooks and effects. Do not redefine combat, contracts, contacts, Street Deals, Turf Levels, AI scoring, random algorithms, or UI behavior in this rule.
+
+This rule is a guardrail summary for economy, cards, and roles. It must not override `05_CARDS_DATABASE.md`, `06_ECONOMY_AND_MARKET.md`, or `08_ROLES.md`. If any listed value, order, flag, event, or behavior conflicts with the owner PRD, stop and report PRD drift.
+
+## Ownership
+
+- `IncomeLogic.gd` owns Income calculation, Income dice use, Cops upkeep, and economy hooks during Income.
+- `MarketLogic.gd` owns market generation, purchase validation, purchase resolution, card placement, District Control rebuild flow, and purchase mutation safety.
+- `PriceLogic.gd` owns base/scaled/final price calculation, price modifier order, protected Nal preview, and price previews.
+- `RoleLogic.gd` owns role validation, role setup effects, role price modifiers, role requirement bypasses, rebuild role modifier, and role flag consumption/reset helpers.
+- UI must call `GameStateManager` mutators/selectors and must not calculate prices, resolve purchases, apply card effects, or mutate economy state directly.
+
+## Fixed card database
+
+The MVP contains exactly 16 cards. Do not add, remove, rename, repricing, retarget, or reinterpret them.
+
+| Card ID | Type | Base price | Destination |
+| --- | --- | ---: | --- |
+| `informant` | `engine` | 5 | `table` |
+| `laundry` | `engine` | 8 | `table` |
+| `accountant` | `engine` | 4 | `table` |
+| `brothel` | `engine` | 6 | `table` |
+| `stash` | `status` | 8 | `table` |
+| `workshop` | `status` | 12 | `table` |
+| `district_control` | `status` | 15 | `table` |
+| `cops` | `defense` | 2 | `table` |
+| `cartel` | `defense` | 6 | `table` |
+| `judge` | `defense` | 3 | `table` |
+| `thug` | `war` | 2 | `hand` |
+| `bruiser` | `war` | 5 | `hand` |
+| `cleaner` | `war` | 9 | `hand` |
+| `insider` | `war` | 3 | `hand` |
+| `saboteur` | `war` | 6 | `hand` |
+| `federal_raid` | `war` | 14 | `hand` |
+
+- Card Resources use `res://data/resources/cards/CardDefinition.gd`.
+- `effect_summary` is display text only; gameplay must not parse it.
+- Card IDs, types, destinations, and validation errors must use canonical constants.
+- Card Resources must have exact membership and no duplicate IDs.
+
+## Card placement and limits
+
+- Engine cards update `player["engine"]`.
+- Status cards update `player["status_buildings"]` and `player["vp"]`.
+- Defense cards update `player["defense"]`.
+- War cards append card IDs to `player["hand"]`.
+
+Runtime placement:
+
+| Card ID | Runtime update on successful purchase |
+| --- | --- |
+| `informant` | `player["engine"]["informers"] += 1` |
+| `laundry` | `player["engine"]["laundries"] += 1` |
+| `accountant` | `player["engine"]["accountants"] += 1` |
+| `brothel` | `player["engine"]["brothel"] = true` |
+| `stash` | `player["status_buildings"]["stash"] += 1`; `player["vp"] += 1` |
+| `workshop` | `player["status_buildings"]["workshop"] += 1`; `player["vp"] += 2` |
+| `district_control` | `player["status_buildings"]["district_control"] += 1`; `player["vp"] += 3` |
+| `cops` | `player["defense"]["cops_active"] = true`; `player["defense"]["cops_timer"] = 0` |
+| `cartel` | `player["defense"]["cartel_state"] = DefenseStates.ACTIVE` |
+| `judge` | `player["defense"]["judge_state"] = DefenseStates.ACTIVE` |
+| War cards | `player["hand"].append(card_id)` |
+
+- `brothel`, active `cops`, active `cartel`, and active `judge` are limited by runtime representation.
+- Depleted `cartel` may be bought again and becomes active.
+- A player cannot buy more than one copy of the same `card_id` in the same round.
+- `district_control` purchase requires `district_control < workshop`.
+- `accountant` requires `vp >= 1` unless Gray Cardinal uses the documented first Accountant bypass.
+
+## Income
+
+Income is resolved once per player per Income phase in canonical player order.
+
+For each player, resolve Income in this exact order:
+
+1. Start `income_total` at 0.
+2. Add `+2 Nal` for each Laundry.
+3. Roll 2d6 through `SeededRandom`.
+4. Add the 2d6 sum to `income_total`.
+5. Add `+1 Nal` for each Informant.
+6. If the roll is a double and the player has Brothel, add Brothel bonus.
+7. If `black_cash` contact is active, Brothel bonus is `+6` instead of `+5`.
+8. Add `income_total` to `player["nal"]`.
+9. Process Cops upkeep.
+10. Process active debts.
+11. Update income-related contract checks.
+12. Append canonical Income, Cops, debt, and contract events in resolution order.
+13. Validate state.
+
+Income formula:
+
+```text
+income_total = dice_sum + (laundries * 2) + informers + brothel_bonus_if_doubles
+```
+
+- `dice_sum` is deterministic 2d6 and is included exactly once.
+- Brothel bonus is `0`, `5`, or `6`.
+- `black_cash` replaces `+5` with `+6`; it does not stack another `+1`.
+- Do not store `income_total` in a duplicate GameState field.
+- Any Income error aborts the complete `advance_phase` transaction.
+- Debt, contract, and contact hooks must be invoked only through their owner-defined flows. This rule defines when they are called, not their internal behavior.
+
+## Price calculation
+
+Use this exact final price order:
+
+1. Start with base or scaled card price.
+2. Apply rebuild override if applicable.
+3. Apply role modifiers.
+4. Apply Turf Level modifiers.
+5. Apply temporary modifiers.
+6. Clamp to minimum price 1.
+
+Fixed scaling:
+
+- Informant costs `5`, `6`, then `7` for 0, 1, then 2+ owned Informants.
+- Laundry costs `8`, `10`, then `12` for 0, 1, then 2+ owned Laundries.
+- Accountant protected Nal is `0`, `4`, `6`, then `6 + (accountants - 2)` for 0, 1, 2, then 3+ Accountants.
+
+- `PriceLogic` must be pure for previews: no Nal subtraction, no card placement, no flag consumption, no state mutation, no UI access, and no random.
+- Price previews must include documented modifier information and stable disabled/error codes.
+
+## Market
+
+Always available cards:
+
+```text
+informant
+stash
+thug
+cops
+```
+
+Rotating market pool:
+
+```text
+laundry
+accountant
+brothel
+workshop
+district_control
+cartel
+judge
+bruiser
+cleaner
+insider
+saboteur
+federal_raid
+```
+
+- Always available and rotating pools must not overlap.
+- Market must contain no duplicate card IDs.
+- Default rotating slot count is 4.
+- At Turf Level 4 or higher, rotating slot count is 3.
+- Market generation must use `SeededPicker` and unified `state["random"]`.
+- Do not derive market random from `game_seed + round` as a standalone stream.
+- MarketState must use the exact schema from `04_GAME_STATE_SCHEMA.md`.
+
+## Purchase and rebuild mutation safety
+
+Purchase validation must require:
+
+- current phase is Market;
+- valid player ID;
+- valid card ID;
+- card exists in `state["market"]["all_available_card_ids"]`;
+- player has enough Nal for final price;
+- player has not bought this `card_id` this round;
+- card-specific requirements are met;
+- card limit is not reached;
+- state is valid.
+
+Canonical purchase errors include:
+
+```text
+INVALID_PHASE
+INVALID_PLAYER_ID
+INVALID_CARD_ID
+CARD_NOT_AVAILABLE_IN_MARKET
+NOT_ENOUGH_NAL
+CARD_ALREADY_PURCHASED_THIS_ROUND
+REQUIREMENT_NOT_MET
+CARD_LIMIT_REACHED
+INVALID_STATE
+```
+
+Successful purchase order:
+
+1. Validate purchase.
+2. Calculate final price.
+3. Subtract final price from `player["nal"]`.
+4. Apply card placement.
+5. Add `card_id` to `player["purchased_this_round"]`.
+6. Consume matching role flags only after success.
+7. Consume matching temporary modifiers only after success.
+8. Run owner contract/contact hooks where documented.
+9. Append canonical purchase-related event.
+10. Validate state.
+
+- Failed purchase must not mutate Nal, VP, hand, engine, status, defense, `purchased_this_round`, role flags, temporary modifiers, contracts, logs, or random.
+- District Control rebuild is a dedicated flow/API, not a fake card ID.
+- Default District Control rebuild price is 8 Nal.
+- District Boss first rebuild price is 7 Nal.
+- Rebuild still requires `district_control < workshop` unless an owner PRD changes that rule.
+- Failed rebuild must not consume District Boss rebuild flag.
+
+## Cops upkeep
+
+- Cops upkeep is processed during Income after Income is added.
+- Default interval is every 3 Income phases while Cops are active.
+- At Turf Level 5 or higher, the human Cops interval is every 2 Income phases.
+- AI Cops interval remains 3 at Turf Level 5.
+- Upkeep cost is 1 Nal.
+- If paid, subtract 1 Nal, reset `cops_timer` to 0, keep Cops active, and append `COPS_UPKEEP_PAID`.
+- If unpaid, set `cops_active = false`, reset `cops_timer` to 0, and append `COPS_DEACTIVATED`.
+- Cops are not stored in hand or refunded.
+
+## Human-only roles
+
+Roles apply only to `GameIds.PLAYER_HUMAN` in MVP.
+
+- AI players do not receive roles, role discounts, role starting bonuses, role limitations, or role flags as gameplay effects.
+- AI behavior uses AI profiles from `13_AI_SYSTEM.md`.
+- Role setup must not use random.
+- Role effects must not be parsed from `effect_summary` or `limitation_summary`.
+
+Role list:
+
+| Role ID | Setup / bonus | Limitation |
+| --- | --- | --- |
+| `merchant` | Starts with 7 Nal; first Engine card is cheaper by 1 | First War card each round is more expensive by 1 |
+| `enforcer` | Starts with active Cops; first War card is cheaper by 1 | All Laundries are more expensive by 1 |
+| `gray_cardinal` | Starts with 4 Nal; first Accountant may bypass `vp >= 1`; first Saboteur is cheaper by 1 | First Stash is more expensive by 1 |
+| `district_boss` | First Stash is cheaper by 2; District Control rebuild costs 7 | First Laundry is more expensive by 1 |
+
+Role flags must include the documented fields:
+
+```text
+merchant_first_engine_discount_used
+merchant_first_war_tax_applied_this_round
+enforcer_first_war_discount_used
+gray_cardinal_first_accountant_bypass_used
+gray_cardinal_first_saboteur_discount_used
+gray_cardinal_first_stash_tax_used
+district_boss_first_stash_discount_used
+district_boss_first_laundry_tax_used
+district_boss_rebuild_discount_used
+used_first_card_discount
+used_emergency_protection
+used_one_time_contact_bonus
+```
+
+- Treat "first" as once per run unless the PRD says each round.
+- Merchant first War tax is once per round and resets at round start before Market.
+- No other role flag resets each round.
+- Consume role flags only after successful purchase or successful rebuild.
+- Never consume role flags on failed validation.
+
+## Forbidden behavior
+
+- Do not change card IDs, prices, types, destinations, limits, effects, or market pools.
+- Do not add, remove, rename, alias, or translate cards or roles.
+- Do not give human roles to AI players.
+- Do not calculate prices in UI.
+- Do not implement purchases, Income, Cops upkeep, rebuild, or role effects in UI.
+- Do not let UI mutate `nal`, `vp`, `engine`, `status_buildings`, `defense`, `hand`, `purchased_this_round`, `role_flags`, or `market`.
+- Do not apply card or role behavior by parsing Resource `effect_summary`, `limitation_summary`, `description`, labels, filenames, or display text.
+- Do not hardcode alternate card/role behavior in `GameStateManager`.
+- Do not consume role or temporary modifier flags on failed purchase/rebuild.
+- Do not let `PriceLogic` mutate state.
+- Do not use forbidden random APIs in economy, market, or role logic.
+- Do not let economy logic secretly resolve combat, make AI decisions, or advance phases.
+- Do not invent event payload shapes, debt behavior, contract behavior, contact effects, combat effects, or AI scoring inside economy logic.
+- Do not treat this rule as an independent source of card, role, price, or market truth when the owner PRD differs.
+
+## Required tests
+
+Add or update GUT tests for:
+
+- exact 16-card database membership, base prices, types, destinations, and Resource fields;
+- Informant and Laundry price scaling;
+- Accountant protected Nal;
+- final price modifier order and minimum price clamp;
+- every role setup effect, role price modifier, role bypass, and role flag consumption/reset;
+- roles do not apply to AI;
+- market composition, Turf Level 4 slot count, deterministic generation, no duplicates, and valid IDs;
+- purchase validation errors and mutation safety for every failure class;
+- successful purchase placement for Engine, Status, Defense, and War cards;
+- District Control rebuild default and District Boss rebuild pricing;
+- Income formula/order, deterministic dice, black_cash Brothel replacement, Cops upkeep, debt hook order, and owner-defined canonical event payloads;
+- failed purchase/rebuild/Income does not mutate active state;
+- UI contains no economy gameplay logic;
+- forbidden random APIs are absent from economy and role logic.
+
+## Output requirements
+
+For economy, market, card, or role changes, report:
+
+- Owner PRD:
+- Owner logic module:
+- Card IDs/prices/destinations affected:
+- Price modifier order:
+- Runtime fields mutated:
+- Role flags consumed or preserved:
+- Purchase/Income/rebuild rollback behavior:
+- Canonical events:
+- Tests run:
+
+## Verification checklist
+
+- Card database remains exactly as documented.
+- Prices, destinations, limits, and market pools match PRD.
+- Income order and formula match PRD.
+- Price modifier order is exact.
+- Market generation is deterministic and uses unified random.
+- Purchase and rebuild are mutation-safe.
+- Role effects apply only to the human player.
+- Role flags are consumed only on success.
+- UI does not own economy or card behavior.
+- No Resource display text is parsed as gameplay logic.
+- Required GUT coverage exists or was updated.

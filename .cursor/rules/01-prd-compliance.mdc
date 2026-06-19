@@ -1,0 +1,76 @@
+---
+description: Critical PRD authority, protected gameplay contracts, and ambiguity handling for every task in The Turf.
+alwaysApply: true
+---
+
+# PRD Compliance
+
+## Applies when
+
+Apply to every task in this repository. Priority: Critical.
+
+## Source of truth
+
+Use project sources in this order:
+
+1. The modular owner file in `docs/prd/`, identified through `docs/prd/00_INDEX.md`.
+2. Resolved and accepted `FIX-*` entries in `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` explain why a correction was made. The corrected owner PRD is the final executable specification.
+3. `PRD 2.4.txt` as historical background only. It must not override modular owner files or accepted fixes.
+4. `ROADMAP/` and `skills/` as implementation guidance only. They must not redefine PRD behavior.
+5. Existing or future code as implementation evidence only. Code must conform to the owner PRD, not become a competing specification.
+
+Use `docs/prd/20_LLM_AGENT_RULES.md` for mandatory agent behavior and compliance workflow.
+
+## Protected contracts
+
+- IDs and constants.
+- Balance values, including prices, effects, rewards, and penalties.
+- Roles, contracts, contacts, debts, Street Deals, AI profiles, and Turf Levels.
+- Deterministic random behavior and random-state contracts.
+- Runtime state schemas and ownership.
+- Validation errors and event payloads.
+- Public `GameStateManager.gd` API names, payloads, and result shapes.
+
+## Required behavior
+
+- Before implementing, modifying, reviewing, or testing behavior, find its owner PRD through `00_INDEX.md`.
+- Search `21_OPEN_QUESTIONS_AND_FIXES.md` for related `FIX-*` and `OQ-*` entries.
+- Implement resolved behavior from the owner PRD, including accepted `FIX-*` corrections.
+- Treat all protected contracts as immutable unless the user explicitly approves a PRD change.
+- Treat a conflict between code, roadmap, skills, the original PRD, and an owner PRD as implementation or secondary-document drift; follow the owner PRD.
+- If two modular owner PRDs conflict, or an accepted `FIX-*` conflicts with its corrected owner PRD, stop and report PRD drift. Do not choose one by preference.
+- If required behavior is absent, contradictory, or ownership is unclear, stop the affected work and reference an existing `OQ-*`.
+- If no suitable `OQ-*` exists, report the exact proposed entry instead of modifying PRD files unless the user explicitly requested PRD maintenance.
+- A proposed `OQ-*` must identify the owner module, related modules, type, blocking status, exact problem, options when gameplay-affecting, recommendation when safe, implementation impact, and test impact.
+- Implement only unrelated, clearly defined behavior while a blocking question remains open.
+
+## Forbidden behavior
+
+- Do not guess, infer, or invent missing gameplay, schema, validation, random, AI, or API behavior.
+- Do not modify protected contracts without an explicit approved PRD update.
+- Do not follow a roadmap, skill, code pattern, or original PRD passage that conflicts with a modular owner PRD or accepted `FIX-*`.
+- Do not modify `docs/prd/` merely because implementation revealed ambiguity unless the user explicitly requested PRD maintenance.
+- Do not silently resolve contradictions in code, tests, comments, fallbacks, aliases, or extra state fields.
+- Do not use untracked `TODO`, `TBD`, `FIXME`, or `???` markers for ambiguity; reference an `OQ-*`.
+- Do not weaken tests or alter expected results to preserve non-compliant code.
+
+## Output requirements
+
+Before behavior-affecting changes, state:
+
+- Owner PRD:
+- Related `FIX-*` / `OQ-*`:
+- Protected contracts affected:
+- Compliance status:
+
+If blocked, report the conflicting sources and either reference the existing `OQ-*` or provide the exact proposed `OQ-*` entry.
+
+## Verification checklist
+
+- The owner PRD was identified through `00_INDEX.md`.
+- Related accepted fixes and open questions were checked.
+- Accepted `FIX-*` entries and their corrected owner PRDs are consistent.
+- No lower-authority source overrode the modular PRD.
+- Protected contracts remain unchanged.
+- No missing behavior was invented.
+- Every unresolved ambiguity references an existing `OQ-*` or has an exact proposed entry awaiting authorized PRD maintenance.

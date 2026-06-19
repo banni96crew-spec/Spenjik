@@ -1,0 +1,283 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Твоя задача — реализовать строго ограниченный milestone:
+
+`M1 — Constants and IDs`
+
+M1 выполняется только после успешного завершения:
+
+`M0 — Project Bootstrap`
+
+Ты обязан проверить фактическое состояние M0 перед началом M1. Если M0 gate не проходит, не начинай constants layer: сначала сообщи о блокирующей проблеме и предложи минимальное восстановление M0.
+
+До любых изменений изучи:
+
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Для проверки полного состава ID также изучи связанные owner PRD, на которые ссылается `03_IDS_AND_CONSTANTS.md`.
+
+Не реализуй gameplay из этих документов.
+
+КОНТЕКСТ ПРОЕКТА:
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Целевой стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources в будущих milestone;
+- Dictionary state snapshots в будущих milestone;
+- `GameStateManager.gd` как будущий Autoload facade;
+- Windows и Linux как первые export targets;
+- без web stack.
+
+Архитектура:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+Стабильные IDs и validation errors принадлежат:
+
+`res://data/ids/`
+
+M1 создаёт foundation layer для будущих Resources и gameplay modules, но не реализует сами Resources, state или gameplay.
+
+Предполагается, что M0 уже создал:
+
+- `res://project.godot`;
+- структуру каталогов;
+- `res://addons/gut/`;
+- тестовые каталоги;
+- GUT smoke test;
+- static scan helper shell;
+- рабочий запуск проекта и GUT.
+
+Перед M1 проверь эти результаты фактически.
+
+Target milestone:
+
+- `M1 — Constants and IDs`
+
+Owner PRD:
+
+- `res://docs/prd/03_IDS_AND_CONSTANTS.md`
+
+Dependency PRDs:
+
+- `res://docs/prd/15_GODOT_ARCHITECTURE.md`
+- `res://docs/prd/18_TEST_PLAN.md`
+- `res://docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `res://docs/prd/20_LLM_AGENT_RULES.md`
+- `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+- gameplay owner PRD только для сверки определённых ID и error codes.
+
+ЗАДАЧА:
+
+Реализуй `Milestone M1 — Constants and IDs`.
+
+Необходимо:
+
+1. Проверить прохождение M0 gate.
+2. Проверить текущее состояние репозитория и сохранить пользовательские изменения.
+3. Извлечь точный перечень constants из `03_IDS_AND_CONSTANTS.md`.
+4. Сверить каждый ID с его owner PRD.
+5. Создать обязательные constants-файлы.
+6. Создать рекомендуемые domain ID-файлы, перечисленные архитектурой и M1.
+7. Не добавлять ID, которых нет в PRD.
+8. Создать или обновить GUT-тесты для constants layer.
+9. Проверить наличие всех обязательных constants.
+10. Проверить отсутствие дублирующихся ID в пределах соответствующих доменов.
+11. Проверить наличие всех validation error codes, уже требуемых PRD-модулями.
+12. Проверить, что protected IDs не переименованы и не изменены.
+13. Запустить M0 smoke test для защиты от bootstrap-регрессии.
+14. Запустить M1 unit tests.
+15. Запустить file-length scan.
+16. Запустить open-question marker scan.
+17. Запустить banned-stack scan, если он уже поддерживается M0 helper.
+18. Сообщить точные результаты всех выполненных проверок.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+Обязательные production files:
+
+- `res://data/ids/GameIds.gd`
+- `res://data/ids/PhaseIds.gd`
+- `res://data/ids/AttackModes.gd`
+- `res://data/ids/ValidationErrors.gd`
+
+Обязательные domain ID files для полного M1 foundation:
+
+- `res://data/ids/RoleIds.gd`
+- `res://data/ids/ContractIds.gd`
+- `res://data/ids/ContactIds.gd`
+- `res://data/ids/StreetDealIds.gd`
+- `res://data/ids/AIProfileIds.gd`
+- `res://data/ids/TurfLevelIds.gd`
+- `res://data/ids/DefenseStates.gd`
+
+Обязательные или эквивалентные GUT tests:
+
+- `res://tests/unit/test_ids_and_constants.gd`
+- `res://tests/unit/test_validation_errors.gd`
+
+Допускается другое разделение тестов, если оно соответствует `18_TEST_PLAN.md`, сохраняет ясную ответственность и не создаёт чрезмерно крупные файлы.
+
+Static tests или helper checks должны покрывать:
+
+- отсутствие `.gd` файлов длиной 250 строк или больше;
+- отсутствие дублирующихся ID;
+- отсутствие неотслеживаемых `TODO`, `TBD`, `FIXME`, `???`;
+- отсутствие запрещённых web-stack artifacts.
+
+Не создавай будущие gameplay-файлы, Resource schemas, catalogs или `.tres`.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинать M1 при проваленном M0 gate.
+- Не выходить за пределы M1.
+- Не реализовывать gameplay logic.
+- Не реализовывать runtime state.
+- Не создавать или изменять игровые правила.
+- Не менять цены, эффекты, условия, формулы или баланс.
+- Не переименовывать существующие protected IDs.
+- Не добавлять undocumented IDs.
+- Не добавлять ad-hoc validation error strings.
+- Не объединять все domains в один чрезмерно крупный constants-файл.
+- Не создавать альтернативный источник истины для одного ID.
+- Не создавать `.tres` Resources.
+- Не создавать Resource schemas или catalogs.
+- Не реализовывать deterministic random.
+- Не реализовывать GameStateManager.
+- Не регистрировать gameplay Autoload.
+- Не реализовывать economy, market, combat, roles, contracts, contacts, Street Deals, debts, Turf Levels или AI.
+- Не создавать gameplay UI.
+- Не добавлять React, TypeScript, JavaScript gameplay runtime, Tailwind, Zustand, Docker, backend или web routing.
+- Не использовать `randf()`, `randi()`, `randomize()` или `RandomNumberGenerator` в gameplay logic.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Использовать static typing там, где это практично.
+- Не ослаблять тесты ради формального pass.
+- Не заявлять о прохождении тестов без фактического запуска.
+- Не удалять и не откатывать несвязанные пользовательские изменения.
+- Не оставлять ambiguity markers без `OQ-*`.
+- Не придумывать отсутствующие ID или error codes.
+
+Если информации недостаточно или документы конфликтуют:
+
+1. Останови только затронутую часть реализации.
+2. Проверь существующие `OQ-*` и `FIX-*`.
+3. Определи owner PRD спорного ID или error code.
+4. Добавь новый `OQ-*` в `res://docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`, если вопрос ещё не зарегистрирован.
+5. Не создавай временный ID или error code как скрытую догадку.
+6. Продолжай только однозначно определённую часть M1.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь текущее состояние репозитория.
+2. Проверь M0 outputs и M0 gate.
+3. Изучи owner PRD и dependency PRDs.
+4. Составь таблицу соответствия:
+   domain → owner PRD → constants file → required IDs.
+5. Проверь `21_OPEN_QUESTIONS_AND_FIXES.md`.
+6. Определи точный список создаваемых и изменяемых файлов.
+7. Подготовь план работ без кода.
+8. Дождись моего сообщения `ок`.
+9. После `ок` сначала создай или обнови GUT-тесты constants layer.
+10. Реализуй минимальные constants-файлы.
+11. Запусти M1 tests.
+12. Исправь найденные ошибки без изменения PRD.
+13. Запусти M0 smoke test.
+14. Запусти file-length scan.
+15. Запусти open-question marker scan.
+16. Запусти доступные architecture и banned-stack scans.
+17. Проверь git diff и отсутствие изменений вне M1.
+18. Подготовь финальный отчёт с фактическими результатами.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план работ по шагам без кода.
+2. Не изменяй файлы до моего сообщения `ок`.
+3. Дождись моего `ок`.
+4. После `ок` выполняй изменения непосредственно в репозитории.
+5. Для каждого файла указывай полный путь в формате `res://...`.
+6. Не скрывай упавшие или незапущенные проверки.
+7. Не отмечай M1 завершённым, если prerequisite M0 или M1 gate не прошёл.
+
+Финальный отчёт оформи так:
+
+Prerequisite M0:
+- `PASS`, `FAIL` или `NOT RUN`
+- проверенные условия
+
+Реализовано:
+- ...
+
+Созданные файлы:
+- `res://...`
+
+Изменённые файлы:
+- `res://...`
+
+Тесты добавлены или обновлены:
+- `res://...`
+
+Проверки выполнены:
+- команда или способ запуска
+- количество passed/failed
+- итоговый статус
+
+Open questions:
+- `none` или список `OQ-*`
+
+Отклонения от плана:
+- `none` или точное объяснение
+
+M1 gate:
+- каждый пункт `PASS`, `FAIL` или `NOT RUN`
+
+M1 GATE CHECKLIST:
+
+Prerequisite M0:
+
+- [ ] Godot 4.6.2 project opens.
+- [ ] GUT addon is present and operational.
+- [ ] M0 smoke test passes.
+- [ ] Required bootstrap folder structure exists.
+- [ ] Static scan helper shell exists.
+
+M1 outputs:
+
+- [ ] `res://data/ids/GameIds.gd` exists.
+- [ ] `res://data/ids/PhaseIds.gd` exists.
+- [ ] `res://data/ids/AttackModes.gd` exists.
+- [ ] `res://data/ids/ValidationErrors.gd` exists.
+- [ ] `res://data/ids/RoleIds.gd` exists.
+- [ ] `res://data/ids/ContractIds.gd` exists.
+- [ ] `res://data/ids/ContactIds.gd` exists.
+- [ ] `res://data/ids/StreetDealIds.gd` exists.
+- [ ] `res://data/ids/AIProfileIds.gd` exists.
+- [ ] `res://data/ids/TurfLevelIds.gd` exists.
+- [ ] `res://data/ids/DefenseStates.gd` exists.
+- [ ] All constants required by `03_IDS_AND_CONSTANTS.md` exist.
+- [ ] Every ID matches its owner PRD.
+- [ ] No duplicate IDs exist within their domains.
+- [ ] All required validation error codes exist.
+- [ ] No undocumented ID or error code was invented.
+- [ ] GUT constants tests exist.
+- [ ] All M1 unit tests pass.
+- [ ] M0 smoke test still passes.
+- [ ] File-length scan passes.
+- [ ] Open-question marker scan passes.
+- [ ] No `.gd` file contains 250 lines or more.
+- [ ] No gameplay logic was implemented.
+- [ ] No `.tres` Resources or catalogs were implemented.
+- [ ] No forbidden random API was introduced.
+- [ ] No forbidden web-stack files were created.
+- [ ] Existing unrelated user changes were preserved.

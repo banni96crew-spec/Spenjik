@@ -1,0 +1,158 @@
+---
+description: Critical AI identity, deterministic setup, profile assignment, purchase/action decisions, random tie-breaks, and human-rule parity.
+globs:
+  - "autoload/GameStateManager.gd"
+  - "logic/ai/**/*.gd"
+  - "logic/economy/**/*.gd"
+  - "logic/combat/**/*.gd"
+  - "logic/game_state/**/*.gd"
+  - "logic/random/**/*.gd"
+  - "logic/contracts/**/*.gd"
+  - "logic/street_deals/**/*.gd"
+  - "logic/contacts/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+  - "logic/turf_levels/**/*.gd"
+alwaysApply: false
+---
+
+# AI System
+
+## Applies when
+
+Apply when creating, reviewing, or modifying AI setup, AI profiles, strong AI selection, AI Market behavior, AI Action behavior, AI combat choices, AI random tie-breaks, AI-facing facade flow, AI Resources, or related tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/13_AI_SYSTEM.md` owns AI player identity, AI profiles, strong AI selection, profile assignment, Market decisions, Action decisions, fallback behavior, scoring, API expectations, and AI tests.
+- `docs/prd/14_DETERMINISTIC_RANDOM.md` owns deterministic random APIs, step counts, allowed AI random consumers, random tie-breaks, and replay contracts.
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` owns accepted AI `FIX-*` decisions referenced by the owner PRDs.
+- Adjacent owner PRDs own their internals: Market and prices belong to `06_ECONOMY_AND_MARKET.md`, combat resolution belongs to `07_COMBAT_SYSTEM.md`, Street Deal/debt behavior belongs to `10_STREET_DEALS_AND_DEBTS.md`, contacts belong to `11_CONTACTS.md`, and Turf Level modifiers belong to `12_TURF_LEVELS.md`.
+
+This rule is a guardrail summary for AI. It must not override `13_AI_SYSTEM.md`, `14_DETERMINISTIC_RANDOM.md`, or accepted `FIX-*` decisions. If any listed profile value, score, fallback, order, random step, event, state shape, or behavior conflicts with the owner PRD, stop and report PRD drift.
+
+## AI identity
+
+- The only AI player IDs are exactly `ai_1`, `ai_2`, and `ai_3`.
+- `GameStateFactory` creates AI players from `GameIds.AI_PLAYER_IDS`; AI logic must not generate alternative AI IDs.
+- AI player IDs are not AI profile IDs.
+- AI players may be targeted by combat and may be selected as strong AI.
+- MVP AI players must not receive roles, contracts, contact offers, contacts, or human Street Deal choices.
+- AI may receive explicit owner-defined side effects only where the owner PRD defines them.
+
+## Deterministic setup
+
+- AI setup must use the unified `state["random"]` and `SeededPicker.gd`.
+- Setup order is: create base players, select strong AI, assign AI profiles, write `state["ai_bosses"]`, apply AI-dependent Turf Level setup modifiers, validate final state.
+- Select exactly one strong AI from `ai_1`, `ai_2`, and `ai_3`.
+- Deterministically select 3 unique AI profiles from the available AI profiles.
+- Assign selected profiles in stable order: first to `ai_1`, second to `ai_2`, third to `ai_3`.
+- Store strong AI and profile assignment in `state["ai_bosses"]`.
+- Same seed and same random step must produce the same strong AI and profile assignment.
+- Different profile assignment, duplicate profiles, no strong AI, or multiple strong AIs are invalid AI state.
+
+## Required AI files and APIs
+
+Use the owner-defined files and signatures from `13_AI_SYSTEM.md`:
+
+- `res://logic/ai/AIBotController.gd`
+- `res://logic/ai/AIPurchaseLogic.gd`
+- `res://logic/ai/AITargetLogic.gd`
+- `res://logic/ai/AIFallbackLogic.gd`
+- `res://data/resources/ai_profiles/AIProfileDefinition.gd`
+- `res://logic/ai/AIActionLogic.gd` when `AIBotController.gd` approaches the file-size limit.
+
+These are owner APIs, not placeholder implementations. Keep signatures and result shapes aligned with `13_AI_SYSTEM.md`.
+
+## AI profiles
+
+- AI profile definitions are immutable `.tres` Resources using the documented `AIProfileDefinition` schema.
+- Profile IDs, purchase scores, attack probabilities, target weights, minimum reserves, and fallback IDs are PRD-owned balance contracts.
+- Do not change profile scores, reserves, fallbacks, attack probabilities, target weights, or profile membership unless the owner PRD changes.
+- Missing purchase score for a card means base score `0`.
+- Missing target weight is invalid profile data unless the owner PRD explicitly defines a default.
+- Invalid AI profile data must fail through the owner-defined validation error/result shape. Do not invent fallback weights or silently skip invalid profile fields.
+
+## Market behavior
+
+- During Market, each AI may buy multiple cards while valid candidates exist and reserve is respected.
+- After every successful purchase, AI must re-evaluate candidates against the new candidate state.
+- AI must respect `minimum_reserve_nal`.
+- AI must respect the normal one-copy-per-card-ID-per-round rule.
+- AI must use `MarketLogic` and `PriceLogic` validation, pricing, protected Nal, and purchase mutation.
+- AI must not calculate final prices in UI or directly mutate cards, Nal, flags, market state, or purchase history.
+- Normal purchase candidates require market availability, purchase validation success, reserve success, and final purchase score greater than `0`.
+- Equal best purchase score uses deterministic `SeededPicker.gd`; random is consumed only when a real tie exists.
+- If no normal purchase candidate exists, apply the profile fallback exactly as defined by `13_AI_SYSTEM.md`; fallback must not bypass Market validation or reserve rules.
+- AI Market participation must end through the owner phase-safe flow.
+- `AIBotController` and AI logic must not call the `GameStateManager` singleton directly. They receive candidate state through owner flow, return decisions/results, and let the facade/phase owner commit.
+
+## Action and combat behavior
+
+- AI rolls attack probability once at the start of its Action turn when the owner PRD requires an AI attack decision.
+- If the attack probability roll fails, AI ends Action; fallback must not force or secretly enable an attack.
+- If AI decides to attack, it may play multiple valid War cards until no valid attacks remain, using the hand at Action start as the loop limit.
+- AI must re-evaluate hand, target, and board state after each resolved attack.
+- Unused War cards remain in hand unless the owner fallback explicitly discards them.
+- AI must build attack options from legal hand cards, legal targets, legal modes, valid `saboteur` engine targets, valid `insider` modifier usage, `CombatEngine` validation, and `CombatEngine` preview.
+- AI must resolve attacks through the same `CombatEngine` rules used by the human player.
+- AI must not mutate hand, Nal, card ownership, defense state, combat state, logs, or action flags directly.
+- Direct UI-to-combat or AI-to-combat mutation is forbidden; use the owner facade/phase flow and owner logic APIs.
+
+## Targeting, modes, and tie-breaks
+
+- AI target scoring uses the exact target feature formula and weights from `13_AI_SYSTEM.md`.
+- Target scoring must not mutate state.
+- Equal best target score uses deterministic `SeededPicker.gd`; random is consumed only when a real tie exists.
+- Attack option tie-breaks use deterministic `SeededPicker.gd` only where the owner PRD specifies a random tie.
+- Do not use random when the owner PRD defines a non-random deterministic tie-break.
+- `saboteur` engine target selection is non-random and uses the owner priority order: `brothel`, `laundry`, `accountant`, `informant`.
+- AI combat modes and `insider` modifier rules must match `07_COMBAT_SYSTEM.md` exactly.
+- AI should avoid blocked attack previews when any unblocked valid attack option exists; blocked options are allowed only under the owner-defined fallback condition.
+
+## Random and replay
+
+- AI random may be consumed only for owner-defined strong AI selection, profile assignment, purchase score tie-breaks, attack probability rolls, target score tie-breaks, and attack option tie-breaks.
+- Use `state["random"]` only; do not create local random streams.
+- Every AI random-consuming API must return the updated random state and leave the original random state unchanged on validation failure.
+- `pick_best_tie` must consume no random for zero or one item and exactly one step for a real tie.
+- Attack probability consumes exactly one random step per relevant AI Action turn.
+- Visual-only randomness must not affect AI decisions, `state`, logs, random step, or replay output.
+
+## Forbidden behavior
+
+- Do not add AI IDs beyond `ai_1`, `ai_2`, and `ai_3`.
+- Do not give AI roles, contracts, contacts, contact choices, or Street Deal choices in MVP.
+- Do not implement ML, neural-network, remote, backend, web, analytics, or adaptive AI.
+- Do not change AI profile balance, profile scores, attack probabilities, target weights, reserves, fallbacks, or profile IDs from code.
+- Do not bypass `MarketLogic`, `PriceLogic`, `CombatEngine`, `GamePhaseController`, `SeededRandom.gd`, or `SeededPicker.gd`.
+- Do not use `randf`, `randi`, `randi_range`, `randomize`, `RandomNumberGenerator`, time-based seeds, array shuffle randomness, or local random state.
+- Do not invent event payloads, result shapes, fallback behavior, target scoring features, attack modes, or tie-break rules.
+- Do not make tests, fixtures, or UI scripts runtime dependencies of AI logic.
+- Do not give AI hidden discounts, free cards, extra Nal, ignored reserves, ignored limits, or AI-only combat permissions unless the owner PRD explicitly defines them.
+
+## Required tests
+
+Add or update focused GUT tests when touching AI behavior:
+
+- AI profile schema, membership, immutable balance values, valid reserves, valid target weights, and valid fallbacks.
+- Strong AI selection: exactly one strong AI, deterministic same seed, no duplicate or missing strong AI.
+- Profile assignment: 3 unique profiles, stable `ai_1` to `ai_3` assignment, deterministic same seed.
+- AI Market: multiple purchases, reserve preservation, one-copy rule, no direct mutation, fallback behavior, validation failure behavior.
+- Purchase tie-break: deterministic picker used only for real ties; single best candidate consumes no tie-break random.
+- AI Action: one attack probability roll, failed roll ends Action, fallback cannot override failed probability, multiple War cards after passed roll.
+- Target and option selection: target scoring features, no self-targeting, deterministic target tie-break, attack option tie-break, `saboteur` priority, `insider` modifier rules.
+- Integration and replay: same seed produces same AI setup/actions/logs/random step; AI uses the same Market and Combat validation paths as the human player.
+- Static scans: forbidden random APIs, direct AI mutation of Nal/cards/combat state, profile balance changes, and `AIBotController` calls to `GameStateManager`.
+
+## Output requirements
+
+When implementing or reviewing AI changes, report:
+
+- Owner PRD sections and related accepted `FIX-*`.
+- AI files, data Resources, scenes, and tests changed.
+- Random consumers touched and expected step behavior.
+- Protected profile, Market, Combat, or phase contracts affected.
+- Tests run, including explicit `not run` items with the reason.

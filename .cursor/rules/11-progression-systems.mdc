@@ -1,0 +1,249 @@
+---
+description: Critical routing, ownership, hooks, state, deterministic offers, human-only progression choices, debt/contact/Turf rules, and FIX decision guardrails.
+globs:
+  - "autoload/GameStateManager.gd"
+  - "logic/contracts/**/*.gd"
+  - "logic/street_deals/**/*.gd"
+  - "logic/contacts/**/*.gd"
+  - "logic/turf_levels/**/*.gd"
+  - "logic/game_state/**/*.gd"
+  - "logic/economy/**/*.gd"
+  - "logic/combat/**/*.gd"
+  - "logic/ai/**/*.gd"
+  - "data/**/*.gd"
+  - "data/**/*.tres"
+  - "scenes/**/*.gd"
+  - "tests/**/*.gd"
+alwaysApply: false
+---
+
+# Progression Systems
+
+## Applies when
+
+Apply when creating, reviewing, or modifying contracts, Street Deals, debts, contacts, Turf Levels, their Resources, owner hooks, facade methods, UI progression views, or related tests. Priority: Critical.
+
+## Source of truth
+
+- `docs/prd/09_CONTRACTS.md` owns contracts.
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md` owns Street Deals and debts.
+- `docs/prd/11_CONTACTS.md` owns contacts.
+- `docs/prd/12_TURF_LEVELS.md` owns Turf Levels.
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` owns accepted `FIX-*` decisions and open ambiguity handling.
+
+This rule is a guardrail routing summary for progression systems. It must not override PRD 09-12 or accepted `FIX-*` decisions. If any listed value, state owner, hook, event, timing, or behavior conflicts with the owner PRD or an accepted `FIX-*`, stop and report PRD drift.
+
+## Routing
+
+- Route contract behavior to `09_CONTRACTS.md` and `ContractLogic.gd`.
+- Route Street Deal and debt behavior to `10_STREET_DEALS_AND_DEBTS.md`, `StreetDealLogic.gd`, and `DebtLogic.gd`.
+- Route contact behavior to `11_CONTACTS.md` and `ContactLogic.gd`.
+- Route Turf Level behavior to `12_TURF_LEVELS.md` and `TurfLevelLogic.gd`.
+- Route canonical IDs, errors, and event payloads to `03_IDS_AND_CONSTANTS.md`.
+- Route runtime shapes and ownership to `04_GAME_STATE_SCHEMA.md`.
+- Route facade payload/result/signal behavior to `16_GAME_STATE_MANAGER_API.md`.
+
+Progression modules may invoke owner-defined hook entry points across systems, but must not implement another owner module's internal rules.
+
+## State ownership
+
+Use only these canonical owners:
+
+| Runtime concept | Canonical owner |
+| --- | --- |
+| Contract offer IDs | `state["contract_offer_ids"]` |
+| Selected contract ID | `state["selected_contract_id"]` |
+| Runtime contracts | `player["contracts"]` |
+| Global Street Deal offer/event state | `state["street_deals"]` |
+| Debts | `player["debts"]` |
+| Owned contacts, cooldowns, usage | `player["contacts"]` |
+| Pending contact offer | `state["contacts"]["pending_offer"]` |
+| Turf Level | integer `state["turf_level"]` |
+| Turf runtime flags | `player["turf_flags"]` |
+| Temporary modifiers | `player["temporary_modifiers"]` |
+
+- Do not duplicate ownership in aliases such as `contract_offers`, root `contracts`, `active_contract`, `active_debts`, `player["street_deals"]`, root unlocked-contact arrays, string Turf IDs, or territory IDs.
+- `GameStateValidator` must reject aliases, extra keys, invalid IDs, wrong types, and invalid event payloads.
+
+## Contracts
+
+- MVP contracts apply only to the human player.
+- AI players must not receive contracts.
+- Setup contract preview returns exactly 3 deterministic unique contract IDs and mutates no active state, active random, runtime contract, or gameplay log.
+- Committed setup regenerates the same 3 offers, validates selected membership, stores `state["contract_offer_ids"]`, stores `state["selected_contract_id"]`, creates exactly one human runtime contract in `player["contracts"]`, and commits atomically.
+- Contract completion does not apply the reward automatically.
+- Rewards apply only through `claim_contract`.
+- Repeated claim must fail.
+- Completed contracts can be claimed after deadline.
+- Incomplete contracts fail only when `round > deadline`.
+- Deadline round itself is still valid for completion.
+- Completed contracts must not later become failed.
+- Contract failure reasons are exactly `war_played` and `deadline_exceeded`.
+- Every first failure appends the canonical `CONTRACT_FAILED` event.
+- Contract logic must not resolve purchases, Income, combat, Street Deals, AI behavior, phase flow, or UI behavior.
+
+Use only owner-defined hooks:
+
+- `MarketLogic` calls contract purchase hooks after successful purchase and placement.
+- `IncomeLogic` calls contract hooks after Income, Cops upkeep, and debt processing.
+- `CombatEngine` calls contract hooks after valid resolved attacks, with success-specific progress only after unblocked success.
+- `GamePhaseController` calls deadline/failure checks at round start and phase checkpoints.
+- `StreetDealLogic` calls contract state-change hooks after successful Street Deal effects where relevant.
+
+## Street Deals and debts
+
+- Street Deals occur only after Action in rounds 4, 8, and 12.
+- In MVP, only the human chooses Street Deal options.
+- AI players do not choose Street Deals.
+- AI may receive explicit Street Deal side effects only where owner PRD defines them.
+- `choices_by_player` normally stores only `player_1`.
+- Street Deal generation is deterministic and must use unified `state["random"]`.
+- Used deals must not repeat in the same run.
+- Active debt blocks only `loan_shark`; other Street Deals remain available.
+- `loan_shark` creates debts in `player["debts"]`.
+- Debts are processed during Income after income gain and Cops upkeep, before contract hooks.
+- Manual debt repayment is not MVP unless the owner PRD changes it.
+- Debt penalties and repayment behavior are owned only by `DebtLogic`.
+- `dirty_tip` Option B selects AI target through `SeededPicker` from `ai_1`, `ai_2`, `ai_3`.
+- `risky_contract` Option B chooses richest AI by highest Nal; ties use stable order `ai_1`, `ai_2`, `ai_3`; no random is used.
+- `inside_contact` Option A calls `ContactLogic` to generate a deterministic 2-contact offer; `StreetDealLogic` must not directly unlock contacts.
+- Turf Level 8 increases only direct upfront human Street Deal payments by +1. It must not affect debt amount due, debt penalties, future debt repayment, positive Nal gains, or AI side effects.
+
+## Contacts
+
+- In MVP, only the human can unlock, own, select, or activate contacts.
+- AI players must not receive contact offers or contacts.
+- Human may own at most 1 contact.
+- Existing contacts cannot be replaced in MVP.
+- Owned contacts are stored only in `player["contacts"]`.
+- Pending offers are stored only in `state["contacts"]["pending_offer"]`.
+- Contact offers must be deterministic and use unified `state["random"]`.
+- `inside_contact` always requests 2 contact options.
+- Strong AI victory normally requests 3 contact options, or 2 at Turf Level 7+.
+- Strong AI victory means the human successfully and unblocked destroys a strong AI Status building: `stash`, `workshop`, or `district_control`.
+- Blocked attacks, failed validation, Nal steal, Engine destruction, non-strong AI targets, and AI attackers must not create a strong-AI-victory contact offer.
+- `black_cash` is passive and changes Brothel double bonus from +5 to +6 through owner Income flow.
+- `corrupt_clerk` is passive; its first Status discount is consumed only after successful Status purchase.
+- `street_medic` prevents only 1 VP loss from debt penalty once per run through the debt hook. It does not prevent Nal loss and is not consumed when effective VP loss is 0.
+
+## Turf Levels
+
+- Turf Level is selected manually before the run.
+- Turf Level is an integer in `TurfLevelIds.ALL`, valid range `0..10`.
+- String Turf IDs, territory IDs, and automatic Turf progression are forbidden in MVP.
+- Turf Level must not change during a match.
+- Turf Levels are cumulative: level `N` applies effects from `1..N`.
+- Turf Level Resources and `effect_summary` are display/config data; gameplay must not parse text summaries.
+
+Owner routing for cumulative effects:
+
+| Level | Effect | Runtime owner |
+| ---: | --- | --- |
+| 1 | All AI start with +1 Nal | setup / `TurfLevelLogic` |
+| 2 | Strong AI starts with +1 VP | setup / AI + Turf integration |
+| 3 | Human starts with -1 Nal after role, minimum 3 | setup / `TurfLevelLogic` |
+| 4 | Rotating market has 3 cards instead of 4 | `MarketLogic` |
+| 5 | Human Cops upkeep interval is 2 instead of 3 | `IncomeLogic` |
+| 6 | First AI War purchase each round costs 1 less | `PriceLogic` / `TurfLevelLogic` |
+| 7 | Strong AI victory contact offer count is 2 instead of 3 | `ContactLogic` |
+| 8 | Direct upfront human Street Deal payments increase by +1 | `StreetDealLogic` |
+| 9 | AI War purchase weight +20% only if human strictly leads VP | `AIPurchaseLogic` |
+| 10 | AI wins VP tie if AI is among leaders | `WinnerResolver` / `TurfLevelLogic` |
+
+- Level 6 discount applies only to AI War purchases and consumes only after successful purchase.
+- Level 9 must not mutate AI profile Resources.
+- Level 10 winner tie-break must not use random. If multiple AI are tied, choose highest Nal, then stable order `ai_1`, `ai_2`, `ai_3`.
+
+## FIX decisions to enforce
+
+Follow these accepted decisions exactly:
+
+- `FIX-001`: Human chooses Street Deals; AI only receives explicit side effects.
+- `FIX-002` and `FIX-030`: `state["street_deals"]` owns global Street Deal state; debts are in `player["debts"]`.
+- `FIX-003`: Active debt blocks only `loan_shark`.
+- `FIX-004`: Turf Level 8 affects only direct upfront human Street Deal payments.
+- `FIX-005`: `dirty_tip` Option B random AI target uses deterministic `SeededPicker`.
+- `FIX-006`: `risky_contract` Option B richest-AI tie uses stable AI order, no random.
+- `FIX-007`: `inside_contact` creates a ContactLogic offer; StreetDealLogic does not unlock contacts directly.
+- `FIX-008`: owned contacts are in `player["contacts"]`; pending offers are in `state["contacts"]["pending_offer"]`.
+- `FIX-009`: max 1 contact means no replacement.
+- `FIX-010`: strong AI victory means unblocked human destruction of strong AI Status building.
+- `FIX-011`: strong AI victory offers 3 contacts normally, 2 at Turf Level 7+; `inside_contact` remains 2.
+- `FIX-012`: `corrupt_clerk` consumes only after successful Status purchase.
+- `FIX-013`: Turf Level 10 multiple AI tie-break uses highest Nal, then stable AI order.
+- `FIX-031`: canonical keys, IDs, errors, and event payloads only; no free-form nested result dictionaries in events.
+- `FIX-033`: contract setup is pure deterministic 3-offer preview, then validated atomic commit.
+
+## Forbidden behavior
+
+- Do not duplicate source-of-truth ownership across root state, player state, Resources, UI, or facade caches.
+- Do not give contracts to AI players.
+- Do not give AI players Street Deal choices.
+- Do not give contacts to AI players.
+- Do not replace an existing contact.
+- Do not change Turf Level during a match.
+- Do not implement automatic Turf Level progression in MVP.
+- Do not use string Turf/territory IDs.
+- Do not auto-claim contract rewards.
+- Do not let completed contracts fail after deadline.
+- Do not make active debt block all Street Deals.
+- Do not store debts globally as `active_debts`.
+- Do not unlock contacts directly from StreetDealLogic.
+- Do not implement contract/contact/debt/Turf internals inside another owner module.
+- Do not parse Resource descriptions or effect summaries as gameplay logic.
+- Do not invent event payloads, validation errors, fallback strings, hooks, rewards, deadlines, debt penalties, contact effects, or Turf effects.
+- Do not use forbidden random APIs; deterministic offers and random side effects must use the owner deterministic random contract.
+
+## Required behavior
+
+- Use only owner-defined hooks and result shapes.
+- Apply accepted `FIX-*` decisions before older PRD text.
+- Validate exact canonical state keys and reject aliases.
+- Keep progression Resources immutable.
+- Commit through `GameStateManager` facade transactions.
+- Failed validation must not mutate active state, random, logs, player resources, contracts, debts, contacts, Turf flags, or pending offers.
+- Add or update focused GUT tests when progression behavior changes.
+- If owner PRD and accepted `FIX-*` conflict, stop and report PRD drift instead of choosing silently.
+- If behavior is absent or ambiguous, reference an existing `OQ-*`; if none exists, report the proposed `OQ-*` instead of inventing behavior.
+
+## Required tests
+
+Progression tests must cover:
+
+- deterministic contract offer preview and committed setup membership;
+- human-only contract selection and AI contract rejection;
+- contract completion, deadline, claim, repeated claim, and failure mutation safety;
+- Street Deal timing, deterministic generation, human-only choice, used-deal exclusion, and active-debt `loan_shark` filtering;
+- debt storage in `player["debts"]`, automatic Income processing, repayment, overdue penalties, VP clamp, and `street_medic` hook;
+- contact ownership split, deterministic offers, max 1 contact, no replacement, strong AI victory offers, and selection mutation safety;
+- Turf Level range, cumulative effects, setup modifiers, per-level owner integrations, no match-time Turf changes, and Level 10 tie-break;
+- static scans for UI-owned progression logic, forbidden random APIs, duplicate ownership aliases, and untracked ambiguity markers.
+
+## Output requirements
+
+For progression changes, report:
+
+- Progression owner PRD:
+- Related `FIX-*` / `OQ-*`:
+- State owner fields touched:
+- Owner hooks invoked:
+- Human-only / AI-side-effect status:
+- Deterministic random use and steps:
+- Claim/deadline/debt/contact/Turf impact:
+- Tests run:
+
+## Verification checklist
+
+- Contracts route to PRD 09 only.
+- Street Deals and debts route to PRD 10 only.
+- Contacts route to PRD 11 only.
+- Turf Levels route to PRD 12 only.
+- Accepted `FIX-*` decisions are followed exactly.
+- No duplicated runtime ownership was introduced.
+- AI received no contracts, contacts, or Street Deal choices.
+- Human-only choices remain human-only.
+- Deterministic offers and random side effects use unified random.
+- Contract claim/deadline rules are mutation-safe.
+- Debts process through Income owner flow.
+- Contact limit is max 1 with no replacement.
+- Turf effects are cumulative and Turf Level cannot change during a match.

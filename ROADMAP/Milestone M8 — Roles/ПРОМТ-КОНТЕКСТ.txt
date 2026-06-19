@@ -1,0 +1,160 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Игра строится вокруг детерминированных фаз, экономики, рынка и конфликтов.
+
+Текущий этап: Milestone M8 — Roles.
+Он выполняется строго после завершённых M0–M7.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+
+- Logic-first: role rules находятся в logic layer.
+- Data-driven: role IDs и display data централизованы.
+- UI является только view/input layer.
+- Gameplay не парсит `effect_summary` и `limitation_summary`.
+- Price preview и role validation не мутируют state.
+- Role flags расходуются только после успешного действия.
+- Randomness разрешена только через RNG contract из M3.
+- Role logic полностью детерминирована и RNG не использует.
+- Роли применяются только к human player.
+- AI использует profiles, а не player roles.
+
+## Структура проекта
+
+Релевантные каталоги:
+
+- `res://logic/roles/`
+- `res://logic/economy/`
+- `res://logic/game_state/`
+- `res://data/ids/`
+- `res://data/resources/roles/`
+- `res://tests/unit/`
+- `res://tests/fixtures/`
+- `res://tests/helpers/`
+
+Источники истины:
+
+- `docs/prd/08_ROLES.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+Используй фактические repository paths документов.
+Формат `res://` применяй только к Godot project files.
+
+## Что уже сделано
+
+M0 — Project Bootstrap:
+
+- создан проект, folder structure, GUT и static scan helper.
+
+M1 — Constants and IDs:
+
+- созданы `RoleIds`, `GameIds` и `ValidationErrors`;
+- ad hoc IDs запрещены.
+
+M2 — Resource Schemas and Catalogs:
+
+- созданы `RoleDefinition`, role Resources и catalog;
+- Resource summaries не являются gameplay rules.
+
+M3 — Deterministic Random:
+
+- создан сериализуемый RNG contract;
+- M8 не использует и не изменяет RNG.
+
+M4 — Game State Schema:
+
+- определены `selected_role_id` и `role_flags`;
+- доступны state factory, validator, serializer и fixtures.
+
+M5 — Core Loop and Phases:
+
+- реализованы phases и round lifecycle;
+- Merchant per-round flag сбрасывается в round-start flow.
+
+M6 — Economy and Market:
+
+- реализованы `PriceLogic`, `MarketLogic` и rebuild flow;
+- M8 добавляет role modifiers через существующие extension points;
+- RoleLogic не вычитает Nal и не размещает купленные карты.
+
+M7 — Combat System:
+
+- реализованы War-карты и defenses;
+- Enforcer starting Cops использует существующую defense schema;
+- M8 не меняет combat effects.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M7.
+
+## Что сейчас делаю
+
+Реализую M8 — Roles:
+
+- `res://logic/roles/RoleLogic.gd`;
+- role setup для human player;
+- role price modifiers;
+- role flags и reset timing;
+- Accountant `vp >= 1` requirement;
+- Gray Cardinal Accountant bypass;
+- District Boss rebuild price modifier;
+- интеграцию с factory, validator, PriceLogic и MarketLogic;
+- GUT tests и static scan.
+
+Четыре неизменяемые роли:
+
+- Merchant;
+- Enforcer;
+- Gray Cardinal;
+- District Boss.
+
+## Договорённости по коду
+
+- Каждый `.gd` файл меньше 250 строк.
+- Соблюдай existing conventions и typed GDScript.
+- Не дублируй IDs, base prices и purchase flow.
+- RoleLogic возвращает чистые modifiers и не списывает Nal.
+- Failed setup/purchase/rebuild не мутирует role flags.
+- Флаги расходуются после успешной placement/payment.
+- Все `first` эффекты once-per-run, если явно не сказано otherwise.
+- Только Merchant first War tax является once-per-round.
+- При обычной покупке Accountant с `vp >= 1` bypass не расходуется.
+- Role effects никогда не применяются к AI.
+- Добавь отдельные flags для Gray Cardinal Stash tax
+  и District Boss Laundry tax.
+- Resolved fixes и более конкретный `08_ROLES.md` имеют приоритет.
+- Нерешённый вопрос фиксируй как `OQ-*`, не изобретая правило.
+- Ориентиры объёма промтов приблизительные, не жёсткие.
+
+## Что НЕ входит в текущий milestone
+
+- Новые роли или изменение role effects.
+- Combat rules и card effects.
+- Contract logic из M9.
+- Street Deals и debts из M10.
+- Contacts из M11.
+- Turf Level implementation из M12.
+- AI profiles и decisions из M13.
+- GameStateManager orchestration из M14.
+- Save/load orchestration из M15.
+- Role selection UI из M16.
+- Market generation или economy redesign.
+- Gameplay randomness.
+- React, TypeScript, Tailwind, Zustand, Docker, backend и routing.

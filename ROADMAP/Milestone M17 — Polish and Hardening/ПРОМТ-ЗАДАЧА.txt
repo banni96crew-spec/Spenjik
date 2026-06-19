@@ -1,0 +1,313 @@
+﻿РОЛЬ:
+Ты senior Godot 4.6.2 architect, release engineer,
+test/hardening lead и coding-agent.
+Ты умеешь:
+- проводить финальный audit Godot/GDScript repository;
+- отличать defect от нового gameplay requirement;
+- улучшать error/log presentation без изменения semantics;
+- создавать безопасные debug-only JSON snapshots;
+- писать GUT regression tests;
+- проверять deterministic replay и full-run gate.
+Реализуй Milestone M17 — Polish and Hardening.
+Сначала изучи repository и дай план без кода.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+The Turf / «Передел» — desktop single-player card/board mini-game
+с одним human player и тремя local AI.
+Матч длится 15 раундов и заканчивается Game Over.
+Стек:
+- Godot 4.6.2 stable;
+- GDScript, GUT;
+- `.tres` Resources и Dictionary state snapshots;
+- GameStateManager Autoload;
+- SeededRandom/SeededPicker;
+- Control/Container UI;
+- Windows/Linux desktop first;
+- без web stack.
+M0–M16 являются prerequisites, но их readiness нужно проверить.
+Dependency direction:
+`UI -> GameStateManager -> logic -> catalogs/resources/constants`
+Debug direction:
+`Developer/test -> GameStateManager debug API -> DebugSnapshotManager`
+Gameplay modules не зависят от debug snapshot.
+Источники истины:
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/16_GAME_STATE_MANAGER_API.md`
+- `docs/prd/17_UI_UX_SPEC.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- owner PRD-файлы M6–M13
+- `docs/prd/20_LLM_AGENT_RULES.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+При конфликте используй owner PRD и resolved `FIX-*`.
+M17 не создаёт новый runtime gameplay API.
+
+ЗАДАЧА:
+Реализовать финальный M17 hardening:
+- улучшить mapping stable errors в readable UI text;
+- улучшить читаемость существующего gameplay log;
+- реализовать optional debug snapshot;
+- закрыть подтверждённые defects regression tests;
+- выполнить final static scans и полный GUT suite;
+- подтвердить replay determinism;
+- подтвердить полный run до round 15 Game Over;
+- проверить отсутствие unresolved blocking `OQ-*`;
+- выдать evidence-based gate report.
+Новые gameplay rules во время polish запрещены.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+Проаудируй и при необходимости обнови:
+- `res://scenes/ui/helpers/ErrorTextMap.gd`
+- `res://scenes/ui/helpers/UIViewFormatters.gd`
+- `res://scenes/ui/panels/GameLogPanel.gd`
+- `res://scenes/ui/panels/GameLogPanel.tscn`
+- `res://autoload/GameStateManager.gd`
+Создай или доведи до готовности:
+- `res://autoload/DebugSnapshotManager.gd`
+При необходимости обнови:
+- `res://project.godot` только для optional Autoload registration.
+Допустимые debug methods GameStateManager:
+- `save_debug_snapshot() -> Dictionary`
+- `get_debug_state_summary() -> Dictionary`
+Добавь/обнови focused tests по existing conventions:
+- `res://tests/unit/test_error_text_map.gd`
+- `res://tests/unit/test_game_log_presentation.gd`
+- `res://tests/unit/test_debug_snapshot_manager.gd`
+Если эквивалентный test уже существует, расширь его, не создавай duplicate.
+Обязательные canonical static tests:
+- `res://tests/static/test_static_random_scan.gd`
+- `res://tests/static/test_architecture_static_scan.gd`
+- `res://tests/static/test_ui_static_boundaries.gd`
+- `res://tests/static/test_file_length_scan.gd`
+- `res://tests/static/test_resource_integrity_scan.gd`
+- `res://tests/static/test_open_questions_docs.gd`
+Обязательные final flow/replay tests:
+- `res://tests/integration/test_full_round_flow.gd`
+- `res://tests/integration/test_game_over_flow.gd`
+- `res://tests/replay/test_replay_determinism.gd`
+- `res://tests/replay/test_replay_random_step_consistency.gd`
+
+PRE-IMPLEMENTATION AUDIT:
+До кода:
+1. Найди actual project root и проверь `project.godot`.
+2. Проверь worktree, не затирай unrelated changes.
+3. Запусти baseline M0–M16 tests/scans.
+4. Зафиксируй pre-existing failures отдельно.
+5. Сопоставь actual ValidationErrors с ErrorTextMap.
+6. Сопоставь CombatLogEntry schema с builders и GameLogPanel.
+7. Проверь GameStateManager debug API и Autoloads.
+8. Проверь static scan helper/entry points.
+9. Проверь full-run/replay harness.
+10. Проверь open questions и blocking status.
+Покажи audit matrix:
+- area;
+- owner document/module;
+- current implementation/tests;
+- confirmed gap;
+- allowed M17 action;
+- determinism/gameplay risk.
+Если prerequisite не завершён, не создавай workaround:
+укажи owning milestone и останови зависимую часть.
+
+ERROR TEXT HARDENING:
+Построй coverage table:
+- error code;
+- owner/return site;
+- current UI text;
+- fallback;
+- test.
+Правила:
+- используй actual constants из `ValidationErrors.gd`;
+- не меняй semantics stable codes;
+- `OK` не показывай как failure;
+- unknown non-empty code получает generic readable fallback;
+- debug context сохраняет исходный code;
+- empty/malformed value обрабатывается безопасно;
+- не добавляй error constants только ради wording;
+- не дублируй gameplay validation в ErrorTextMap;
+- не меняй failed result на success.
+Проверь errors setup, phase, market, combat, contracts,
+Street Deals/Debts, contacts и facade validation.
+Если semantic contract не определён, создай `OQ-*`, не угадывай.
+
+LOG READABILITY HARDENING:
+Сохрани authoritative fields:
+- `id`, `round`, `phase`, `event_type`;
+- `actor_id`, `target_id`, `card_id`;
+- `summary`, `details`.
+Правила:
+- log остаётся append-only;
+- порядок, IDs и event types сохраняются;
+- UI не создаёт gameplay entries;
+- formatting делается в UI/helper layer, где возможно;
+- state хранит IDs, display text не подменяет их;
+- empty/optional/long entries отображаются безопасно;
+- expanded details — UI-local presentation state;
+- не добавляй wall-clock timestamps;
+- cosmetic changes не должны менять replay outcome.
+Проаудируй required events:
+- match/round/phase;
+- income/market/action;
+- purchases/rebuild;
+- attacks/blocks/discards;
+- contracts/Street Deals/debts/contacts;
+- AI activity;
+- Game Over/winner.
+Если event отсутствует вопреки owner PRD:
+1. Докажи defect test/reproduction.
+2. Минимально исправь owning log builder.
+3. Не меняй gameplay effects.
+4. Добавь regression test.
+5. Перезапусти replay.
+
+DEBUG SNAPSHOT:
+Required path:
+- `user://debug_run_snapshot.json`
+Обязательные свойства:
+- сериализуется detached Dictionary snapshot;
+- source и active state не мутируются;
+- random step, phase и combat log не меняются;
+- snapshot не required для normal gameplay;
+- gameplay не читает snapshot;
+- write failure не ломает матч;
+- facade не commit-ит state и не emit-ит gameplay signals;
+- debug summary read-only и deterministic;
+- JSON не содержит Node/Resource runtime references.
+Запрещено:
+- SaveManager, save slots, autosave, continue/load flow;
+- gameplay restore или чтение snapshot при старте;
+- migration system;
+- gameplay dependency на DebugSnapshotManager.
+`load_debug_snapshot()` optional и не подключается к MVP gameplay.
+Tests:
+- valid JSON создан и содержит expected state fields;
+- source snapshot/state/random/logs unchanged;
+- failure path safe;
+- normal run работает без snapshot;
+- debug summary одинаков для одинакового state.
+Filesystem test удаляет только созданный test file
+и не зависит от machine-specific absolute path.
+
+DEFECT FIX POLICY:
+Можно исправлять только:
+- parse/runtime error;
+- test-confirmed contract/integration/replay defect;
+- incorrect error mapping/log rendering;
+- debug snapshot defect;
+- static architecture violation;
+- full-run blocker, противоречащий owner PRD.
+Для каждого fix:
+1. Покажи reproduction/failing test.
+2. Укажи owner PRD/FIX.
+3. Добавь regression test.
+4. Внеси минимальное изменение.
+5. Запусти targeted, affected и full suites.
+Не перебалансируй числа, AI weights, effects, phases или winner rules.
+Не подгоняй expected result теста под bug.
+
+FINAL VERIFICATION:
+Запусти по порядку:
+1. M17 targeted/regression tests.
+2. Все unit tests.
+3. Все integration tests.
+4. Full-round и Game Over tests.
+5. Replay tests.
+6. UI/payload/scene tests.
+7. Все static tests.
+8. Полный GUT suite одним финальным запуском.
+9. Godot project parse/open check.
+10. Scripted 15-round run до Game Over.
+Подтверди:
+- same seed + inputs -> identical final snapshot/random step;
+- round 16 не создаётся;
+- valid `winner_id`, `game_result`, final summary log;
+- после Game Over gameplay mutations отклоняются;
+- debug snapshot call не меняет gameplay result;
+- каждый `.gd` файл меньше 250 строк;
+- forbidden RNG/UI mutation/web stack отсутствуют;
+- Resources/catalogs/IDs и OQ/FIX docs проходят scans.
+Если Windows/Linux export presets/templates доступны,
+выполни non-destructive desktop export smoke.
+Если нет — честно отметь skipped; Web export не добавляй.
+
+OPEN QUESTIONS:
+- M17 запрещён при unresolved `blocking: yes`.
+- Deferred non-MVP `blocking: no` не является blocker.
+- Не игнорируй duplicate IDs или untracked ambiguity markers.
+- При blocker останови зависимую часть и оформи `OQ-*`.
+
+ОГРАНИЧЕНИЯ:
+- Не добавляй gameplay rules/content и rebalance.
+- Не меняй IDs, formulas, public contracts или phase graph.
+- Не меняй RNG algorithm/call order/random step.
+- `randf()`, `randi()`, `randomize()`, `RandomNumberGenerator` запрещены.
+- Не добавляй wall-clock nondeterminism.
+- Не превращай snapshot в persistence.
+- Не добавляй React, TypeScript, Tailwind, Zustand, Docker,
+  network, telemetry, backend, web routing или Web export.
+- Не делай большой unrelated refactor.
+- Не ослабляй tests, scans и assertions.
+- Не заявляй pass для незапущенной проверки.
+- Не удаляй unrelated user changes.
+- Каждый `.gd` файл строго меньше 250 строк.
+- FIX-023, FIX-024, FIX-026–FIX-030 обязательны.
+- Ориентиры длины промтов приблизительные.
+
+ПОРЯДОК РАБОТЫ:
+1. Изучи docs и repository.
+2. Проверь M0–M16 readiness и baseline.
+3. Построй audit/error/log coverage tables.
+4. Проверь debug snapshot boundary и blockers.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» сначала добавь regression tests.
+7. Минимально исправь error/log presentation.
+8. Реализуй debug snapshot и tests.
+9. Исправь только доказанные defects.
+10. Запусти targeted и affected tests.
+11. Запусти полный suite, scans и replay.
+12. Запусти full run и доступный desktop smoke.
+13. Выдай evidence-based M17 gate report.
+
+ФОРМАТ ОТВЕТА:
+1. Сначала дай план без кода.
+2. Покажи audit matrix и coverage gaps.
+3. Укажи baseline failures, blockers и OQ.
+4. Дождись моего «ок».
+5. До «ок» не изменяй файлы.
+6. После «ок» показывай изменения с полными `res://...` путями.
+7. Для fix указывай reproduction, owner и regression test.
+8. Перечисли реально запущенные commands/tests/scans.
+9. Для проверки укажи pass/fail/skipped и причину.
+10. Сообщи full-run result и replay/random-step comparison.
+11. Не заявляй pass по inspection вместо execution.
+12. В конце дай M17 gate checklist.
+
+M17 GATE CHECKLIST:
+- [ ] M0–M16 readiness и baseline проверены.
+- [ ] ErrorTextMap покрывает actual stable codes и safe fallback.
+- [ ] Error mapping не меняет gameplay semantics.
+- [ ] Log schema/order/IDs/details сохранены.
+- [ ] Required events и readable rendering проверены.
+- [ ] Log polish не меняет replay outcome.
+- [ ] `res://autoload/DebugSnapshotManager.gd` существует.
+- [ ] JSON пишется в `user://debug_run_snapshot.json`.
+- [ ] Snapshot не мутирует state/random/logs.
+- [ ] Snapshot failure безопасен; gameplay от него не зависит.
+- [ ] Save/load/persistence не реализованы.
+- [ ] Каждый defect имеет regression test.
+- [ ] Unit, integration, UI и static suites проходят.
+- [ ] Full-round и Game Over tests проходят.
+- [ ] Replay snapshots и final random step идентичны.
+- [ ] Все `.gd` files меньше 250 строк.
+- [ ] Forbidden RNG, UI mutation и web artifacts отсутствуют.
+- [ ] Resource/catalog/ID integrity подтверждена.
+- [ ] Untracked ambiguity и unresolved blocking OQ отсутствуют.
+- [ ] Полный 15-round run завершается Game Over.
+- [ ] Valid winner/result/final log получены; round 16 отсутствует.
+- [ ] Project открывается/парсится в Godot 4.6.2.
+- [ ] Desktop smoke выполнен или честно отмечен skipped.
+- [ ] Новые gameplay rules не добавлены.
+- [ ] Итоговый gate основан на реально выполненных проверках.

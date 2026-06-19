@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "hooks/adapters/validate-commit-cursor-adapter.sh"
+      },
+      {
+        "command": "hooks/adapters/validate-push-cursor-adapter.sh"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "hooks/adapters/validate-assets-cursor-adapter.sh"
+      },
+      {
+        "command": "hooks/adapters/validate-skill-change-cursor-adapter.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": "hooks/adapters/session-stop-cursor-adapter.sh"
+      }
+    ]
+  }
+}

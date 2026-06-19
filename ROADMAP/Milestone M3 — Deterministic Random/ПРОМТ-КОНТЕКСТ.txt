@@ -1,0 +1,130 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+Разработка идёт строго по milestone-порядку:
+
+M0 Project Bootstrap
+→ M1 Constants and IDs
+→ M2 Resource Schemas and Catalogs
+→ M3 Deterministic Random
+→ последующие gameplay-модули
+
+Игровое ядро должно быть детерминированным, тестируемым без UI и пригодным для replay. Одинаковые seed, исходное состояние, решения и порядок random-вызовов должны давать одинаковый результат.
+
+Документы в `res://docs/prd/` — источник истины. Не придумывай отсутствующие алгоритмы, API, state fields или gameplay rules. При неоднозначности проверь `21_OPEN_QUESTIONS_AND_FIXES.md`; если решения нет, останови затронутую часть и зарегистрируй `OQ-*`.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript и GUT.
+- `.tres` Resources для статических данных.
+- Dictionary snapshots для будущего runtime state.
+- Windows и Linux как первые export targets.
+- Без web stack.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+Gameplay random принадлежит только:
+
+- `res://logic/random/SeededRandom.gd`
+- `res://logic/random/SeededPicker.gd`
+
+Все будущие consumers используют единый `state["random"]`. Поле `random["step"]` — единственный счётчик gameplay random.
+RandomState:
+
+```gdscript
+{
+	"seed": String,
+	"step": int,
+	"last_random_tag": String,
+	"random_history_enabled": bool
+}
+```
+
+При включённой debug history разрешено поле `history: Array[Dictionary]`. Gameplay от history не зависит.
+
+Критические invariants:
+
+- Required algorithm: `cyrb53` + `mulberry32`.
+- `seeded_random(seed, step)` — pure function.
+- Один draw потребляет ровно один step.
+- Seed не изменяется; tag не влияет на value.
+- Failed validation не изменяет random state и не потребляет step.
+- Picker не мутирует input arrays.
+- Preview и selector functions не потребляют random.
+- Winner resolution не использует random.
+- Каждый `.gd` файл содержит менее 250 строк.
+
+Запрещены в gameplay code:
+
+- `randf()`, `randi()`, `randomize()`;
+- `RandomNumberGenerator`;
+- system time и OS random.
+
+## Структура проекта
+
+Production files M3:
+
+- `res://logic/random/SeededRandom.gd`
+- `res://logic/random/SeededPicker.gd`
+
+Tests M3:
+
+- `res://tests/unit/test_seeded_random.gd`
+- `res://tests/unit/test_seeded_picker.gd`
+- random static scan по существующей test convention проекта.
+
+## Что уже сделано
+
+M0 завершил Godot project bootstrap, GUT, folder structure, smoke test и static scan helper.
+
+M1 завершил constants и IDs, включая `ValidationErrors.OK` и `ValidationErrors.REQUIREMENT_NOT_MET`, constants tests и ранние static scans.
+
+M2 завершил Resource schemas, обязательные `.tres`, domain catalogs и Resource integrity tests.
+
+Перед M3 проверь все prerequisite gates фактически. Если gate не проходит, не начинай M3: сообщи blocker и восстанови только необходимый prerequisite.
+
+## Что сейчас делаю
+
+Реализую только `Milestone M3 — Deterministic Random`:
+
+- `SeededRandom.gd` и `SeededPicker.gd`;
+- deterministic sample-vector tests;
+- exact step-consumption и optional history tests;
+- forbidden random API scan.
+
+Owner PRD:
+
+- `res://docs/prd/14_DETERMINISTIC_RANDOM.md`
+
+Direct dependencies:
+
+- `03_IDS_AND_CONSTANTS.md`
+- `04_GAME_STATE_SCHEMA.md`, только RandomState
+- `15_GODOT_ARCHITECTURE.md`
+- `18_TEST_PLAN.md`
+- `19_IMPLEMENTATION_ORDER.md`
+- `20_LLM_AGENT_RULES.md`
+- `21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Договорённости по коду
+
+- Реализуй точный owner contract, не приблизительный аналог.
+- Используй stable result shapes и validation constants из M1.
+- Используй static typing там, где практично.
+- Не меняй sample vectors и не ослабляй tests ради pass.
+- Не откатывай несвязанные пользовательские изменения.
+- Не заявляй о прохождении незапущенных tests.
+- Не оставляй ambiguity markers без `OQ-*`.
+
+## Что НЕ входит в текущий milestone
+
+Не реализуй GameStateFactory, GameStateValidator, phases, economy, market, contracts, Street Deals, contacts, AI, WinnerResolver, GameStateManager, gameplay UI, random consumers и full-game replay.
+
+Не изменяй constants, Resources, catalogs или gameplay rules без прямого требования owner PRD.

@@ -1,0 +1,127 @@
+﻿# Проект: The Turf / Передел
+
+## О чём продукт
+The Turf / «Передел» — desktop single-player card/board mini-game внутри визуальной новеллы.
+Игрок и AI управляют районами, зданиями, ресурсами, картами и эффектами.
+Текущий этап: Milestone M9 — Contracts, строго после M0–M8.
+
+## Стек
+- Godot 4.6.2 stable.
+- GDScript.
+- GUT.
+- `.tres` Resources.
+- Windows/Linux.
+- Без web stack.
+
+## Архитектура
+- Logic-first: contract rules находятся в logic layer.
+- Data-driven: IDs, deadlines, rewards и display data централизованы.
+- UI является только view/input layer.
+- Gameplay не парсит Resource descriptions.
+- Validation выполняется до mutation.
+- Failed mutators не изменяют входной state.
+- Selectors не мутируют state и не расходуют RNG.
+- Offers используют единый deterministic RNG из M3.
+- Progress меняется только через явные ContractLogic hooks.
+- Completion не выдаёт reward автоматически.
+- Reward применяется только через manual claim.
+- Контракты принадлежат только human player.
+
+## Структура проекта
+- `res://logic/contracts/`
+- `res://logic/random/`
+- `res://logic/economy/`
+- `res://logic/combat/`
+- `res://logic/game_state/`
+- `res://data/ids/`
+- `res://data/resources/contracts/`
+- `res://tests/unit/`
+- `res://tests/integration/`
+
+Источники истины:
+- `docs/prd/09_CONTRACTS.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/14_DETERMINISTIC_RANDOM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Что уже сделано
+M0:
+- создан проект, GUT, folder structure и static scan.
+
+M1:
+- созданы `ContractIds`, `GameIds` и `ValidationErrors`.
+
+M2:
+- созданы `ContractDefinition`, семь Resources и catalog.
+
+M3:
+- созданы `SeededRandom` и `SeededPicker`;
+- `pick_unique` расходует один RNG step на selected item.
+
+M4:
+- определены `selected_contract_id`, player contracts и random state;
+- доступны factory, validator, serializer и fixtures.
+
+M5:
+- реализованы round lifecycle и phase checkpoints.
+
+M6:
+- реализованы purchase, income, Nal, VP и building state;
+- Market/Income имеют boundaries для contract hooks.
+
+M7:
+- combat result содержит valid, blocked, success и destroyed object data;
+- CombatEngine имеет boundary для contract hook.
+
+M8:
+- роли применяются только к human;
+- role logic не изменяется в M9.
+
+Перед работой coding-agent проверяет фактическое состояние M0–M8.
+
+## Что сейчас делаю
+Реализую M9 — Contracts:
+- `res://logic/contracts/ContractLogic.gd`;
+- 3 deterministic unique offers;
+- выбор одного offered contract;
+- runtime progress, completion, failure и claim;
+- Market, Income, Combat и round-start hooks;
+- future-safe state-change hook;
+- unit/integration tests и static scan.
+
+Семь контрактов:
+- Silent Expansion;
+- Bloody Turf War;
+- Gray Capital;
+- Iron Roof;
+- District Under Control;
+- Proxy War;
+- Big Cashbox.
+
+## Договорённости по коду
+- Каждый `.gd` файл меньше 250 строк.
+- Используй existing conventions и typed GDScript.
+- Offers создаются через `SeededPicker.pick_unique`.
+- Human выбирает ровно один контракт из offers.
+- AI не получает contracts.
+- Deadline round включительно допускает completion.
+- Failure наступает только при `round > deadline`.
+- Completed contract не становится failed.
+- Completed contract можно claim после deadline.
+- Claim выдаёт reward ровно один раз.
+- Не дублируй purchase, income, combat или phase resolution.
+- Нерешённый вопрос фиксируй как `OQ-*`.
+- Лимиты строк промтов считаются по всем физическим строкам.
+- `ПРОМТ-ЗАДАЧА` не повторяет раздел «КОНТЕКСТ ПРОЕКТА».
+
+## Что НЕ входит в текущий milestone
+- Изменение IDs, conditions, deadlines или rewards.
+- Street Deals, debts, Contacts и Turf Levels.
+- AI contracts или AI decisions.
+- GameStateManager facade и UI.
+- Auto-claim rewards.
+- Gameplay randomness вне offer generation.
+- Web/backend stack.

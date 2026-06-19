@@ -1,0 +1,137 @@
+# Проект: The Turf / Передел
+
+## О чём продукт
+
+“The Turf” / “Передел” — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+Разработка идёт строго по milestone-порядку:
+
+M0 Project Bootstrap
+→ M1 Constants and IDs
+→ M2 Resource Schemas and Catalogs
+→ M3 Deterministic Random
+→ M4 Game State Schema
+→ M5 Core Loop and Phases
+→ M6 Economy and Market
+→ последующие gameplay-модули
+
+M6 реализует получение и расход Nal, deterministic Income, price calculation, shared market, purchase validation/resolution, Cops upkeep и District Control rebuild.
+
+Документы в `res://docs/prd/` — источник истины. Не меняй цены, market pools, card placement или modifier order. При конфликте применяй resolved `FIX-*`; unresolved ambiguity оформляй как `OQ-*`.
+
+## Стек
+
+- Godot 4.6.2 stable.
+- GDScript и GUT.
+- `.tres` Resources и domain catalogs.
+- Dictionary snapshots.
+- `SeededRandom` и `SeededPicker`.
+- Windows и Linux.
+- Без web stack.
+
+## Архитектура
+
+Будущее направление зависимостей:
+
+UI → GameStateManager → logic modules → catalogs/resources/constants
+
+M6 разделён на небольшие owner files:
+
+- `PriceLogic.gd` — read-only price/protection calculations.
+- `MarketLogic.gd` — market generation и public economy orchestration.
+- `IncomeLogic.gd` — deterministic income и Cops upkeep.
+- `PurchaseValidator.gd` — read-only purchase/rebuild validation.
+- `PurchaseResolver.gd` — successful state mutation and placement.
+
+Критические invariants:
+
+- Nal и VP не становятся отрицательными.
+- Price preview и validation не мутируют state и random.
+- Failed purchase/rebuild не мутирует state и не consumes flags/modifiers.
+- Market generation использует shared `state["random"]`.
+- Income roll использует `roll_d6_pair` и ровно 2 random steps на player.
+- Purchase работает на deep copy и commit result возвращается только при success.
+- Resource definitions не мутируются.
+- Gameplay UI отсутствует.
+- Каждый `.gd` файл содержит менее 250 строк.
+
+## Структура проекта
+
+Production files M6:
+
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/economy/MarketLogic.gd`
+- `res://logic/economy/IncomeLogic.gd`
+- `res://logic/economy/PurchaseValidator.gd`
+- `res://logic/economy/PurchaseResolver.gd`
+
+Tests:
+
+- `res://tests/unit/test_price_logic.gd`
+- `res://tests/unit/test_market_logic.gd`
+- `res://tests/unit/test_income_logic.gd`
+- focused purchase/rebuild tests по существующей convention.
+
+## Что уже сделано
+
+M0–M2 создали project infrastructure, constants, Resources и catalogs.
+
+M3 создал deterministic random contract.
+
+M4 создал canonical GameState, Factory, Validator и fixtures.
+
+M5 создал phase orchestration и WinnerResolver.
+
+Перед M6 фактически проверь M0–M5 gates. При проваленном prerequisite не начинай M6.
+
+## Что сейчас делаю
+
+Реализую только `Milestone M6 — Economy and Market`:
+
+- base/scaled prices и minimum price;
+- price-modifier integration order;
+- protected Nal;
+- deterministic market;
+- purchase validation и placement;
+- deterministic Income;
+- Cops upkeep;
+- District Control rebuild;
+- starting-resource integration points;
+- future domain hooks без преждевременной реализации owner modules.
+
+Owner PRD:
+
+- `res://docs/prd/06_ECONOMY_AND_MARKET.md`
+
+Direct dependencies:
+
+- `02_CORE_LOOP_AND_PHASES.md`
+- `03_IDS_AND_CONSTANTS.md`
+- `04_GAME_STATE_SCHEMA.md`
+- `05_CARDS_DATABASE.md`
+- `08_ROLES.md`, только integration contract
+- `10_STREET_DEALS_AND_DEBTS.md`, только debt hook
+- `11_CONTACTS.md`, только economy modifiers
+- `12_TURF_LEVELS.md`, только economy-owned integration
+- `14_DETERMINISTIC_RANDOM.md`
+- `18_TEST_PLAN.md`
+- `19_IMPLEMENTATION_ORDER.md`
+- `20_LLM_AGENT_RULES.md`
+- `21_OPEN_QUESTIONS_AND_FIXES.md`
+
+## Договорённости по коду
+
+- Используй card catalogs/definitions; не парси `effect_summary`.
+- Stable IDs и errors бери из M1.
+- Modifier order: base/scaled → rebuild override → role hook → Turf hook → temporary/contact modifiers → clamp.
+- Temporary/contact flags consume только после successful matching purchase.
+- Starting resources в M6 — base values и explicit integration points; Role/Turf setup effects принадлежат M8/M12.
+- Debt, Contract и AI behavior не fake-stubятся.
+- Ориентиры длины prompt-файлов примерные и не являются acceptance criteria.
+- Не ослабляй tests и не скрывай failed/not-run checks.
+
+## Что НЕ входит в текущий milestone
+
+Не реализуй combat, RoleLogic, ContractLogic, DebtLogic, ContactLogic, TurfLevelLogic, AI purchasing, GameStateManager или UI.
+
+M6 предоставляет validated economy APIs и hooks, которыми эти modules воспользуются позже, но не поглощает их правила.

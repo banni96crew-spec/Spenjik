@@ -1,0 +1,368 @@
+РОЛЬ:
+
+Ты senior Godot 4.6.2 architect и coding-agent, работающий непосредственно с репозиторием игры “The Turf” / “Передел”.
+
+Реализуй только `M6 — Economy and Market`. Не переходи к M7 и последующим gameplay-модулям.
+
+КОНТЕКСТ ПРОЕКТА:
+
+M6 выполняется только после успешных M0–M5.
+
+До изменений изучи:
+
+- `res://docs/prd/06_ECONOMY_AND_MARKET.md` — owner PRD;
+- `02_CORE_LOOP_AND_PHASES.md`;
+- `03_IDS_AND_CONSTANTS.md`;
+- `04_GAME_STATE_SCHEMA.md`;
+- `05_CARDS_DATABASE.md`;
+- relevant integration sections в `08`, `10`, `11`, `12`, `13`;
+- `14_DETERMINISTIC_RANDOM.md`;
+- `18_TEST_PLAN.md`;
+- `19_IMPLEMENTATION_ORDER.md`;
+- `20_LLM_AGENT_RULES.md`;
+- `21_OPEN_QUESTIONS_AND_FIXES.md`.
+
+Обязательно учти:
+
+- `FIX-012`: Corrupt Clerk consumes только после successful Status purchase.
+- `FIX-021`: market использует unified `state["random"]`.
+- `FIX-022`: Income dice потребляют ровно 2 steps.
+- `FIX-025`: District Control rebuild — отдельное действие.
+
+M6 полностью реализует economy-owned behavior, но не поглощает Roles, Contracts, Debts, Contacts, Turf Levels или AI.
+
+ЗАДАЧА:
+
+1. Проверь repository state и сохрани пользовательские изменения.
+2. Фактически проверь M0–M5 gates.
+3. Составь economy matrix: rule → owner → API → mutation → test.
+4. Выяви integration gaps с будущими modules.
+5. Оформи unresolved conflicts как `OQ-*`.
+6. Реализуй пять required production files.
+7. Добавь focused GUT tests.
+8. Запусти M6 tests, regressions и static scans.
+9. Проверь mutation safety, random steps, Resource immutability, scope и diff.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ:
+
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/economy/MarketLogic.gd`
+- `res://logic/economy/IncomeLogic.gd`
+- `res://logic/economy/PurchaseValidator.gd`
+- `res://logic/economy/PurchaseResolver.gd`
+
+Tests:
+
+- `res://tests/unit/test_price_logic.gd`
+- `res://tests/unit/test_market_logic.gd`
+- `res://tests/unit/test_income_logic.gd`
+- purchase/rebuild tests в отдельных files либо существующих M6 suites.
+
+Не создавай economy mega-file. Разделяй helpers/tests при приближении к 250 строкам.
+
+REQUIRED API:
+
+`PriceLogic.gd`:
+
+- full card price preview;
+- Informant/Laundry scaling;
+- protected Nal;
+- minimum-price clamp;
+- rebuild preview;
+- modifier pipeline.
+
+Required helpers:
+
+```gdscript
+static func get_informant_price(player: Dictionary) -> int
+static func get_laundry_price(player: Dictionary) -> int
+static func get_protected_nal(accountants: int) -> int
+static func clamp_price(price: int, min_price: int = 1) -> int
+```
+
+`MarketLogic.gd`:
+
+```gdscript
+static func generate_market(state: Dictionary) -> Dictionary
+static func can_buy_card(state: Dictionary, player_id: String, card_id: String) -> Dictionary
+static func buy_card(state: Dictionary, player_id: String, card_id: String) -> Dictionary
+static func rebuild_district_control(state: Dictionary, player_id: String) -> Dictionary
+static func get_rotating_slot_count(turf_level: int) -> int
+```
+
+`IncomeLogic.gd`:
+
+- resolve income для одного player;
+- при необходимости orchestration для 4 players;
+- Cops upkeep;
+- `get_cops_upkeep_interval(state, player)`.
+
+`PurchaseValidator.gd` выполняет read-only purchase/rebuild validation.
+
+`PurchaseResolver.gd` применяет placement, Nal/VP changes и modifier consumption только после success.
+
+Внутренние signatures согласуй с существующими patterns. Не создавай competing public APIs.
+
+PRICE CONTRACT:
+
+Используй M2 card catalogs/definitions. Не дублируй изменяемую price table и не парси display text.
+
+Scaling:
+
+- Informant: 5 / 6 / 7 при owned 0 / 1 / 2+.
+- Laundry: 8 / 10 / 12 при owned 0 / 1 / 2+.
+
+Protected Nal:
+
+- 0 Accountants → 0;
+- 1 → 4;
+- 2 → 6;
+- N > 2 → `6 + (N - 2)`.
+
+Modifier order:
+
+1. Base/scaled price.
+2. Rebuild override.
+3. Role hook.
+4. Turf hook.
+5. Temporary/contact modifiers.
+6. Clamp к minimum 1.
+
+Price preview не мутирует state, random, flags, modifiers или Resources.
+
+Role/Turf owner modules ещё не реализованы. Создай clean integration contract, но не дублируй их полную логику внутри M6.
+
+MARKET CONTRACT:
+
+Always available:
+
+- informant, stash, thug, cops.
+
+Rotating pool:
+
+- laundry, accountant, brothel, workshop;
+- district_control, cartel, judge;
+- bruiser, cleaner, insider, saboteur, federal_raid.
+
+Rules:
+
+- pools не пересекаются;
+- IDs valid и unique;
+- 4 rotating slots ниже Turf Level 4, иначе 3;
+- selection через `SeededPicker.pick_unique`;
+- shared random state обновляется exact selected count steps;
+- same initial state → same market;
+- market соответствует M4 schema.
+
+PURCHASE CONTRACT:
+
+Validation проверяет:
+
+- Market phase;
+- valid state/player/card;
+- availability;
+- enough Nal по final price;
+- one copy одного card ID на player за round;
+- card-specific requirements и limits.
+
+Используй documented errors:
+
+- `INVALID_PHASE`, `INVALID_PLAYER_ID`, `INVALID_CARD_ID`;
+- `CARD_NOT_AVAILABLE_IN_MARKET`, `NOT_ENOUGH_NAL`;
+- `CARD_ALREADY_PURCHASED_THIS_ROUND`;
+- `REQUIREMENT_NOT_MET`, `CARD_LIMIT_REACHED`, `INVALID_STATE`.
+
+Missing required error — PRD/OQ issue, не ad-hoc string.
+
+Card rules:
+
+- District Control требует `district_control < workshop`;
+- Accountant base requirement: `vp >= 1`; Gray Cardinal bypass — M8 hook;
+- Brothel и active Cops нельзя купить повторно;
+- active Cartel/Judge нельзя купить повторно;
+- depleted Cartel можно reactivate.
+
+Success:
+
+1. Вычти final price.
+2. Размести card по Resource type/destination.
+3. Для Status добавь documented VP.
+4. Добавь ID в `purchased_this_round`.
+5. Consume matching modifier.
+6. Validate final state.
+
+Placement:
+
+- Engine → engine fields;
+- Status → counters + 1/2/3 VP;
+- Defense → Cops/Cartel/Judge state;
+- War → hand.
+
+Failure оставляет Nal, random, cards, flags и modifiers deep-equal unchanged.
+
+`FIX-012`:
+
+- Corrupt Clerk modifier отображается в preview;
+- consumes только после successful Status purchase;
+- failed/non-Status purchase не consumes его.
+
+Если M11 marker не определён однозначно, создай `OQ-*` и оставь explicit hook.
+
+INCOME CONTRACT:
+
+Exact order для каждого player:
+
+1. +2 Nal за Laundry.
+2. `SeededRandom.roll_d6_pair`.
+3. +1 Nal за Informant.
+4. Brothel +5 на doubles.
+5. Black Cash меняет bonus на +6.
+6. Add total Nal.
+7. Process Cops upkeep.
+8. Debt hook.
+9. Contract hook.
+10. Validate result.
+
+Random:
+
+- ровно 2 steps на resolved player;
+- updated random state сохраняется;
+- preview не rolls dice;
+- failure до roll не consumes random.
+
+Black Cash проверяй только через documented contact state. Не реализуй ContactLogic.
+
+Cops:
+
+- active timer увеличивается после income;
+- interval 3;
+- human interval 2 при Turf Level 5+;
+- AI interval остаётся 3;
+- due + Nal >= 1: pay 1, timer 0, active;
+- due + Nal < 1: timer 0, inactive;
+- Nal не становится negative.
+
+Debt/Contract modules ещё не реализованы. Не fake-stubь penalties/progress и не заявляй, что hooks выполнены. При compile-time dependency conflict создай `OQ-*`.
+
+REBUILD CONTRACT:
+
+- dedicated action, не fake card ID;
+- только Market phase;
+- требует `can_rebuild_district_for_8 == true`;
+- default price 8;
+- future District Boss price 7 через role hook;
+- сохраняет `district_control < workshop`;
+- success: subtract price, +1 District Control, +3 VP, flag false;
+- failure: no mutation.
+
+STARTING RESOURCES:
+
+Base:
+
+- `STARTING_NAL = 5`;
+- `STARTING_VP = 0`.
+
+`19_IMPLEMENTATION_ORDER.md` требует integration points:
+
+- предоставь base/setup helper или documented hook;
+- не реализуй role/Turf starting effects;
+- не выбирай strong AI;
+- не меняй M4 Factory без согласованной необходимости.
+
+МИНИМАЛЬНЫЕ ТЕСТЫ:
+
+- exact price scaling, protected Nal, modifier order и minimum 1;
+- preview no mutation/no random;
+- deterministic unique market, slot count и exact steps;
+- purchase errors и все placement categories;
+- failed purchase no mutation/consumption;
+- Income calculations и exact +2 random steps;
+- Cops intervals, payment и deactivation;
+- rebuild success/failures;
+- unavailable future hooks не подменены gameplay logic.
+
+ОГРАНИЧЕНИЯ:
+
+- Не начинай M6 при проваленном prerequisite gate.
+- Не меняй prices, market pools или card effects.
+- Не парси Resource display text и не мутируй Resources.
+- Не используй forbidden random APIs.
+- Не consumes random в preview/validation.
+- Не мутируй original state при failure.
+- Не реализуй CombatEngine.
+- Не реализуй RoleLogic, ContractLogic, DebtLogic, ContactLogic или TurfLevelLogic.
+- Не реализуй AI purchase decisions.
+- Не создавай GameStateManager или UI.
+- Не добавляй save/load, web stack или hidden global state.
+- Каждый `.gd` файл должен быть меньше 250 строк.
+- Ориентиры длины prompt-файлов примерные; это не acceptance criteria.
+- Не ослабляй tests и не скрывай failed/not-run checks.
+- Не откатывай несвязанные пользовательские изменения.
+- Не оставляй ambiguity markers без `OQ-*`.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Проверь prerequisites, repository state, fixes и open questions.
+2. Составь matrices для price, market, purchase, income и rebuild.
+3. Отдельно перечисли boundaries с M8–M13.
+4. Дай план без кода и дождись моего `ок`.
+5. После `ок` сначала обнови fixtures и focused tests.
+6. Реализуй PriceLogic и PurchaseValidator/Resolver.
+7. Реализуй MarketLogic.
+8. Реализуй IncomeLogic и Cops upkeep.
+9. Реализуй rebuild.
+10. Запусти M6 tests, M0–M5 regressions и scans.
+11. Проверь mutation snapshots, random steps, Resources, file length, scope и diff.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Не изменяй файлы до моего `ок`.
+3. После `ок` работай непосредственно в репозитории.
+4. Указывай пути в формате `res://...`.
+5. Не скрывай failed или not-run проверки.
+6. Не отмечай M6 завершённым при непрошедшем gate.
+
+Финальный отчёт:
+
+```text
+Prerequisites:
+- M0–M5: PASS/FAIL/NOT RUN
+
+Implemented:
+- ...
+
+Changed files:
+- res://...
+
+Integration boundaries:
+- ...
+
+Tests and scans:
+- command
+- passed/failed
+
+Open questions:
+- none / OQ-*
+
+M6 gate:
+- PASS/FAIL/NOT RUN
+```
+
+M6 GATE CHECKLIST:
+
+- [ ] M0–M5 gates проходят.
+- [ ] Все 5 production files существуют.
+- [ ] Prices/scaling/protected Nal корректны.
+- [ ] Price preview не мутирует state/random.
+- [ ] Market deterministic, unique и использует shared random.
+- [ ] Purchases validate и place cards корректно.
+- [ ] Failed purchases не мутируют state/flags/modifiers.
+- [ ] Income dice deterministic и используют 2 steps/player.
+- [ ] Cops upkeep работает.
+- [ ] District Control rebuild работает отдельным action.
+- [ ] Future-domain hooks не реализуют чужие modules.
+- [ ] Regressions и static scans проходят.
+- [ ] Все `.gd` files меньше 250 строк.
+- [ ] M7+ gameplay и web stack не добавлены.
+- [ ] Пользовательские изменения сохранены.

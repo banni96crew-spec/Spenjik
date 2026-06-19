@@ -1,0 +1,503 @@
+﻿РОЛЬ:
+
+Ты senior Godot 4.6.2 gameplay architect и coding-agent.
+Ты реализуешь logic-first, data-driven системы на typed GDScript,
+пишешь GUT tests и строго соблюдаешь PRD.
+
+Сначала изучи репозиторий и contracts M0–M11.
+До подтверждения пользователя не изменяй файлы.
+
+КОНТЕКСТ ПРОЕКТА:
+
+The Turf / «Передел» — desktop single-player card/board mini-game
+внутри визуальной новеллы.
+
+Стек:
+
+- Godot 4.6.2 stable;
+- GDScript;
+- GUT;
+- `.tres` Resources;
+- Windows/Linux;
+- без web stack.
+
+Архитектура:
+
+- logic-first и data-driven;
+- UI только view/input layer;
+- Dictionary state snapshots;
+- validation before mutation;
+- owner modules применяют Turf helpers;
+- deterministic behavior без RNG в TurfLevelLogic.
+
+Проверь фактические contracts M0–M11:
+
+- Turf constants, Resources и catalog;
+- state factory, validator и fixtures;
+- role setup order;
+- round reset и WinnerResolver;
+- Market, Income и Price extension points;
+- ContactLogic Level 7 boundary;
+- StreetDealLogic Level 8 boundary.
+
+Источники истины:
+
+- `docs/prd/12_TURF_LEVELS.md`
+- `docs/prd/02_CORE_LOOP_AND_PHASES.md`
+- `docs/prd/04_GAME_STATE_SCHEMA.md`
+- `docs/prd/06_ECONOMY_AND_MARKET.md`
+- `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
+- `docs/prd/11_CONTACTS.md`
+- `docs/prd/13_AI_SYSTEM.md`
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/18_TEST_PLAN.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+
+ЗАДАЧА:
+
+Реализовать Milestone M12 — Turf Levels:
+
+- `TurfLevelLogic.gd`;
+- validation и cumulative rules уровней 0–10;
+- setup modifiers Levels 1–3;
+- runtime helpers Levels 4–10;
+- Turf flags и reset;
+- integration с существующими owner modules;
+- M13-ready Level 9 contract;
+- GUT tests и static scan.
+
+ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+
+- `res://logic/turf_levels/TurfLevelLogic.gd`
+- `res://tests/unit/test_turf_level_logic.gd`
+
+Проверь и точечно обнови при необходимости:
+
+- `res://data/ids/TurfLevelIds.gd`
+- `res://data/ids/ValidationErrors.gd`
+- `res://data/resources/turf_levels/TurfLevelDefinition.gd`
+- `res://data/resources/turf_levels/turf_level_0.tres`
+  ... `turf_level_10.tres`;
+- `res://logic/catalog/TurfLevelCatalog.gd`
+- `res://logic/game_state/GameStateFactory.gd`
+- `res://logic/game_state/GameStateValidator.gd`
+- `res://logic/game_state/GamePhaseController.gd`
+- `res://logic/game_state/WinnerResolver.gd`
+- `res://logic/economy/MarketLogic.gd`
+- `res://logic/economy/IncomeLogic.gd`
+- `res://logic/economy/PriceLogic.gd`
+- `res://logic/contacts/ContactLogic.gd`
+- `res://logic/street_deals/StreetDealLogic.gd`
+- fixtures и integration tests.
+
+Не создавай `AIBotController` или `AIPurchaseLogic` в M12,
+если их ещё нет: они принадлежат M13.
+Каждый `.gd` файл должен быть меньше 250 строк.
+Helpers создавай только при реальной необходимости.
+
+LEVEL DATA И VALIDATION:
+
+Valid Turf Level:
+
+- integer от 0 до 10 включительно.
+
+Используй `TurfLevelIds.MIN/MAX` или существующие constants.
+Invalid value возвращает `INVALID_TURF_LEVEL`;
+fallback `REQUIREMENT_NOT_MET` допустим только при отсутствии error ID.
+
+Должны существовать ровно 11 Resource definitions:
+
+- Level 0;
+- Levels 1–10;
+- без duplicate level values.
+
+`TurfLevelDefinition` хранит level, title и effect summary.
+Gameplay не парсит summary.
+
+Turf Level:
+
+- выбирается вручную только во время setup;
+- хранится в `state["turf_level"]`;
+- не меняется во время run;
+- не повышается автоматически после win/loss.
+
+OQ-002 automatic progression остаётся вне MVP.
+
+CUMULATIVE CONTRACT:
+
+Если выбран Level N, применяются все effects Levels 1..N.
+
+Примеры:
+
+- Level 0: base rules;
+- Level 4: effects 1–4;
+- Level 8: effects 1–8;
+- Level 10: effects 1–10.
+
+Не реализуй levels как mutually exclusive branches.
+
+TURF FLAGS:
+
+Каждый PlayerState должен иметь:
+
+```gdscript
+"turf_flags": {
+    "ai_first_war_discount_used_this_round": false
+}
+```
+
+Flag существует у всех players для schema consistency,
+но применяется только к AI.
+
+В начале каждого раунда до Market сбрасывается только этот flag.
+Failed purchase не consume-ит flag.
+
+ОБЯЗАТЕЛЬНЫЙ API:
+
+Предоставь проектные эквиваленты:
+
+- `create_empty_turf_flags()`
+- `is_valid_turf_level(turf_level)`
+- `apply_setup_modifiers(state)`
+- `reset_round_turf_flags(player)`
+- `get_rotating_market_slot_count(turf_level)`
+- `get_cops_upkeep_interval(state, player)`
+- `get_ai_war_purchase_modifiers(state, player, card_def)`
+- `consume_turf_flags_after_purchase(...)`
+- `get_strong_ai_victory_contact_offer_count(turf_level)`
+- `get_street_deal_payment_delta(state, player)`
+- `is_human_vp_leader(state)`
+- `get_ai_war_purchase_weight_multiplier(state)`
+- `resolve_level_10_ai_tie_break(state, tied_players)`
+
+Helpers должны быть pure/read-only.
+Только `apply_*`, `consume_*` и reset могут возвращать mutation
+на deep-copied data согласно conventions проекта.
+
+SETUP ORDER:
+
+Required order:
+
+1. Создать base GameState и players.
+2. Применить selected human role setup.
+3. Назначить AI profiles и ровно одного strong AI.
+4. Записать selected Turf Level.
+5. Применить cumulative Levels 1–3.
+6. Инициализировать turf flags.
+7. Провалидировать final state.
+
+M13 ещё не реализован.
+M12 не должен выбирать strong AI или расходовать RNG.
+
+`apply_setup_modifiers` работает с state, где strong AI уже отмечен.
+Для Level 2 он должен:
+
+- требовать ровно одного `is_strong_ai == true`;
+- корректно работать в unit tests через fixture-state;
+- возвращать validation failure, если strong AI отсутствует/неоднозначен;
+- не подменять отсутствующий M13 алгоритм.
+
+LEVEL 0:
+
+- никаких Turf modifiers;
+- base owner-module behavior остаётся неизменным.
+
+LEVEL 1 — AI STARTING NAL:
+
+При Level 1+:
+
+- каждый из трёх AI получает +1 starting Nal;
+- human не получает bonus;
+- effect применяется один раз только during setup.
+
+LEVEL 2 — STRONG AI STARTING VP:
+
+При Level 2+:
+
+- ровно один заранее назначенный strong AI получает +1 VP;
+- human и остальные AI не получают bonus;
+- effect применяется один раз during setup.
+
+LEVEL 3 — HUMAN STARTING NAL:
+
+При Level 3+:
+
+- после role setup human Nal уменьшается на 1;
+- minimum starting Nal = 3;
+- AI не затрагиваются.
+
+Expected role results:
+
+- Merchant 7 → 6;
+- Enforcer 5 → 4;
+- Gray Cardinal 4 → 3;
+- District Boss 5 → 4.
+
+LEVEL 4 — MARKET SLOTS:
+
+Helper возвращает:
+
+- below 4: 4 rotating slots;
+- Level 4+: 3 rotating slots.
+
+MarketLogic использует helper перед deterministic market selection.
+Always-available cards и pools не меняются.
+TurfLevelLogic не генерирует market.
+
+LEVEL 5 — COPS UPKEEP:
+
+Helper возвращает:
+
+- default interval 3;
+- Level 5+ для human: interval 2;
+- Level 5+ для AI: interval 3.
+
+Upkeep cost остаётся 1 Nal.
+Deactivation rules не меняются.
+IncomeLogic остаётся владельцем upkeep resolution.
+
+LEVEL 6 — AI WAR DISCOUNT:
+
+При Level 6+:
+
+- только first successful War purchase каждого AI в round получает -1;
+- каждый AI имеет независимый flag;
+- final price clamp остаётся в PriceLogic;
+- success consume-ит matching flag;
+- failed purchase flag не consume-ит;
+- reset происходит каждый round before Market.
+
+Не применяется к:
+
+- human;
+- не-War purchases;
+- War cards, полученным из Street Deals;
+- уже находящимся в hand cards.
+
+Structured modifier:
+
+- source `turf_level`;
+- turf level 6;
+- owner flag;
+- type `CARD_PRICE_DELTA`;
+- delta -1;
+- applies to War;
+- consume on success.
+
+LEVEL 7 — CONTACT OFFER:
+
+Helper возвращает:
+
+- below 7: strong-AI victory count 3;
+- Level 7+: count 2.
+
+Применяется только к source `strong_ai_victory`.
+Inside Contact всегда запрашивает 2.
+Max-one contact rule не меняется.
+ContactLogic остаётся владельцем offer generation.
+
+LEVEL 8 — STREET DEAL PAYMENTS:
+
+Helper возвращает +1 только если:
+
+- Level 8+;
+- player human;
+- owner module запрашивает direct upfront payment delta.
+
+Affected:
+
+- Dirty Tip A: 3 → 4;
+- Black Market Cache B: 6 → 7;
+- Risky Contract A: 3 → 4.
+
+Не затрагиваются Loan Shark debt amount, repayment, penalties,
+positive Nal gains, AI effects и temporary modifiers.
+StreetDealLogic валидирует affordability по modified payment.
+
+LEVEL 9 — AI WAR PURCHASE WEIGHT:
+
+При Level 9+ multiplier = 1.2 только когда:
+
+- human VP строго выше VP каждого AI;
+- оцениваемая card является War;
+- score используется для AI purchase decision.
+
+Во всех остальных случаях multiplier = 1.0:
+
+- below Level 9;
+- human tied for lead;
+- любой AI имеет VP >= human;
+- card не War.
+
+Multiplier:
+
+- не меняет card price;
+- не мутирует AI profile Resources;
+- не мутирует state.
+
+M13 будет владельцем `AIPurchaseLogic`.
+В M12 реализуй и протестируй pure helper/contract,
+но не создавай AI purchase loop, scoring или profiles.
+
+LEVEL 10 — WINNER TIE-BREAK:
+
+При Level 10 effect применяется только:
+
+- during final winner resolution;
+- если highest VP разделяют несколько players;
+- если среди VP leaders есть хотя бы один AI.
+
+Rules:
+
+- sole VP leader всегда выигрывает;
+- при human/AI VP tie winner обязан быть AI;
+- если AI leader один, выбрать его;
+- если AI leaders несколько, выбрать highest Nal;
+- при равном Nal использовать stable order:
+  `ai_1`, `ai_2`, `ai_3`.
+
+Не используй random.
+Resolved `FIX-013` имеет приоритет:
+между несколькими AI leaders после VP используется highest Nal,
+затем stable AI order, без дополнительных выдуманных criteria.
+
+Below Level 10 WinnerResolver использует существующий normal tie-break.
+TurfLevelLogic возвращает structured applied/not-applied result;
+WinnerResolver остаётся владельцем final game result.
+
+MUTATION И OWNERSHIP:
+
+- Failed setup не меняет Turf Level, Nal, VP или flags.
+- Pure helpers не меняют state, Resources или RNG.
+- Level 6 flag consume только после successful purchase.
+- TurfLevelLogic не генерирует market/contact/Street Deal.
+- TurfLevelLogic не разрешает Income, purchase или winner flow.
+- Runtime Turf Level mutator запрещён.
+
+RESULT CONTRACT:
+
+Setup result содержит:
+
+- ok/error;
+- turf level;
+- effects applied;
+- resulting state;
+- optional logs.
+
+Level 10 result содержит:
+
+- applied;
+- winner ID;
+- reason;
+- tied player IDs;
+- AI tie-break method/selected ID.
+
+Не используй text summary как gameplay source of truth.
+
+TESTS:
+
+Добавь targeted GUT tests для:
+
+- 11 Resources и range validation;
+- cumulative behavior;
+- Levels 1–3 setup и order;
+- missing/multiple strong AI validation;
+- turf flags initialization/reset;
+- Level 4 slots;
+- Level 5 human/AI intervals;
+- Level 6 AI-only success/failure/reset cases;
+- Level 7 source-specific counts;
+- Level 8 affected/unaffected payments;
+- Level 9 strict VP lead и Resource immutability;
+- Level 10 sole leader, human/AI tie, multiple AI/Nal/stable order;
+- failed mutation deep immutability;
+- no runtime Turf change;
+- owner-module integrations Levels 4–8 и 10;
+- M13-ready Level 9 helper;
+- отсутствие UI и forbidden RNG.
+
+Используй existing fixtures/helpers.
+Обнови state/schema/catalog tests.
+Запусти relevant unit, integration и static suites.
+
+STATIC SCAN:
+
+Turf implementation не должна содержать:
+
+- Godot random APIs или `RandomNumberGenerator`;
+- UI/scene access;
+- parsing `effect_summary`;
+- base card price/card effect changes;
+- role/contact/contract/Street Deal rewrites;
+- AI profile mutation;
+- combat resolution;
+- phase advancement;
+- automatic progression;
+- web stack.
+
+ОГРАНИЧЕНИЯ:
+
+- Не меняй Turf table или диапазон 0–10.
+- Не реализуй automatic progression.
+- Не реализуй M13–M17 заранее.
+- Не создавай AI system в M12.
+- Не дублируй owner-module resolution.
+- Не добавляй runtime Turf Level mutation.
+- Не выполняй unrelated refactor.
+- Каждый `.gd` файл меньше 250 строк.
+- Ориентиры длины промтов приблизительны.
+
+Обязательные decisions:
+
+- `FIX-004` — Level 8 только direct upfront payments;
+- `FIX-011` — strong-AI offer count 3/2;
+- `FIX-013` — Level 10 highest Nal, затем stable AI order;
+- `OQ-002` — automatic progression deferred.
+
+При новом противоречии проверь документ 21.
+Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
+
+ПОРЯДОК РАБОТЫ:
+
+1. Изучи M12 PRD, owner contracts, tests и fixes.
+2. Проинспектируй M0–M11 и integration points.
+3. Сопоставь Resources, state flags, APIs и setup order.
+4. Выяви M13 boundary и минимальные edits.
+5. Дай план без кода и дождись моего «ок».
+6. После «ок» реализуй TurfLevelLogic и state integration.
+7. Подключи Levels 4–8 и 10 к owner modules.
+8. Подготовь/test Level 9 helper без AI implementation.
+9. Запусти tests/static scan и исправь M12 errors.
+10. Представь итог.
+
+ФОРМАТ ОТВЕТА:
+
+1. Сначала дай план без кода.
+2. Укажи зависимости, M13 boundary, blockers и OQ.
+3. Дождись моего «ок».
+4. До «ок» не изменяй файлы.
+5. После «ок» показывай изменения с путями `res://...`.
+6. Перечисли проверки и результаты.
+7. В конце дай заполненный M12 gate checklist.
+
+Не пиши общие советы и не подменяй реализацию псевдокодом.
+Не отмечай gate пройденным без успешных проверок.
+
+M12 GATE CHECKLIST:
+
+- [ ] Resources Levels 0–10 существуют и валидны.
+- [ ] Range 0–10 и cumulative behavior работают.
+- [ ] Setup Levels 1–3 применяется в правильном порядке.
+- [ ] Turf flags создаются и сбрасываются.
+- [ ] Level 4 market slots работают.
+- [ ] Level 5 human Cops interval работает.
+- [ ] Level 6 AI War discount consume/reset корректен.
+- [ ] Level 7 strong-AI offer count работает.
+- [ ] Level 8 изменяет только direct payments.
+- [ ] Level 9 pure multiplier helper готов для M13.
+- [ ] Level 10 AI-favored tie-break работает без RNG.
+- [ ] Failed validation/helpers не мутируют state.
+- [ ] Owner-module integrations и tests проходят.
+- [ ] Каждый `.gd` файл меньше 250 строк.
+- [ ] Gameplay вне M12 и web stack не добавлены.
