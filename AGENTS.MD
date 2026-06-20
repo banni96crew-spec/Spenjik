@@ -25,10 +25,10 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 
 - `.cursor/agents/` — определения специализированных Cursor-агентов и общие принципы их работы.
 - `.cursor/rules/`, `.cursor/skills/`, `.cursor/hooks/` — проектные правила, вспомогательные workflows и локальные проверки Cursor.
-- `docs/prd/` — главный источник истины по продукту, игровым системам, архитектуре, API, тестам и правилам для LLM.
-- `docs/engine-reference/godot/` — закреплённая справка по Godot 4.6, изменениям API и актуальным практикам.
-- `docs/templates/` — шаблоны проектной, архитектурной, UX-, QA- и production-документации.
-- `docs/examples/`, `docs/references/`, `docs/hooks-reference/` — примеры workflow, справочные материалы и примеры проверок.
+- `/docs/prd/` — главный источник истины по продукту, игровым системам, архитектуре, API, тестам и правилам для LLM.
+- `/docs/engine-reference/godot/` — закреплённая справка по Godot 4.6, изменениям API и актуальным практикам.
+- `/docs/templates/` — шаблоны проектной, архитектурной, UX-, QA- и production-документации.
+- `/docs/examples/`, `docs/references/`, `docs/hooks-reference/` — примеры workflow, справочные материалы и примеры проверок.
 - `ROADMAP/` — контекст и задания для milestone M0–M17; порядок реализации задаётся также `docs/prd/19_IMPLEMENTATION_ORDER.md`.
 - `Godot_v4.6.2-stable_win64.exe/` — локальные исполняемые файлы Godot 4.6.2 для Windows.
 - `README.md` — краткий обзор статуса, стека, источников истины и порядка разработки.

@@ -46,12 +46,12 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 
 Основные документы:
 
-- [`docs/prd/01_PRODUCT_OVERVIEW.md`](docs/prd/01_PRODUCT_OVERVIEW.md) — продукт и scope;
-- [`docs/prd/15_GODOT_ARCHITECTURE.md`](docs/prd/15_GODOT_ARCHITECTURE.md) — архитектура и структура проекта;
-- [`docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md) — GUT, smoke, replay и static tests;
-- [`docs/prd/19_IMPLEMENTATION_ORDER.md`](docs/prd/19_IMPLEMENTATION_ORDER.md) — порядок M0–M17;
-- [`docs/prd/20_LLM_AGENT_RULES.md`](docs/prd/20_LLM_AGENT_RULES.md) — правила coding-agent;
-- [`docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`](docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md) — принятые исправления и открытые вопросы;
+- [`.cursor/docs/prd/01_PRODUCT_OVERVIEW.md`](docs/prd/01_PRODUCT_OVERVIEW.md) — продукт и scope;
+- [`.cursor/docs/prd/15_GODOT_ARCHITECTURE.md`](docs/prd/15_GODOT_ARCHITECTURE.md) — архитектура и структура проекта;
+- [`.cursor/docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md) — GUT, smoke, replay и static tests;
+- [`.cursor/docs/prd/19_IMPLEMENTATION_ORDER.md`](docs/prd/19_IMPLEMENTATION_ORDER.md) — порядок M0–M17;
+- [`.cursor/docs/prd/20_LLM_AGENT_RULES.md`](docs/prd/20_LLM_AGENT_RULES.md) — правила coding-agent;
+- [`.cursor/docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`](docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md) — принятые исправления и открытые вопросы;
 - [`AGENTS.MD`](AGENTS.MD) — практическое руководство для Cursor/Codex.
 
 При конфликте owner PRD имеет приоритет над roadmap, общими шаблонами и старыми материалами.
