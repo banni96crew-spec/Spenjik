@@ -28,7 +28,7 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 - `/docs/prd/` — главный источник истины по продукту, игровым системам, архитектуре, API, тестам и правилам для LLM.
 - `/docs/engine-reference/godot/` — закреплённая справка по Godot 4.6, изменениям API и актуальным практикам.
 - `/docs/templates/` — шаблоны проектной, архитектурной, UX-, QA- и production-документации.
-- `/docs/examples/`, `docs/references/`, `docs/hooks-reference/` — примеры workflow, справочные материалы и примеры проверок.
+- `.cursor/docs/examples/`, `.cursor/docs/references/`, `.cursor/docs/hooks-reference.md` — примеры workflow, справочные материалы и примеры проверок.
 - `ROADMAP/` — контекст и задания для milestone M0–M17; порядок реализации задаётся также `docs/prd/19_IMPLEMENTATION_ORDER.md`.
 - `Godot_v4.6.2-stable_win64.exe/` — локальные исполняемые файлы Godot 4.6.2 для Windows.
 - `README.md` — краткий обзор статуса, стека, источников истины и порядка разработки.
@@ -216,10 +216,10 @@ godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -
 ## Important Notes
 
 - Главный риск проекта — расхождение реализации с owner PRD. Не переносить правила из памяти, старого монолитного PRD или общих agent-шаблонов, если модульный PRD задаёт более конкретное правило.
-- `docs/technical-preferences.md` заполнен из модульного PRD. Поля, для которых PRD не задаёт численных или engine-level решений, явно отмечены как неопределённые и не должны заполняться догадками.
-- `docs/coding-standards.md` синхронизирован с Godot 4.6.2, GDScript и GUT 9.6.0. Универсальные Unity/Unreal и GdUnit4-команды к проекту не применяются.
+- `.cursor/docs/technical-preferences.md` заполнен из модульного PRD. Поля, для которых PRD не задаёт численных или engine-level решений, явно отмечены как неопределённые и не должны заполняться догадками.
+- `.cursor/docs/coding-standards.md` синхронизирован с Godot 4.6.2, GDScript и GUT 9.6.0. Универсальные Unity/Unreal и GdUnit4-команды к проекту не применяются.
 - MVP не включает multiplayer, backend, аккаунты, campaign persistence, обязательный web export, мобильную адаптацию, C#-версию и card editor.
 - `SaveManager.gd` не нужен. Допустим только необязательный `DebugSnapshotManager.gd`, который не участвует в gameplay loop.
-- Реализация идёт в порядке milestone из `19_IMPLEMENTATION_ORDER.md`: constants → Resources/catalogs → deterministic random → state factory/validator → owner logic + tests → facade → integration/replay → UI.
+- Реализация идёт в порядке milestone из `docs/prd/19_IMPLEMENTATION_ORDER.md`: constants → Resources/catalogs → deterministic random → state factory/validator → owner logic + tests → facade → integration/replay → UI.
 - UI до зелёных logic-тестов допускается только как placeholder без gameplay-правил.
 - Пользователь принимает творческие и стратегические решения. Агент должен показывать варианты и компромиссы, когда требования действительно не определены, но не запрашивать повторное разрешение на уже явно поручённое изменение.

@@ -90,11 +90,11 @@ SUCCESS | PARTIAL | BLOCKED
 
 ### Engine Version Safety
 
-**Engine Version Safety**: Before suggesting any engine-specific API, class, or node:
-1. Check `docs/engine-reference/[engine]/VERSION.md` for the project's pinned engine version
+**Engine Version Safety**: Before suggesting any Godot-specific API, class, or node:
+1. Check `docs/engine-reference/godot/VERSION.md` for the project's pinned Godot version
 2. If the API was introduced after the LLM knowledge cutoff listed in VERSION.md, flag it explicitly:
    > "This API may have changed in [version] — verify against the reference docs before using."
-3. Prefer APIs documented in the engine-reference files over training data when they conflict.
+3. Prefer APIs documented in `docs/engine-reference/godot/` over training data when they conflict.
 
 ### Tool Design Principles
 

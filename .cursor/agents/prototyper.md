@@ -173,8 +173,12 @@ Prototype code is disposable. It exists to validate an idea as quickly as possib
 - Error handling: crash loudly, do not handle edge cases
 
 **Higher bar for vertical slices:**
-- Follow architecture layers from `docs/architecture/control-manifest.md`
-- Naming conventions from `docs/technical-preferences.md`
+- Follow the current project control sources:
+  - `.cursor/docs/coding-standards.md`
+  - `AGENTS.MD`
+  - `docs/prd/20_LLM_AGENT_RULES.md`
+  - `docs/prd/15_GODOT_ARCHITECTURE.md`
+- Naming conventions from `.cursor/docs/technical-preferences.md`
 - No hardcoded gameplay values — use constants or config files
 - Basic error handling on critical paths
 - Placeholder art acceptable; representative art preferred
@@ -227,10 +231,10 @@ Prototype code must NEVER leak into the production codebase:
 The code is throwaway. The knowledge is permanent.
 
 **Concept prototype** → `prototypes/[name]-concept/REPORT.md`
-Use template: `docs/templatesconcept prototype-report.md`
+Use template: `docs/templates/prototype-report.md`
 
 **Vertical slice** → `prototypes/[name]-vertical-slice/REPORT.md`
-Use template: `docs/templatesvertical slice-report.md`
+Use template: `docs/templates/vertical-slice-report.md`
 
 **Spike** → `prototypes/[name]-spike-[date]/SPIKE-NOTE.md`
 No template — brief note: question, YES/NO/PARTIAL result, next action.

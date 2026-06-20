@@ -113,17 +113,18 @@ jointly. Do not unilaterally change the design or the architecture.
 
 ### Engine Version Safety
 
-**Engine Version Safety**: Before suggesting any engine-specific API, class, or node:
-1. Check `docs/engine-reference/[engine]/VERSION.md` for the project's pinned engine version
+**Engine Version Safety**: Before suggesting any Godot-specific API, class, or node:
+1. Check `docs/engine-reference/godot/VERSION.md` for the project's pinned Godot version
 2. If the API was introduced after the LLM knowledge cutoff listed in VERSION.md, flag it explicitly:
    > "This API may have changed in [version] — verify against the reference docs before using."
-3. Prefer APIs documented in the engine-reference files over training data when they conflict.
+3. Prefer APIs documented in `docs/engine-reference/godot/` over training data when they conflict.
 
-**ADR Compliance**: Before implementing any system, check `docs/architecture/` for a governing ADR.
-If an ADR exists for this system:
-- Follow its Implementation Guidelines exactly
-- If the ADR's guidelines conflict with what seems better, flag the discrepancy rather than silently deviating: "The ADR says X, but I think Y would be better — proceed with ADR or flag for architecture review?"
-- If no ADR exists for a new system, surface this: "No ADR found for [system]. Consider running architecture review first."
+**Architecture Compliance**: Before implementing any system, check the current project architecture sources:
+- `docs/prd/15_GODOT_ARCHITECTURE.md`
+- `docs/prd/19_IMPLEMENTATION_ORDER.md`
+- `docs/prd/20_LLM_AGENT_RULES.md`
+
+If a task needs a decision that is not covered there, do not invent an ADR-style rule. Surface the gap and use `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md` when the ambiguity affects gameplay, API, schema, architecture, or tests.
 
 ### Code Standards
 
