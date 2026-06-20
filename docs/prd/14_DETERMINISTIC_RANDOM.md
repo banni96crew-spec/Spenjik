@@ -289,7 +289,7 @@ If:
 random_state["random_history_enabled"] == true
 ```
 
-then each random draw should append a debug entry:
+then each `SeededRandom.next()` call must append one debug entry:
 
 ```gdscript
 {
@@ -301,6 +301,12 @@ then each random draw should append a debug entry:
 ```
 
 History collection is optional and debug-only, but the `history` field is always present.
+
+The history entry must contain exactly `step_before`, `step_after`, `tag`, and `value`.
+The legacy shape using only `step` is forbidden.
+
+If history is disabled, `history` remains an empty array.
+If history is enabled, every `SeededRandom.next()` call appends exactly one entry.
 
 Gameplay logic must not depend on `history`.
 
@@ -377,7 +383,71 @@ Do not replace:
 
 without creating a save/replay compatibility break.
 
-### 6.4. Implementation Note
+### 6.4. Exact Numerical Contract
+
+`SeededRandom.seeded_random(seed, step)` must perform these exact operations:
+
+1. Build:
+
+```text
+hash_input = seed + "::step::" + str(step)
+```
+
+2. Calculate:
+
+```text
+hash53 = cyrb53(hash_input, 0)
+```
+
+3. Fold the 53-bit hash into a 32-bit state:
+
+```text
+low32 = hash53 & 0xffffffff
+high32 = (hash53 >> 21) & 0xffffffff
+state32 = (low32 ^ high32) & 0xffffffff
+```
+
+4. Advance the required PRNG once:
+
+```text
+output32 = mulberry32_next(state32)
+```
+
+5. Normalize using:
+
+```text
+value = output32 / 4294967296.0
+```
+
+The tag must not participate in `hash_input`, hashing, PRNG state, or normalization.
+
+`seeded_random()` is pure and consumes 0 random steps.
+`next()` consumes exactly 1 random step.
+`roll_d6_pair()` consumes exactly 2 random steps.
+
+### 6.5. Locked Sample Vectors
+
+The following values are replay compatibility contracts:
+
+| Seed | Step | Value |
+| --- | ---: | ---: |
+| `run_12345` | 0 | `0.708633181872` |
+| `run_12345` | 1 | `0.749210928567` |
+| `run_12345` | 2 | `0.925818509422` |
+
+Starting from `create_random_state("run_12345")`, `roll_d6_pair()` must return:
+
+```gdscript
+{
+	"dice": [5, 5],
+	"sum": 10,
+	"is_double": true
+}
+```
+
+The returned random state must have `step == 2`.
+
+### 6.6. Implementation Note
 
 Exact GDScript implementation may differ internally, but output must be stable for:
 
@@ -385,7 +455,7 @@ Exact GDScript implementation may differ internally, but output must be stable f
 * same step;
 * same code version.
 
-Recommended GUT tests must lock sample outputs once implementation is written.
+GUT tests must lock the sample outputs from Section 6.5.
 
 ## 7. SeededRandom.gd API
 
@@ -427,6 +497,7 @@ Rules:
 * same `seed + step` always returns same value;
 * different step should usually return different value;
 * returns float in `[0.0, 1.0)`.
+* follows the exact hash input, 53-bit folding, PRNG advance, and normalization contract from Section 6.4.
 
 Result:
 
@@ -1011,6 +1082,7 @@ Minimum tests:
 * same seed and same step returns same value;
 * same seed and different step usually returns different value;
 * different seed and same step usually returns different value;
+* locked `run_12345` sample vectors match Section 6.5;
 * value is always `>= 0.0`;
 * value is always `< 1.0`;
 * `next` increments step by 1;
@@ -1032,6 +1104,7 @@ Minimum tests:
 * `roll_d6_pair` consumes exactly 2 steps;
 * same seed and same starting step returns same dice;
 * returned random state step advances by 2.
+* `run_12345` returns `[5, 5]`, sum `10`, `is_double == true`, and final step `2`.
 
 ### 16.3. SeededPicker Tests
 
@@ -1187,6 +1260,7 @@ This module is complete when:
 * `SeededRandom.gd` exists;
 * `SeededPicker.gd` exists;
 * `SeededRandom` uses `cyrb53 + mulberry32`;
+* `seeded_random` follows the exact numerical contract and locked sample vectors from Section 6;
 * random state starts with seed and step 0;
 * every gameplay random call consumes unified `state["random"]`;
 * `SeededRandom.next` increments step by 1;

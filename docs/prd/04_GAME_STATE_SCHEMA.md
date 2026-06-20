@@ -483,10 +483,19 @@ history	Array	Debug-only list of random calls
 If enabled, every history entry must use exactly:
 
 {
-	"step": 0,
+	"step_before": 0,
+	"step_after": 1,
 	"tag": "",
 	"value": 0.0
 }
+
+The legacy shape using only `"step"` is forbidden.
+
+If `random_history_enabled == false`, `history` remains an empty array.
+
+If `random_history_enabled == true`, every `SeededRandom.next()` call appends exactly one entry.
+
+Gameplay logic must not read or depend on `history`.
 
 ### 6.5. Mutation Rule
 

@@ -1723,6 +1723,108 @@ Test impact:
 
 * M1 tests verify that all 20 files exist and that their required constants are complete and unique.
 
+### FIX-036 — Exact seeded_random numerical contract
+
+Status: `resolved`
+
+Owner module:
+
+* 14_DETERMINISTIC_RANDOM.md
+
+Related modules:
+
+* 04_GAME_STATE_SCHEMA.md
+* 18_TEST_PLAN.md
+
+Problem:
+
+* The required `cyrb53 + mulberry32` algorithms did not define how `step` enters the hash, how the 53-bit hash becomes a 32-bit PRNG state, or which outputs are replay compatibility vectors.
+* Multiple implementations could satisfy the algorithm names while producing incompatible replay sequences.
+
+Accepted correction:
+
+* `SeededRandom.seeded_random(seed, step)` builds `hash_input = seed + "::step::" + str(step)`.
+* It calculates `hash53 = cyrb53(hash_input, 0)`.
+* It calculates `low32 = hash53 & 0xffffffff`.
+* It calculates `high32 = (hash53 >> 21) & 0xffffffff`.
+* It calculates `state32 = (low32 ^ high32) & 0xffffffff`.
+* It calculates `output32 = mulberry32_next(state32)`.
+* It returns `output32 / 4294967296.0`.
+* `tag` does not participate in number generation.
+* `seeded_random()` is pure and consumes 0 steps.
+* `next()` consumes exactly 1 step.
+* `roll_d6_pair()` consumes exactly 2 steps.
+* Locked sample vectors are:
+  * `run_12345`, step `0` -> `0.708633181872`;
+  * `run_12345`, step `1` -> `0.749210928567`;
+  * `run_12345`, step `2` -> `0.925818509422`.
+* `roll_d6_pair("run_12345")` produces dice `[5, 5]`, sum `10`, `is_double == true`, and final step `2`.
+
+Gameplay impact:
+
+* Yes.
+* Fixes the replay-compatible random sequence.
+
+Implementation impact:
+
+* `SeededRandom.gd` must implement the exact hash input, folding, PRNG, and normalization sequence.
+* Tags remain debug labels only.
+
+Test impact:
+
+* M3 tests must lock all listed float and dice sample vectors.
+* Tests must assert exact step consumption and tag independence.
+
+### FIX-037 — Canonical random history entry shape
+
+Status: `resolved`
+
+Owner modules:
+
+* 04_GAME_STATE_SCHEMA.md
+* 14_DETERMINISTIC_RANDOM.md
+
+Related modules:
+
+* 18_TEST_PLAN.md
+
+Problem:
+
+* `04_GAME_STATE_SCHEMA.md` used `{step, tag, value}` while `14_DETERMINISTIC_RANDOM.md` used `{step_before, step_after, tag, value}`.
+* The conflicting schemas prevented exact validation and deterministic history tests.
+
+Accepted correction:
+
+* Every history entry uses exactly:
+
+```gdscript
+{
+	"step_before": int,
+	"step_after": int,
+	"tag": String,
+	"value": float
+}
+```
+
+* The legacy `{step, tag, value}` shape is forbidden.
+* If `random_history_enabled == false`, `history` remains an empty array.
+* If `random_history_enabled == true`, every `SeededRandom.next()` call appends exactly one entry.
+* Gameplay logic must not read or depend on `history`.
+
+Gameplay impact:
+
+* No.
+* History remains debug-only.
+
+Implementation impact:
+
+* `SeededRandom.next()` must write only the canonical history entry shape when history is enabled.
+
+Test impact:
+
+* M3 tests must assert the exact entry keys and values.
+* Tests must assert no history append while history is disabled and one append per `next()` while enabled.
+
 ## 11. Accepted Design Decisions Summary
 
 | Area                      | Accepted Decision                                                          |
@@ -1744,6 +1846,8 @@ Test impact:
 | AI attack roll            | One deterministic roll per AI Action turn.                                 |
 | AI War cards              | AI may play multiple valid War cards after passing attack roll.            |
 | Random state              | All gameplay random consumes shared `state["random"]`.                     |
+| Random numerical contract | Exact `cyrb53` folding, `mulberry32`, normalization, and vectors are fixed. |
+| Random history            | Entries use `step_before`, `step_after`, `tag`, and `value` only.           |
 | Save policy               | No persistence in MVP; debug snapshot only.                                |
 | UI boundary               | UI never owns gameplay logic.                                              |
 | Implementation order      | Foundations → logic → facade → integration → UI.                           |
@@ -1923,7 +2027,7 @@ Related modules:
 
 Type:
 
-* data schema
+* schema
 
 Blocking:
 
@@ -1966,6 +2070,7 @@ Every effect dictionary must use:
 	"penalty": {},
 	"contact_offer_count": 0
 }
+```
 
 Allowed target values:
 
@@ -2153,7 +2258,7 @@ Related modules:
 
 Type:
 
-* data schema
+* schema
 
 Blocking:
 
@@ -2185,6 +2290,7 @@ Allowed `effect_type` values:
 brothel_double_bonus_plus_one
 first_status_card_discount
 prevent_debt_vp_loss_once
+```
 
 Canonical Contact Resource data:
 
