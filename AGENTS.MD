@@ -1,5 +1,15 @@
 # AGENTS.MD
 
+## Cursor compatibility
+
+Before starting work:
+
+1. Read applicable files from `.cursor/rules/`.
+2. Read relevant workflows from `.cursor/skills/`.
+3. Treat `.cursor/agents/` as role definitions when delegating to subagents.
+4. Report which files were loaded.
+5. If a Cursor-specific directive cannot be interpreted, stop and report it.
+
 ## Project Overview
 
 **The Turf** — локальная пошаговая карточная мини-игра о борьбе за влияние, управлении ресурсами и тактических атаках. Матч рассчитан ровно на 15 раундов и включает человека и трёх локальных AI-соперников.
