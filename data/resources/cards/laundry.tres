@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/cards/CardDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "laundry"
+title = "Laundry"
+type = "engine"
+base_price = 8
+destination = "table"
+max_per_player = 0
+effect_summary = "+2 Nal during Income"

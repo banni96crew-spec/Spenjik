@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TurfLevelDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/turf_levels/TurfLevelDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 3
+title = "Human Starting Nal Penalty"
+effect_summary = "Human gets -1 starting Nal after role, minimum 3."

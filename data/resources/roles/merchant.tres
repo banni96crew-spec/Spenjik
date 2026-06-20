@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/roles/RoleDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "merchant"
+title = "Merchant"
+starting_nal = 7
+effect_summary = "Starts with 7 Nal; first Engine card is cheaper by 1."
+limitation_summary = "First War card each round is more expensive by 1."

@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="StreetDealDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/street_deals/StreetDealDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "inside_contact"
+title = "Inside Contact"
+description = "Find a useful contact or take immediate cash."
+min_round = 8
+weight = 100
+max_uses_per_run = 1
+option_a_label = "Meet the contact"
+option_a_description = "Choose 1 contact from 2 deterministic contact offers."
+option_a_effects = Array[Dictionary]([{
+"amount": 0,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 2,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "unlock_contact"
+}])
+option_b_label = "Take the envelope"
+option_b_description = "Gain 4 Nal."
+option_b_effects = Array[Dictionary]([{
+"amount": 4,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}])

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "avenger"
+purchase_scores = {
+"bruiser": 100,
+"cartel": 70,
+"cleaner": 60,
+"cops": 75,
+"stash": 35,
+"thug": 65
+}
+attack_probability = 0.65
+target_weights = {
+"availableNal": 2,
+"destructibleBuildings": 4,
+"humanBias": 1,
+"lowDefense": 2,
+"revenge": 6,
+"vpLead": 3
+}
+minimum_reserve_nal = 2
+fallback = "attack_best_target"

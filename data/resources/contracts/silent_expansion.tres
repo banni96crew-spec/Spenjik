@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ContractDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contracts/ContractDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "silent_expansion"
+title = "Silent Expansion"
+deadline_round = 8
+progress_required = 2
+reward_type = "vp"
+reward_amount = 1
+description = "Build 2 Status buildings and do not play War."

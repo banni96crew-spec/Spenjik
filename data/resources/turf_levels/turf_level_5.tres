@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TurfLevelDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/turf_levels/TurfLevelDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 5
+title = "Human Cops Upkeep Interval Penalty"
+effect_summary = "Human Cops upkeep interval is every 2 Income phases instead of 3."

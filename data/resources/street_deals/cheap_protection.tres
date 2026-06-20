@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="StreetDealDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/street_deals/StreetDealDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "cheap_protection"
+title = "Cheap Protection"
+description = "Secure a cheaper defense or take quick cash with future risk."
+min_round = 4
+weight = 100
+max_uses_per_run = 1
+option_a_label = "Arrange protection"
+option_a_description = "The next Defense card costs 2 less, minimum 1."
+option_a_effects = Array[Dictionary]([{
+"amount": 0,
+"card_id": "",
+"card_type": "defense",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": -2,
+"minimum": 1,
+"modifier_type": "next_defense_card_price_delta",
+"penalty": {},
+"target": "human",
+"type": "add_temporary_modifier"
+}])
+option_b_label = "Take the cash"
+option_b_description = "Gain 2 Nal. The next War card costs 1 more."
+option_b_effects = Array[Dictionary]([{
+"amount": 2,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}, {
+"amount": 0,
+"card_id": "",
+"card_type": "war",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 1,
+"minimum": 0,
+"modifier_type": "next_war_card_price_delta",
+"penalty": {},
+"target": "human",
+"type": "add_temporary_modifier"
+}])

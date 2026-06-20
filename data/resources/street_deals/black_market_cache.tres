@@ -1,0 +1,57 @@
+[gd_resource type="Resource" script_class="StreetDealDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/street_deals/StreetDealDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "black_market_cache"
+title = "Black Market Cache"
+description = "Choose between cash now or a costly victory point."
+min_round = 4
+weight = 100
+max_uses_per_run = 1
+option_a_label = "Take the cash"
+option_a_description = "Gain 6 Nal."
+option_a_effects = Array[Dictionary]([{
+"amount": 6,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}])
+option_b_label = "Secure influence"
+option_b_description = "Pay 6 Nal and gain 1 VP."
+option_b_effects = Array[Dictionary]([{
+"amount": 6,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "lose_nal"
+}, {
+"amount": 1,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_vp"
+}])

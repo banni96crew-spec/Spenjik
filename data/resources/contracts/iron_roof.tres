@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ContractDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contracts/ContractDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "iron_roof"
+title = "Iron Roof"
+deadline_round = 9
+progress_required = 3
+reward_type = "nal"
+reward_amount = 4
+description = "Have Cops, Cartel, and Judge."

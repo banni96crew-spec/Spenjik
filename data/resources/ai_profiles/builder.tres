@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "builder"
+purchase_scores = {
+"cartel": 55,
+"cops": 45,
+"district_control": 85,
+"laundry": 65,
+"stash": 100,
+"workshop": 90
+}
+attack_probability = 0.25
+target_weights = {
+"availableNal": 1,
+"destructibleBuildings": 3,
+"humanBias": 1,
+"lowDefense": 1,
+"revenge": 2,
+"vpLead": 4
+}
+minimum_reserve_nal = 3
+fallback = "hold_nal"

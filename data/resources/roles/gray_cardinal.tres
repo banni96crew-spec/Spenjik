@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/roles/RoleDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "gray_cardinal"
+title = "Gray Cardinal"
+starting_nal = 4
+effect_summary = "Starts with 4 Nal; first Accountant may be bought without 1+ VP; first Saboteur is cheaper by 1."
+limitation_summary = "First Stash is more expensive by 1."

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "paranoid"
+purchase_scores = {
+"accountant": 75,
+"cartel": 90,
+"cops": 100,
+"judge": 85,
+"stash": 55,
+"workshop": 40
+}
+attack_probability = 0.2
+target_weights = {
+"availableNal": 1,
+"destructibleBuildings": 2,
+"humanBias": 1,
+"lowDefense": 1,
+"revenge": 5,
+"vpLead": 3
+}
+minimum_reserve_nal = 4
+fallback = "buy_cheapest_valid"

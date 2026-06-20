@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="StreetDealDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/street_deals/StreetDealDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "dirty_tip"
+title = "Dirty Tip"
+description = "Buy useful information or let the streets heat up."
+min_round = 4
+weight = 100
+max_uses_per_run = 1
+option_a_label = "Buy the tip"
+option_a_description = "Pay 3 Nal and receive Bruiser in hand."
+option_a_effects = Array[Dictionary]([{
+"amount": 3,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "lose_nal"
+}, {
+"amount": 0,
+"card_id": "bruiser",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_card_to_hand"
+}])
+option_b_label = "Sell the tip"
+option_b_description = "Gain 3 Nal. A deterministic random AI receives Thug."
+option_b_effects = Array[Dictionary]([{
+"amount": 3,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}, {
+"amount": 0,
+"card_id": "thug",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "random_ai",
+"type": "add_card_to_hand"
+}])

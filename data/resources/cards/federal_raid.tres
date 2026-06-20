@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/cards/CardDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "federal_raid"
+title = "Federal Raid"
+type = "war"
+base_price = 14
+destination = "hand"
+max_per_player = 0
+effect_summary = "Destroys District Control"

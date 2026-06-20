@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ContractDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contracts/ContractDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "bloody_turf_war"
+title = "Bloody Turf War"
+deadline_round = 12
+progress_required = 2
+reward_type = "nal"
+reward_amount = 6
+description = "Destroy 2 AI Status buildings."

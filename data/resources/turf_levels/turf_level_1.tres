@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TurfLevelDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/turf_levels/TurfLevelDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+level = 1
+title = "AI Starting Nal Bonus"
+effect_summary = "All AI start with +1 Nal."

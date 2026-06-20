@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ContactDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contacts/ContactDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "black_cash"
+title = "Black Cash"
+description = "Brothel double bonus gives +6 Nal instead of +5."
+effect_kind = "passive"
+cooldown_rounds = 0
+effect_type = "brothel_double_bonus_plus_one"

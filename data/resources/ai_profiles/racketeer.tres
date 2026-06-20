@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "racketeer"
+purchase_scores = {
+"bruiser": 90,
+"cleaner": 70,
+"cops": 45,
+"insider": 75,
+"stash": 35,
+"thug": 100
+}
+attack_probability = 0.8
+target_weights = {
+"availableNal": 5,
+"destructibleBuildings": 2,
+"humanBias": 1,
+"lowDefense": 3,
+"revenge": 2,
+"vpLead": 2
+}
+minimum_reserve_nal = 1
+fallback = "attack_best_target"

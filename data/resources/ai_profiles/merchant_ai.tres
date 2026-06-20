@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "merchant"
+purchase_scores = {
+"accountant": 65,
+"brothel": 70,
+"informant": 85,
+"judge": 40,
+"laundry": 100,
+"stash": 50
+}
+attack_probability = 0.2
+target_weights = {
+"availableNal": 3,
+"destructibleBuildings": 1,
+"humanBias": 0,
+"lowDefense": 1,
+"revenge": 1,
+"vpLead": 2
+}
+minimum_reserve_nal = 6
+fallback = "hold_nal"

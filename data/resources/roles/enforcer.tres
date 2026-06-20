@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RoleDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/roles/RoleDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "enforcer"
+title = "Enforcer"
+starting_nal = 5
+effect_summary = "Starts with active Cops; first War card is cheaper by 1."
+limitation_summary = "All Laundries are more expensive by 1."

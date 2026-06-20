@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ContractDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contracts/ContractDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "district_under_control"
+title = "District Under Control"
+deadline_round = 12
+progress_required = 2
+reward_type = "vp"
+reward_amount = 1
+description = "Build District Control and have protection."

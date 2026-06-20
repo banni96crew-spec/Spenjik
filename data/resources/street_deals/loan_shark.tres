@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="StreetDealDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/street_deals/StreetDealDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "loan_shark"
+title = "Loan Shark"
+description = "Borrow Nal now and accept a delayed debt risk."
+min_round = 8
+weight = 100
+max_uses_per_run = 1
+option_a_label = "Big loan"
+option_a_description = "Gain 10 Nal. Create a debt for 12 Nal due in 2 rounds. If unpaid, lose all Nal and 1 VP."
+option_a_effects = Array[Dictionary]([{
+"amount": 10,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}, {
+"amount": 0,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 2,
+"debt_amount_due": 12,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {
+"lose_all_nal": true,
+"vp_delta": -1
+},
+"target": "human",
+"type": "create_debt"
+}])
+option_b_label = "Small loan"
+option_b_description = "Gain 5 Nal. Create a debt for 6 Nal due in 2 rounds. If unpaid, lose 1 VP."
+option_b_effects = Array[Dictionary]([{
+"amount": 5,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 0,
+"debt_amount_due": 0,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {},
+"target": "human",
+"type": "add_nal"
+}, {
+"amount": 0,
+"card_id": "",
+"card_type": "",
+"contact_offer_count": 0,
+"deadline_round_delta": 2,
+"debt_amount_due": 6,
+"delta": 0,
+"minimum": 0,
+"modifier_type": "",
+"penalty": {
+"lose_all_nal": false,
+"vp_delta": -1
+},
+"target": "human",
+"type": "create_debt"
+}])

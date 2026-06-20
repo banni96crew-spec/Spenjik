@@ -1905,6 +1905,330 @@ Test impact:
 
 * Static scan must continue banning React/TypeScript/Zustand/Tailwind/Docker implementation artifacts.
 
+### OQ-004 — Canonical Street Deal Resource effect payloads and display text
+
+Status: `resolved`
+
+Owner module:
+
+* 10_STREET_DEALS_AND_DEBTS.md
+
+Related modules:
+
+* 03_IDS_AND_CONSTANTS.md
+* 11_CONTACTS.md
+* 12_TURF_LEVELS.md
+* 18_TEST_PLAN.md
+* 19_IMPLEMENTATION_ORDER.md
+
+Type:
+
+* data schema
+
+Blocking:
+
+* yes
+
+Problem:
+
+* `StreetDealDefinition` requires `title`, `description`, option labels, option descriptions, and `option_a_effects` / `option_b_effects`.
+* `10_STREET_DEALS_AND_DEBTS.md` defines the gameplay meaning of each option but does not define the exact Dictionary payload shape for `.tres` Resource data.
+* M2 cannot create strict Street Deal `.tres` Resources without inventing undocumented fields or effect payloads.
+
+Options:
+
+* Option A: keep Street Deal effect payloads as free-form dictionaries.
+* Option B: store only display text in Resources and let future StreetDealLogic hardcode all behavior.
+* Option C: define canonical data-only effect payload dictionaries using `EffectTypes`, with stable keys and no gameplay resolution logic.
+
+Decision:
+
+* Use Option C.
+
+Accepted correction:
+
+Street Deal Resource effect payloads are data-only dictionaries. They describe static effect data but do not resolve gameplay.
+
+Every effect dictionary must use:
+
+```gdscript
+{
+	"type": "",
+	"target": "",
+	"amount": 0,
+	"card_id": "",
+	"card_type": "",
+	"modifier_type": "",
+	"delta": 0,
+	"minimum": 0,
+	"debt_amount_due": 0,
+	"deadline_round_delta": 0,
+	"penalty": {},
+	"contact_offer_count": 0
+}
+
+Allowed target values:
+
+human
+random_ai
+richest_ai
+
+Allowed effect type values are from EffectTypes.gd.
+
+Unused fields must keep neutral values:
+
+String: ""
+int: 0
+Dictionary: {}
+
+Canonical Street Deal Resource display data and effects:
+
+loan_shark
+title: Loan Shark
+description: Borrow Nal now and accept a delayed debt risk.
+option_a_label: Big loan
+option_a_description: Gain 10 Nal. Create a debt for 12 Nal due in 2 rounds. If unpaid, lose all Nal and 1 VP.
+option_a_effects:
+- type: add_nal
+  target: human
+  amount: 10
+- type: create_debt
+  target: human
+  debt_amount_due: 12
+  deadline_round_delta: 2
+  penalty:
+    lose_all_nal: true
+    vp_delta: -1
+
+option_b_label: Small loan
+option_b_description: Gain 5 Nal. Create a debt for 6 Nal due in 2 rounds. If unpaid, lose 1 VP.
+option_b_effects:
+- type: add_nal
+  target: human
+  amount: 5
+- type: create_debt
+  target: human
+  debt_amount_due: 6
+  deadline_round_delta: 2
+  penalty:
+    lose_all_nal: false
+    vp_delta: -1
+dirty_tip
+title: Dirty Tip
+description: Buy useful information or let the streets heat up.
+option_a_label: Buy the tip
+option_a_description: Pay 3 Nal and receive Bruiser in hand.
+option_a_effects:
+- type: lose_nal
+  target: human
+  amount: 3
+- type: add_card_to_hand
+  target: human
+  card_id: bruiser
+
+option_b_label: Sell the tip
+option_b_description: Gain 3 Nal. A deterministic random AI receives Thug.
+option_b_effects:
+- type: add_nal
+  target: human
+  amount: 3
+- type: add_card_to_hand
+  target: random_ai
+  card_id: thug
+cheap_protection
+title: Cheap Protection
+description: Secure a cheaper defense or take quick cash with future risk.
+option_a_label: Arrange protection
+option_a_description: The next Defense card costs 2 less, minimum 1.
+option_a_effects:
+- type: add_temporary_modifier
+  target: human
+  modifier_type: next_defense_card_price_delta
+  card_type: defense
+  delta: -2
+  minimum: 1
+
+option_b_label: Take the cash
+option_b_description: Gain 2 Nal. The next War card costs 1 more.
+option_b_effects:
+- type: add_nal
+  target: human
+  amount: 2
+- type: add_temporary_modifier
+  target: human
+  modifier_type: next_war_card_price_delta
+  card_type: war
+  delta: 1
+black_market_cache
+title: Black Market Cache
+description: Choose between cash now or a costly victory point.
+option_a_label: Take the cash
+option_a_description: Gain 6 Nal.
+option_a_effects:
+- type: add_nal
+  target: human
+  amount: 6
+
+option_b_label: Secure influence
+option_b_description: Pay 6 Nal and gain 1 VP.
+option_b_effects:
+- type: lose_nal
+  target: human
+  amount: 6
+- type: add_vp
+  target: human
+  amount: 1
+inside_contact
+title: Inside Contact
+description: Find a useful contact or take immediate cash.
+option_a_label: Meet the contact
+option_a_description: Choose 1 contact from 2 deterministic contact offers.
+option_a_effects:
+- type: unlock_contact
+  target: human
+  contact_offer_count: 2
+
+option_b_label: Take the envelope
+option_b_description: Gain 4 Nal.
+option_b_effects:
+- type: add_nal
+  target: human
+  amount: 4
+risky_contract
+title: Risky Contract
+description: Chase influence at a cost or take cash while helping the richest AI.
+option_a_label: Push the deal
+option_a_description: Pay 3 Nal and gain 1 VP.
+option_a_effects:
+- type: lose_nal
+  target: human
+  amount: 3
+- type: add_vp
+  target: human
+  amount: 1
+
+option_b_label: Back off
+option_b_description: Gain 5 Nal. The richest AI gains 1 Nal.
+option_b_effects:
+- type: add_nal
+  target: human
+  amount: 5
+- type: add_nal
+  target: richest_ai
+  amount: 1
+
+Implementation impact:
+
+StreetDealDefinition.gd may store option_a_effects and option_b_effects as Array[Dictionary].
+M2 may create all six Street Deal .tres files using this payload contract.
+Future StreetDealLogic must validate and resolve these payloads explicitly.
+Display text must never be parsed as gameplay behavior.
+
+Test impact:
+
+M2 Resource integrity tests must verify:
+all six Street Deal Resources exist;
+every Street Deal ID matches StreetDealIds.ALL;
+every option has label, description, and effect payloads;
+every effect uses the canonical keys;
+every effect type exists in EffectTypes.ALL;
+every target is one of human, random_ai, richest_ai;
+no undocumented effect keys exist.
+
+### OQ-005 — Canonical Contact Resource effect types and display text
+
+Status: `resolved`
+
+Owner module:
+
+* 11_CONTACTS.md
+
+Related modules:
+
+* 03_IDS_AND_CONSTANTS.md
+* 06_ECONOMY_AND_MARKET.md
+* 10_STREET_DEALS_AND_DEBTS.md
+* 18_TEST_PLAN.md
+* 19_IMPLEMENTATION_ORDER.md
+
+Type:
+
+* data schema
+
+Blocking:
+
+* yes
+
+Problem:
+
+* `ContactDefinition` requires `title`, `description`, `effect_kind`, `cooldown_rounds`, and `effect_type`.
+* `11_CONTACTS.md` defines each contact effect in prose but does not define exact stable `effect_type` values or canonical display text.
+* M2 cannot create strict Contact `.tres` Resources without inventing Resource values.
+
+Options:
+
+* Option A: use contact IDs as `effect_type`.
+* Option B: use generic `passive` / `active` as `effect_type`.
+* Option C: define stable contact-specific `effect_type` strings that describe the effect hook.
+
+Decision:
+
+* Use Option C.
+
+Accepted correction:
+
+Contact Resource effect types are stable strings. They identify the contact hook/effect family but do not resolve gameplay.
+
+Allowed `effect_type` values:
+
+```text
+brothel_double_bonus_plus_one
+first_status_card_discount
+prevent_debt_vp_loss_once
+
+Canonical Contact Resource data:
+
+black_cash
+id: black_cash
+title: Black Cash
+description: Brothel double bonus gives +6 Nal instead of +5.
+effect_kind: passive
+cooldown_rounds: 0
+effect_type: brothel_double_bonus_plus_one
+corrupt_clerk
+id: corrupt_clerk
+title: Corrupt Clerk
+description: First Status card after receiving this contact is cheaper by 1.
+effect_kind: passive
+cooldown_rounds: 0
+effect_type: first_status_card_discount
+street_medic
+id: street_medic
+title: Street Medic
+description: Once per game prevents loss of 1 VP from a debt penalty.
+effect_kind: active
+cooldown_rounds: 0
+effect_type: prevent_debt_vp_loss_once
+
+Implementation impact:
+
+ContactDefinition.gd may store effect_type as String.
+M2 may create all three Contact .tres files using these exact values.
+Future ContactLogic must resolve behavior explicitly by contact ID and/or effect_type.
+Display text must never be parsed as gameplay behavior.
+
+Test impact:
+
+M2 Resource integrity tests must verify:
+all three Contact Resources exist;
+every Contact ID matches ContactIds.ALL;
+effect_kind is exactly passive or active;
+black_cash and corrupt_clerk are passive;
+street_medic is active;
+cooldown_rounds == 0 for all MVP contacts;
+effect_type is one of the three accepted values;
+display text is populated but not used as gameplay data.
+
 ## 13. Required Source Files
 
 This module requires no gameplay source file.

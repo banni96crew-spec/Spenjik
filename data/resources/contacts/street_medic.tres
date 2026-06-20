@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ContactDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/contacts/ContactDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "street_medic"
+title = "Street Medic"
+description = "Once per game prevents loss of 1 VP from a debt penalty."
+effect_kind = "active"
+cooldown_rounds = 0
+effect_type = "prevent_debt_vp_loss_once"

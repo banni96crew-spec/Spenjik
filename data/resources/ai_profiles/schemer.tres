@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="AIProfileDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://data/resources/ai_profiles/AIProfileDefinition.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "schemer"
+purchase_scores = {
+"accountant": 65,
+"bruiser": 60,
+"informant": 45,
+"insider": 85,
+"judge": 70,
+"saboteur": 100
+}
+attack_probability = 0.55
+target_weights = {
+"availableNal": 2,
+"destructibleBuildings": 1,
+"humanBias": 1,
+"lowDefense": 2,
+"revenge": 2,
+"vpLead": 3
+}
+minimum_reserve_nal = 3
+fallback = "end_phase"
