@@ -1686,6 +1686,43 @@ Test impact:
 
 * `res://tests/integration/test_smoke_mvp.gd` is required.
 
+### FIX-035 — Complete M1 constants-file scope
+
+Status: `resolved`
+
+Owner module:
+
+* 19_IMPLEMENTATION_ORDER.md
+
+Related modules:
+
+* 03_IDS_AND_CONSTANTS.md
+* 15_GODOT_ARCHITECTURE.md
+* 18_TEST_PLAN.md
+
+Problem:
+
+* The M1 milestone listed only 11 constants files while `03_IDS_AND_CONSTANTS.md` required 20 files.
+* This made the M1 completion gate inconsistent with the canonical constants owner.
+
+Accepted correction:
+
+* `03_IDS_AND_CONSTANTS.md` owns the complete M1 constants-file list.
+* M1 requires all 20 files listed in that document.
+* `19_IMPLEMENTATION_ORDER.md` must list the same complete set.
+
+Gameplay impact:
+
+* No.
+
+Implementation impact:
+
+* M1 creates all 20 constants files before Resource, state, or gameplay milestones begin.
+
+Test impact:
+
+* M1 tests verify that all 20 files exist and that their required constants are complete and unique.
+
 ## 11. Accepted Design Decisions Summary
 
 | Area                      | Accepted Decision                                                          |

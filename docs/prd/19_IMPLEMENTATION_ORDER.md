@@ -345,15 +345,24 @@ Implement:
 * `PhaseIds.gd`;
 * `AttackModes.gd`;
 * `ValidationErrors.gd`;
-* recommended constants files:
+* `RoleIds.gd`;
+* `ContractIds.gd`;
+* `ContactIds.gd`;
+* `StreetDealIds.gd`;
+* `AIProfileIds.gd`;
+* `CardTypes.gd`;
+* `CardDestinations.gd`;
+* `DefenseStates.gd`;
+* `RewardTypes.gd`;
+* `EffectTypes.gd`;
+* `ModifierTypes.gd`;
+* `LogEventTypes.gd`;
+* `TieBreakIds.gd`;
+* `TurfLevelIds.gd`;
+* `StreetDealOptionIds.gd`;
+* `StateKeys.gd`.
 
-  * `RoleIds.gd`;
-  * `ContractIds.gd`;
-  * `ContactIds.gd`;
-  * `StreetDealIds.gd`;
-  * `AIProfileIds.gd`;
-  * `TurfLevelIds.gd`;
-  * `DefenseStates.gd`.
+The complete M1 constants-file list is owned by `03_IDS_AND_CONSTANTS.md`.
 
 Gate tests:
 
