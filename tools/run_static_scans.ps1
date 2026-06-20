@@ -93,7 +93,7 @@ if ($untrackedMarkers.Count -gt 0) {
 	exit 1
 }
 
-$forbiddenRandomPatterns = @("randf(", "randi(", "randomize(", "RandomNumberGenerator")
+$forbiddenRandomPatterns = @("randf(", "randi(", "randi_range(", "randomize(", "RandomNumberGenerator")
 $forbiddenRandomUsages = @()
 foreach ($sourceFile in $sourceFiles) {
 	$relativePath = Get-ProjectRelativePath -FullName $sourceFile.FullName

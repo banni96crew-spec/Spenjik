@@ -30,17 +30,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - deterministic RNG через M3;
 - explicit owner-module hooks.
 
-Проверь фактические contracts M0–M10:
-
-- IDs, Resources, catalog и state schema;
-- `SeededPicker.pick_unique`;
-- Income Brothel flow;
-- PriceLogic/MarketLogic modifier flow;
-- CombatEngine attack event;
-- Inside Contact handoff;
-- DebtLogic pre-penalty hook;
-- round-start reset.
-
 Источники истины:
 
 - `docs/prd/11_CONTACTS.md`
@@ -409,7 +398,6 @@ Contact implementation не должна содержать:
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M11 PRD, state/RNG contracts, tests и fixes.
-2. Проинспектируй M0–M10 и hook boundaries.
 3. Сопоставь ownership, flags, APIs и Resources.
 4. Выяви placeholders и минимальные integration edits.
 5. Дай план без кода и дождись моего «ок».

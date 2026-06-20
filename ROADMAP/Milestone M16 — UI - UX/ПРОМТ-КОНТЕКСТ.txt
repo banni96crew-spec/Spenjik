@@ -96,9 +96,6 @@ M15:
 - одинаковый seed/script даёт одинаковый snapshot/random step;
 - static scans являются частью gate.
 
-Перед M16 coding-agent обязан проверить фактические scene folders,
-M14 API/view shapes, ValidationErrors, assets/Theme и M15 gate.
-
 ## Что сейчас делаю
 
 Реализую M16 — UI / UX:

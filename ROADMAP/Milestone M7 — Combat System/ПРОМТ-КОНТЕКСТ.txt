@@ -95,8 +95,6 @@ M6 — Economy and Market:
 - реализованы Nal, цены, рынок и protected Nal;
 - M7 использует единый protected Nal API из `PriceLogic`.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M6.
-
 ## Что сейчас делаю
 
 Реализую M7 — Combat System:

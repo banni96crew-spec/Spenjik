@@ -120,8 +120,6 @@ M10 — Street Deals and Debts:
 - Inside Contact создаёт handoff для offer из двух контактов;
 - DebtLogic предоставляет hook перед VP debt penalty.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M10.
-
 ## Что сейчас делаю
 
 Реализую M11 — Contacts:

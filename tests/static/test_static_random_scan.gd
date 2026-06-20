@@ -8,6 +8,7 @@ const GAMEPLAY_PATHS: Array[String] = [
 const FORBIDDEN_PATTERNS: Array[String] = [
 	"randf(",
 	"randi(",
+	"randi_range(",
 	"randomize(",
 	"RandomNumberGenerator",
 ]

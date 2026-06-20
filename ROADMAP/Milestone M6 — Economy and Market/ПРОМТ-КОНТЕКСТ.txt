@@ -82,8 +82,6 @@ M4 создал canonical GameState, Factory, Validator и fixtures.
 
 M5 создал phase orchestration и WinnerResolver.
 
-Перед M6 фактически проверь M0–M5 gates. При проваленном prerequisite не начинай M6.
-
 ## Что сейчас делаю
 
 Реализую только `Milestone M6 — Economy and Market`:

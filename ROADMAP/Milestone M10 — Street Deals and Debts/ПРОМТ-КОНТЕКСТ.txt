@@ -111,8 +111,6 @@ M9 — Contracts:
 - доступен `ContractLogic.on_state_changed`;
 - успешные deal/debt изменения вызывают contract hook.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M9.
-
 ## Что сейчас делаю
 
 Реализую M10 — Street Deals and Debts:

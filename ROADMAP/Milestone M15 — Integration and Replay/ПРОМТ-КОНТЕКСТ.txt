@@ -9,7 +9,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 Партия длится ровно 15 раундов и завершается Game Over.
 
 Текущий этап: Milestone M15 — Integration and Replay.
-Он выполняется строго после завершённых M0–M14.
 
 ## Стек
 
@@ -98,9 +97,6 @@ M14:
 - public mutators используют atomic commit;
 - selectors возвращают safe views;
 - UI-facing gameplay API делегирует owner modules.
-
-Перед M15 coding-agent проверяет фактическое состояние M0–M14,
-existing tests, API signatures и все открытые вопросы.
 
 ## Что сейчас делаю
 

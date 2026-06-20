@@ -9,7 +9,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 Игровая партия длится до 15 раундов и использует детерминированный state.
 
 Текущий этап: Milestone M14 — GameStateManager API.
-Он выполняется строго после завершённых M0–M13.
 
 ## Стек
 
@@ -102,9 +101,6 @@ M13:
 
 - реализован deterministic AI setup, Market и Action behavior;
 - AI делегирует purchases в MarketLogic, attacks в CombatEngine.
-
-Перед M14 coding-agent обязан проверить фактические APIs M0–M13,
-а не предполагать их имена или result shapes.
 
 ## Что сейчас делаю
 

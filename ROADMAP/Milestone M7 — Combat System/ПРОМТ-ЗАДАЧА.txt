@@ -33,16 +33,6 @@
 - preview и validation read-only;
 - deterministic behavior.
 
-M0–M6 считаются выполненными, но проверь репозиторий:
-
-- bootstrap и GUT;
-- constants и IDs;
-- Resource schemas и catalogs;
-- deterministic RNG;
-- game state schema;
-- core loop и phases;
-- economy и market.
-
 Источники истины:
 
 - `docs/prd/07_COMBAT_SYSTEM.md`
@@ -354,7 +344,6 @@ Static scan должен исключать в combat logic:
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M7 PRD, test plan, implementation order и resolved fixes.
-2. Проинспектируй APIs, IDs, state и tests M0–M6.
 3. Найди phase/action и protected Nal contracts.
 4. Выяви расхождения и blockers.
 5. Дай план без кода и дождись моего «ок».

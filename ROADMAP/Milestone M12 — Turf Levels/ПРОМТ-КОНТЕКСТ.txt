@@ -113,8 +113,6 @@ M11 — Contacts:
 - Level 7 strong-AI offer count boundary подготовлена;
 - Inside Contact всегда остаётся offer count 2.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M11.
-
 ## Что сейчас делаю
 
 Реализую M12 — Turf Levels:

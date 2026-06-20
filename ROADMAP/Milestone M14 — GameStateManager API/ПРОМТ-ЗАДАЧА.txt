@@ -23,12 +23,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - Windows/Linux;
 - без web stack.
 
-M0–M13 должны быть завершены: constants, Resources/catalogs,
-deterministic RNG, state schema, phases, economy/market, combat,
-roles, contracts, Street Deals/debts, contacts, Turf Levels и AI.
-
-Не доверяй этому статусу вслепую: проверь actual repository.
-
 Dependency direction:
 
 `UI -> GameStateManager -> logic modules -> catalogs/resources/constants`
@@ -447,7 +441,6 @@ orchestration через owner APIs.
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M14 PRD, owner PRDs, tests и fixes.
-2. Проинспектируй M0–M13 и Autoload configuration.
 3. Построй facade-to-owner API matrix.
 4. Проверь payloads, results, validators, random order и signals.
 5. Зафиксируй blockers/OQ и минимальные compatibility edits.

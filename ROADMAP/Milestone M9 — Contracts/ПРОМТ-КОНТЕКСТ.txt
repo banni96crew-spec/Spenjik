@@ -80,8 +80,6 @@ M8:
 - роли применяются только к human;
 - role logic не изменяется в M9.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M8.
-
 ## Что сейчас делаю
 Реализую M9 — Contracts:
 - `res://logic/contracts/ContractLogic.gd`;

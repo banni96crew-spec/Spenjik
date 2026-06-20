@@ -30,14 +30,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - preview и validation read-only;
 - deterministic behavior.
 
-M0–M7 считаются выполненными, но проверь фактические:
-
-- constants, IDs, Resources и catalogs;
-- state factory, validator и fixtures;
-- phase/round lifecycle;
-- `PriceLogic`, `MarketLogic` и rebuild flow;
-- combat defense schema.
-
 Источники истины:
 
 - `docs/prd/08_ROLES.md`
@@ -365,7 +357,6 @@ Role logic не должна содержать:
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M8 PRD, M4/M6 contracts, tests и fixes.
-2. Проинспектируй M0–M7 и integration points.
 3. Сопоставь фактический flags shape с M8.
 4. Выяви blockers и минимальные edits.
 5. Дай план без кода и дождись моего «ок».

@@ -30,16 +30,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - UI не содержит AI logic;
 - Resources являются immutable definitions.
 
-Проверь фактические M0–M12:
-
-- IDs, AI profile Resources и catalog;
-- AI state schema и fixtures;
-- deterministic RNG APIs;
-- Market purchase/price contracts;
-- Combat validation/preview/resolve/discard;
-- phase-safe Market/Action completion;
-- Turf Level 6 и 9 helpers.
-
 Источники истины:
 
 - `docs/prd/13_AI_SYSTEM.md`
@@ -555,7 +545,6 @@ AI implementation не должна содержать:
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M13 PRD, owner APIs, RNG contract, tests и fixes.
-2. Проинспектируй M0–M12 и actual Resources/constants.
 3. Выполни merchant profile ID audit.
 4. Сопоставь APIs, random call order и phase boundaries.
 5. Выяви blockers и минимальные integration edits.

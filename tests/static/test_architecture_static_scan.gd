@@ -1,16 +1,17 @@
 extends GutTest
 
-const M4_PATHS: Array[String] = [
+const M5_PATHS: Array[String] = [
 	"res://logic/game_state",
 	"res://tests/fixtures",
 	"res://tests/unit",
 ]
-const FORBIDDEN_M4_GAMEPLAY_FILES: Array[String] = [
-	"res://logic/game_state/GamePhaseController.gd",
-	"res://logic/game_state/WinnerResolver.gd",
+const FORBIDDEN_FUTURE_GAMEPLAY_FILES: Array[String] = [
 	"res://logic/economy/IncomeLogic.gd",
 	"res://logic/economy/MarketLogic.gd",
 	"res://logic/combat/CombatEngine.gd",
+	"res://logic/street_deals/StreetDealLogic.gd",
+	"res://logic/turf_levels/TurfLevelLogic.gd",
+	"res://logic/ai/AIBotController.gd",
 	"res://autoload/GameStateManager.gd",
 ]
 
@@ -28,10 +29,10 @@ func test_runtime_states_are_json_compatible_without_objects() -> void:
 		assert_false(_contains_forbidden_runtime_type(state))
 
 
-func test_m4_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> void:
+func test_game_state_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> void:
 	var forbidden: Array[String] = [
 		"res://scenes/ui/",
-		"Control",
+		"extends Control",
 		"Button",
 		"Label",
 		"TextureRect",
@@ -46,10 +47,10 @@ func test_m4_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> void:
 		"res://logic/game_state"
 	):
 		var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
-		assert_eq(pattern, "", "Forbidden M4 pattern %s in %s" % [pattern, path])
+		assert_eq(pattern, "", "Forbidden pattern %s in %s" % [pattern, path])
 
 
-func test_m4_source_has_no_web_stack_artifacts() -> void:
+func test_game_state_source_has_no_web_stack_artifacts() -> void:
 	var forbidden: Array[String] = [
 		"React", "TypeScript", "Zustand", "Tailwind", "Docker", "WebSocket",
 	]
@@ -60,13 +61,13 @@ func test_m4_source_has_no_web_stack_artifacts() -> void:
 		assert_eq(pattern, "", "Forbidden stack term %s in %s" % [pattern, path])
 
 
-func test_m4_does_not_create_future_gameplay_modules() -> void:
-	for path: String in FORBIDDEN_M4_GAMEPLAY_FILES:
-		assert_false(FileAccess.file_exists(path), "M5+ file created: %s" % path)
+func test_m5_does_not_create_future_gameplay_modules() -> void:
+	for path: String in FORBIDDEN_FUTURE_GAMEPLAY_FILES:
+		assert_false(FileAccess.file_exists(path), "M6+ file created: %s" % path)
 
 
 func test_project_gdscript_files_stay_under_250_lines() -> void:
-	for root_path: String in M4_PATHS:
+	for root_path: String in M5_PATHS:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
 			assert_lt(
 				StaticScanHelper.count_lines(path),

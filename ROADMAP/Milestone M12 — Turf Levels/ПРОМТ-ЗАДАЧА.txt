@@ -30,16 +30,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - owner modules применяют Turf helpers;
 - deterministic behavior без RNG в TurfLevelLogic.
 
-Проверь фактические contracts M0–M11:
-
-- Turf constants, Resources и catalog;
-- state factory, validator и fixtures;
-- role setup order;
-- round reset и WinnerResolver;
-- Market, Income и Price extension points;
-- ContactLogic Level 7 boundary;
-- StreetDealLogic Level 8 boundary.
-
 Источники истины:
 
 - `docs/prd/12_TURF_LEVELS.md`
@@ -461,7 +451,6 @@ Turf implementation не должна содержать:
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M12 PRD, owner contracts, tests и fixes.
-2. Проинспектируй M0–M11 и integration points.
 3. Сопоставь Resources, state flags, APIs и setup order.
 4. Выяви M13 boundary и минимальные edits.
 5. Дай план без кода и дождись моего «ок».

@@ -105,8 +105,6 @@ M12 — Turf Levels:
   и Level 9 War weight multiplier helpers;
 - setup modifiers применяются после strong AI assignment.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M12.
-
 ## Что сейчас делаю
 
 Реализую M13 — AI System:

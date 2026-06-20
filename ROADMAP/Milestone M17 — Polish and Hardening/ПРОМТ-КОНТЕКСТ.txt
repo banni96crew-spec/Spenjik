@@ -78,8 +78,6 @@ M14–M16:
 - одинаковый seed/script даёт одинаковый snapshot/random step;
 - functional desktop UI вызывает gameplay только через facade;
 - ErrorTextMap и GameLogPanel уже существуют.
-Перед M17 coding-agent проверяет фактическую готовность repository,
-а не принимает M0–M16 на веру.
 
 ## Что сейчас делаю
 Реализую M17:

@@ -34,9 +34,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - Windows/Linux;
 - без web stack.
 
-M15 выполняется после M14. Production systems M0–M14 должны быть
-реализованы и покрыты unit tests, но их фактический статус надо проверить.
-
 Источники истины:
 
 - `docs/prd/18_TEST_PLAN.md`

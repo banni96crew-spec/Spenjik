@@ -30,16 +30,6 @@ The Turf / «Передел» — desktop single-player card/board mini-game
 - deterministic RNG через M3;
 - явные inter-module hooks.
 
-M0–M9 считаются выполненными, но проверь фактические:
-
-- IDs, Resources и catalogs;
-- state factory, validator и fixtures;
-- `SeededPicker` APIs;
-- Street Deal phase lifecycle;
-- Income/Cops upkeep order;
-- temporary price modifiers;
-- `ContractLogic.on_state_changed`.
-
 Источники истины:
 
 - `docs/prd/10_STREET_DEALS_AND_DEBTS.md`
