@@ -5,14 +5,17 @@ const M8_PATHS: Array[String] = [
 	"res://logic/economy",
 	"res://logic/combat",
 	"res://logic/roles",
+	"res://logic/contracts",
 	"res://tests/fixtures",
 	"res://tests/unit",
+	"res://tests/integration",
 ]
 const LOGIC_PATHS: Array[String] = [
 	"res://logic/game_state",
 	"res://logic/economy",
 	"res://logic/combat",
 	"res://logic/roles",
+	"res://logic/contracts",
 ]
 const FORBIDDEN_FUTURE_GAMEPLAY_FILES: Array[String] = [
 	"res://logic/street_deals/StreetDealLogic.gd",

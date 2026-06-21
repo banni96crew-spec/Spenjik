@@ -1,12 +1,5 @@
 class_name IncomeLogic
 
-const INCOME_CONTRACT_IDS: Array[String] = [
-	ContractIds.GRAY_CAPITAL,
-	ContractIds.IRON_ROOF,
-	ContractIds.DISTRICT_UNDER_CONTROL,
-	ContractIds.BIG_CASHBOX,
-]
-
 
 static func get_base_starting_resources() -> Dictionary:
 	return {"nal": 5, "vp": 0}
@@ -37,6 +30,17 @@ static func resolve_player(state: Dictionary, player_id: String) -> Dictionary:
 		brothel_income, total, nal_before
 	)
 	var upkeep: Dictionary = _resolve_cops_upkeep(candidate, player)
+	var contract_result: Dictionary = ContractLogic.on_income_resolved(
+		candidate,
+		{
+			"player_id": player_id,
+			"nal_after": player["nal"],
+			"vp_after": player["vp"],
+		}
+	)
+	if not contract_result["ok"]:
+		return _failure(state, contract_result["error"])
+	candidate = contract_result["state"]
 	var final_validation: Dictionary = GameStateValidator.validate_game_state(candidate)
 	if not final_validation["ok"]:
 		return _failure(state, final_validation["error"])
@@ -47,7 +51,7 @@ static func resolve_player(state: Dictionary, player_id: String) -> Dictionary:
 		"informant_income": informant_income,
 		"brothel_income": brothel_income, "total_income": total,
 		"cops_upkeep_result": upkeep, "debt_results": [],
-		"contract_results": [], "state": candidate,
+		"contract_results": [contract_result], "state": candidate,
 		"log_entries": _new_logs(state, candidate),
 	}
 
@@ -79,14 +83,6 @@ static func validate_future_income_dependencies(state: Dictionary) -> Dictionary
 		for debt: Dictionary in player.get("debts", []):
 			if not debt.get("repaid", false):
 				return {"ok": false, "error": ValidationErrors.PHASE_NOT_READY}
-	var human: Dictionary = _find_player(state, GameIds.PLAYER_HUMAN)
-	for contract: Dictionary in human.get("contracts", []):
-		if (
-			INCOME_CONTRACT_IDS.has(contract.get("contract_id", ""))
-			and not contract.get("completed", false)
-			and not contract.get("failed", false)
-		):
-			return {"ok": false, "error": ValidationErrors.PHASE_NOT_READY}
 	return {"ok": true, "error": ValidationErrors.OK}
 
 

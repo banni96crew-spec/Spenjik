@@ -4,6 +4,7 @@ const COMBAT_PATH := "res://logic/combat"
 const FORBIDDEN: Array[String] = [
 	"randf(",
 	"randi(",
+	"randi_range(",
 	"randomize(",
 	"RandomNumberGenerator",
 	"res://scenes/ui/",
@@ -14,7 +15,6 @@ const FORBIDDEN: Array[String] = [
 	"Panel",
 	"get_node(",
 	"advance_phase",
-	"ContractLogic",
 	"ContactLogic",
 	"React",
 	"TypeScript",

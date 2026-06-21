@@ -215,3 +215,7 @@ M9 GATE CHECKLIST:
 - [ ] Unit, integration, random и static tests проходят.
 - [ ] Каждый `.gd` файл меньше 250 строк.
 - [ ] Gameplay вне M9 и web stack не добавлены.
+
+M9/M11 must consume CombatEngine hook events without changing M7 combat rules.
+ContactLogic must ignore combat events that are not successful unblocked strong-AI Status destruction.
+Do not modify RoleLogic rules unless a M9 contract integration test proves a real boundary issue.

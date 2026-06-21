@@ -9,6 +9,7 @@ static func resolve_purchase(
 	price_result: Dictionary
 ) -> Dictionary:
 	var candidate: Dictionary = state.duplicate(true)
+	var log_start: int = candidate["combat_log"].size()
 	var player: Dictionary = _find_player(candidate, player_id)
 	var nal_before: int = player["nal"]
 	player["nal"] -= int(price_result["final_price"])
@@ -19,13 +20,26 @@ static func resolve_purchase(
 	)
 	player = _find_player(candidate, player_id)
 	_consume_non_role_modifiers(player, price_result["modifiers"])
+	var contract_result: Dictionary = ContractLogic.on_card_purchased(
+		candidate,
+		{
+			"player_id": player_id,
+			"card_id": definition.id,
+			"card_type": definition.type,
+			"destination": definition.destination,
+		}
+	)
+	if not contract_result["ok"]:
+		return _failure(state, contract_result["error"])
+	candidate = contract_result["state"]
 	_append_purchase_log(
 		candidate, player_id, definition, price_result, nal_before
 	)
-	return _validated_result(state, candidate, {
+	return _validated_result(state, candidate, log_start, {
 		"player_id": player_id, "card_id": definition.id,
 		"price": price_result["final_price"],
 		"destination": definition.destination,
+		"contract_results": [contract_result],
 	})
 
 
@@ -36,6 +50,7 @@ static func resolve_rebuild(
 	price_result: Dictionary
 ) -> Dictionary:
 	var candidate: Dictionary = state.duplicate(true)
+	var log_start: int = candidate["combat_log"].size()
 	var player: Dictionary = _find_player(candidate, player_id)
 	var nal_before: int = player["nal"]
 	var price: int = int(price_result["final_rebuild_price"])
@@ -51,15 +66,27 @@ static func resolve_rebuild(
 	var card: CardDefinition = CardCatalog.get_by_id(
 		GameIds.CARD_DISTRICT_CONTROL
 	)
+	var contract_result: Dictionary = ContractLogic.on_state_changed(
+		candidate,
+		{
+			"source": "district_rebuild",
+			"source_event_type": LogEventTypes.CARD_PURCHASED,
+			"player_id": player_id,
+		}
+	)
+	if not contract_result["ok"]:
+		return _failure(state, contract_result["error"])
+	candidate = contract_result["state"]
 	_append_purchase_log(candidate, player_id, card, {
 		"base_price": price_result["base_rebuild_price"],
 		"final_price": price,
 		"modifiers": price_result["modifiers"],
 	}, nal_before)
-	return _validated_result(state, candidate, {
+	return _validated_result(state, candidate, log_start, {
 		"player_id": player_id,
 		"price": price,
 		"destination": card.destination,
+		"contract_results": [contract_result],
 	})
 
 
@@ -153,6 +180,7 @@ static func _append_purchase_log(
 static func _validated_result(
 	original: Dictionary,
 	candidate: Dictionary,
+	log_start: int,
 	fields: Dictionary
 ) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(candidate)
@@ -160,7 +188,8 @@ static func _validated_result(
 		return _failure(original, validation["error"])
 	var result: Dictionary = {
 		"ok": true, "error": ValidationErrors.OK,
-		"state": candidate, "log_entries": [candidate["combat_log"][-1]],
+		"state": candidate,
+		"log_entries": candidate["combat_log"].slice(log_start),
 	}
 	result.merge(fields)
 	return result

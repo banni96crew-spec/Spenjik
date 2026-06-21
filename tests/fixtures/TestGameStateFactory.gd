@@ -5,6 +5,31 @@ static func setup_state(game_seed: String = "test_seed_001") -> Dictionary:
 	return GameStateFactory.create_new_game_state(game_seed, 0)
 
 
+static func setup_with_offers(
+	game_seed: String = "test_seed_contract_offers"
+) -> Dictionary:
+	var state: Dictionary = setup_state(game_seed)
+	state["contract_offer_ids"] = ContractIds.ALL.slice(0, 3)
+	return state
+
+
+static func setup_with_contract(
+	contract_id: String,
+	game_seed: String = "test_seed_contract_selection"
+) -> Dictionary:
+	var state: Dictionary = setup_with_offers(game_seed)
+	if not state["contract_offer_ids"].has(contract_id):
+		state["contract_offer_ids"][0] = contract_id
+	state["selected_contract_id"] = contract_id
+	var definition: ContractDefinition = ContractCatalog.get_by_id(contract_id)
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["contracts"] = [
+		GameStateFactory.create_contract_runtime(
+			contract_id, definition.deadline_round
+		)
+	]
+	return state
+
+
 static func base_state(game_seed: String = "test_seed_001") -> Dictionary:
 	return TestStates.committed_state(game_seed)
 

@@ -65,7 +65,7 @@ func test_cops_upkeep_interval_payment_and_deactivation() -> void:
 	assert_eq(inactive["nal"], 0)
 
 
-func test_future_dependencies_block_before_random_without_mutation() -> void:
+func test_future_debt_dependency_blocks_before_random_without_mutation() -> void:
 	var debt_state: Dictionary = TestGameStateFactory.base_state("income_debt")
 	TestPlayers.find(debt_state, GameIds.PLAYER_HUMAN)["debts"] = [
 		GameStateFactory.create_debt_state(
@@ -77,25 +77,3 @@ func test_future_dependencies_block_before_random_without_mutation() -> void:
 	var result: Dictionary = IncomeLogic.resolve_all_players(debt_state)
 	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
 	assert_eq(debt_state, before)
-	var contract_state: Dictionary = _contract_state(
-		ContractIds.GRAY_CAPITAL, "income_contract"
-	)
-	before = contract_state.duplicate(true)
-	result = IncomeLogic.resolve_all_players(contract_state)
-	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
-	assert_eq(contract_state, before)
-
-
-func _contract_state(contract_id: String, game_seed: String) -> Dictionary:
-	var state: Dictionary = TestGameStateFactory.base_state(game_seed)
-	var definition: ContractDefinition = ContractCatalog.get_by_id(contract_id)
-	state["selected_contract_id"] = contract_id
-	state["contract_offer_ids"] = [
-		contract_id, ContractIds.SILENT_EXPANSION, ContractIds.PROXY_WAR,
-	]
-	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["contracts"] = [
-		GameStateFactory.create_contract_runtime(
-			contract_id, definition.deadline_round
-		)
-	]
-	return state

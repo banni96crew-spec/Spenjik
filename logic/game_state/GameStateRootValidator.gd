@@ -29,36 +29,11 @@ static func validate_simple_fields(
 		return StateShapeValidator.fail(
 			ValidationErrors.INVALID_ROLE_ID, "state.selected_role_id", "invalid_id"
 		)
-	if typeof(state["selected_contract_id"]) != TYPE_STRING:
-		return StateShapeValidator.fail(
-			ValidationErrors.INVALID_CONTRACT_ID, "state.selected_contract_id", "wrong_type"
-		)
-	if typeof(state["contract_offer_ids"]) != TYPE_ARRAY:
-		return StateShapeValidator.fail(
-			ValidationErrors.INVALID_CONTRACT_ID, "state.contract_offer_ids", "wrong_type"
-		)
-	if committed:
-		var offers: Dictionary = StateShapeValidator.unique_strings(
-			state["contract_offer_ids"], ContractIds.ALL, "state.contract_offer_ids",
-			ValidationErrors.INVALID_CONTRACT_ID
-		)
-		if not offers["ok"] or state["contract_offer_ids"].size() != 3:
-			return StateShapeValidator.fail(
-				ValidationErrors.INVALID_CONTRACT_ID,
-				"state.contract_offer_ids", "committed_offer_contract"
-			)
-		if (
-			not ContractIds.ALL.has(state["selected_contract_id"])
-			or not state["contract_offer_ids"].has(state["selected_contract_id"])
-		):
-			return StateShapeValidator.fail(
-				ValidationErrors.INVALID_CONTRACT_ID,
-				"state.selected_contract_id", "not_offered"
-			)
-	elif state["selected_contract_id"] != "" or not state["contract_offer_ids"].is_empty():
-		return StateShapeValidator.fail(
-			ValidationErrors.INVALID_CONTRACT_ID, "state.contracts", "setup_placeholder"
-		)
+	var contract_fields: Dictionary = (
+		GameStateContractValidator.validate_root_fields(state, committed)
+	)
+	if not contract_fields["ok"]:
+		return contract_fields
 	if typeof(state["debug"]) != TYPE_DICTIONARY:
 		return StateShapeValidator.fail(
 			ValidationErrors.INVALID_STATE, "state.debug", "wrong_type"
@@ -99,7 +74,11 @@ static func validate_players(state: Dictionary, committed: bool) -> Dictionary:
 			return StateShapeValidator.fail(
 				ValidationErrors.INVALID_TURF_LEVEL, "player.turf_level", "root_mismatch"
 			)
-		var expected_contracts: int = 1 if committed and index == 0 else 0
+		var expected_contracts: int = (
+			GameStateContractValidator.human_contract_count(
+				state, committed, index
+			)
+		)
 		if player["contracts"].size() != expected_contracts:
 			return StateShapeValidator.fail(
 				ValidationErrors.INVALID_STATE, "player.contracts", "ownership_count"
@@ -114,13 +93,7 @@ static func validate_players(state: Dictionary, committed: bool) -> Dictionary:
 					ValidationErrors.INVALID_MODIFIER_STATE,
 					"player.temporary_modifiers.owner_player_id", "owner_mismatch"
 				)
-	if committed:
-		var contract: Dictionary = state["players"][0]["contracts"][0]
-		if contract["contract_id"] != state["selected_contract_id"]:
-			return StateShapeValidator.fail(
-				ValidationErrors.INVALID_CONTRACT_ID, "player.contracts", "selection_mismatch"
-			)
-	return StateShapeValidator.ok()
+	return GameStateContractValidator.selection_matches_runtime(state)
 
 
 static func validate_phase_fields(state: Dictionary) -> Dictionary:

@@ -146,7 +146,8 @@ func test_attack_result_logs_and_hook_boundaries_are_structured() -> void:
 	)
 	assert_true(result["ok"], str(result))
 	assert_true(result["success"])
-	assert_eq(result["contract_results"], [])
+	assert_eq(result["contract_results"].size(), 1)
+	assert_false(result["contract_results"][0]["changed"])
 	assert_eq(result["contact_results"], [])
 	assert_false(result["resolved_attack_event"]["blocked"])
 	assert_true(result["resolved_attack_event"]["success"])
@@ -167,7 +168,7 @@ func test_attack_result_logs_and_hook_boundaries_are_structured() -> void:
 	assert_true(GameStateValidator.validate_game_state(result["state"])["ok"])
 
 
-func test_blocked_log_has_only_canonical_block_field_and_no_hooks() -> void:
+func test_blocked_log_has_canonical_block_field_and_contract_event() -> void:
 	var state: Dictionary = CombatTestHelper.state_with_hand(
 		[GameIds.CARD_THUG]
 	)
@@ -181,7 +182,9 @@ func test_blocked_log_has_only_canonical_block_field_and_no_hooks() -> void:
 	assert_eq(log_entry["details"]["block_source"], GameIds.CARD_COPS)
 	assert_true(result["resolved_attack_event"]["blocked"])
 	assert_false(result["resolved_attack_event"]["success"])
-	assert_eq(result["contract_hook_events"], [])
+	assert_eq(result["contract_hook_events"].size(), 1)
+	assert_true(result["contract_hook_events"][0]["blocked"])
+	assert_false(result["contract_results"][0]["changed"])
 	assert_eq(result["contact_hook_events"], [])
 	assert_eq(
 		CombatTestHelper.target(result["state"])["last_attacked_by"],

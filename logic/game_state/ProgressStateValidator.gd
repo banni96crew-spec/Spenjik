@@ -68,11 +68,30 @@ static func validate_contract(value: Dictionary) -> Dictionary:
 		return StateShapeValidator.fail(
 			ValidationErrors.INVALID_STATE, "contract.failed_reason", "invalid_value"
 		)
-	for key: String in ["completed_round", "claimed_round"]:
-		if value[key] < 0 or value[key] > 15:
-			return StateShapeValidator.fail(
-				ValidationErrors.INVALID_STATE, "contract.%s" % key, "range"
-			)
+	if value["failed"] != not value["failed_reason"].is_empty():
+		return StateShapeValidator.fail(
+			ValidationErrors.INVALID_STATE, "contract.failed_reason", "status_mismatch"
+		)
+	if (
+		(value["completed"] and (
+			value["completed_round"] < 1
+			or value["completed_round"] > value["deadline"]
+		))
+		or (not value["completed"] and value["completed_round"] != 0)
+	):
+		return StateShapeValidator.fail(
+			ValidationErrors.INVALID_STATE, "contract.completed_round", "status_mismatch"
+		)
+	if (
+		(value["claimed"] and (
+			value["claimed_round"] < value["completed_round"]
+			or value["claimed_round"] > 15
+		))
+		or (not value["claimed"] and value["claimed_round"] != 0)
+	):
+		return StateShapeValidator.fail(
+			ValidationErrors.INVALID_STATE, "contract.claimed_round", "status_mismatch"
+		)
 	return StateShapeValidator.ok()
 
 

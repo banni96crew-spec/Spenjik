@@ -19,6 +19,7 @@ static func resolve_attack(
 		return _failure(state, validation["error"])
 	var normalized: Dictionary = validation["payload"]
 	var candidate: Dictionary = state.duplicate(true)
+	var log_start: int = candidate["combat_log"].size()
 	var attacker: Dictionary = AttackValidator.find_player(
 		candidate, normalized["attacker_id"]
 	)
@@ -48,19 +49,27 @@ static func resolve_attack(
 			candidate, normalized, effect, defense["blocked"]
 		)
 	)
-	candidate["combat_log"].append(
-		CombatLogBuilder.build_attack_log(result)
+	var contract_result: Dictionary = ContractLogic.on_attack_resolved(
+		candidate, result["resolved_attack_event"]
 	)
-	result["log_entries"] = [candidate["combat_log"][-1]]
+	if not contract_result["ok"]:
+		return _failure(state, contract_result["error"])
+	candidate = contract_result["state"]
+	result["state"] = candidate
+	result["contract_results"] = [contract_result]
+	result["contract_hook_events"] = [
+		result["resolved_attack_event"].duplicate(true)
+	]
 	if not defense["blocked"]:
-		result["contract_hook_events"] = [
-			result["resolved_attack_event"].duplicate(true)
-		]
 		result["contact_hook_events"] = [
 			CombatHookBuilder.build_contact_event(
 				candidate, normalized, effect
 			)
 		]
+	candidate["combat_log"].append(
+		CombatLogBuilder.build_attack_log(result)
+	)
+	result["log_entries"] = candidate["combat_log"].slice(log_start)
 	var final_validation: Dictionary = GameStateValidator.validate_game_state(
 		candidate
 	)

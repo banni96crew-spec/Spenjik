@@ -54,7 +54,9 @@ func test_cops_block_thug_without_consuming_cops() -> void:
 		CombatTestHelper.attacker(result["state"])["hand"],
 		[GameIds.CARD_THUG]
 	)
-	assert_eq(result["contract_hook_events"], [])
+	assert_eq(result["contract_hook_events"].size(), 1)
+	assert_true(result["contract_hook_events"][0]["blocked"])
+	assert_false(result["contract_results"][0]["changed"])
 	assert_eq(result["contact_hook_events"], [])
 
 

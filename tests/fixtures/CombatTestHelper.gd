@@ -5,7 +5,10 @@ static func state_with_hand(
 	card_ids: Array[String],
 	game_seed: String = "test_seed_combat"
 ) -> Dictionary:
-	var state: Dictionary = TestGameStateFactory.action_state(game_seed)
+	var state: Dictionary = TestStates.with_contract(
+		TestGameStateFactory.action_state(game_seed),
+		ContractIds.IRON_ROOF
+	)
 	TestPlayers.find(
 		state, GameIds.PLAYER_HUMAN
 	)["hand"] = card_ids.duplicate()

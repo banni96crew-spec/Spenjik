@@ -1,6 +1,7 @@
 class_name GamePhaseController
 
 const STREET_DEAL_ROUNDS: Array[int] = [4, 8, 12]
+
 ## Reports whether exactly one M5-owned phase transition can run.
 static func can_advance_phase(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = _validate_transition_input(state)
@@ -82,6 +83,10 @@ static func enter_income_phase(state: Dictionary) -> Dictionary:
 	PhaseStateHelper.apply_round_reset(candidate)
 	if candidate["round"] != round_before:
 		PhaseLogBuilder.append_round_started(candidate)
+	var deadlines: Dictionary = ContractLogic.process_deadlines(candidate)
+	if not deadlines["ok"]:
+		return _failure(state, deadlines["error"])
+	candidate = deadlines["state"]
 	PhaseLogBuilder.append_phase_changed(candidate, from_phase, round_before)
 	return _validated_result(state, candidate, log_start)
 
@@ -92,7 +97,6 @@ static func enter_market_phase(state: Dictionary) -> Dictionary:
 	if state["current_phase"] != PhaseIds.INCOME:
 		return _failure(state, ValidationErrors.INVALID_PHASE)
 	return MarketLogic.resolve_income_and_enter_market(state)
-
 
 static func enter_action_phase(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(state)
@@ -117,7 +121,6 @@ static func enter_action_phase(state: Dictionary) -> Dictionary:
 	)
 	return _validated_result(state, candidate, log_start)
 
-
 static func advance_action_player(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = PhaseStateHelper.validate_action_advancement_input(
 		state
@@ -138,7 +141,6 @@ static func advance_action_player(state: Dictionary) -> Dictionary:
 	if not advancement["ok"]:
 		return _failure(state, advancement["error"])
 	return _validated_result(state, candidate, log_start)
-
 
 static func enter_street_deal_phase(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(state)
@@ -221,7 +223,6 @@ static func _validate_transition_input(state: Dictionary) -> Dictionary:
 		PhaseStateHelper.apply_round_reset(candidate)
 		return GameStateValidator.validate_game_state(candidate)
 	return GameStateValidator.validate_game_state(state)
-
 
 static func _validated_result(
 	original: Dictionary,

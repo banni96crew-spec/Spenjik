@@ -39,6 +39,26 @@ static func clone_state(state: Dictionary) -> Dictionary:
 	return state.duplicate(true)
 
 
+static func with_contract(
+	state: Dictionary,
+	contract_id: String
+) -> Dictionary:
+	var result: Dictionary = clone_state(state)
+	var offers: Array[String] = [contract_id]
+	for candidate: String in ContractIds.ALL:
+		if not offers.has(candidate) and offers.size() < 3:
+			offers.append(candidate)
+	result["contract_offer_ids"] = offers
+	result["selected_contract_id"] = contract_id
+	var definition: ContractDefinition = ContractCatalog.get_by_id(contract_id)
+	TestPlayers.find(result, GameIds.PLAYER_HUMAN)["contracts"] = [
+		GameStateFactory.create_contract_runtime(
+			contract_id, definition.deadline_round
+		)
+	]
+	return result
+
+
 static func without_key(state: Dictionary, key: String) -> Dictionary:
 	var result: Dictionary = clone_state(state)
 	result.erase(key)

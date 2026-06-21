@@ -169,3 +169,6 @@ M10 — Street Deals and Debts:
 - Manual activation Street Medic перед penalty.
 - Gameplay randomness вне contact offer generation.
 - React, TypeScript, Tailwind, Zustand, Docker, backend и routing.
+
+Пока не пиши код, твоя задача - ознакомиться с контекстом проекта. ОБЯЗАТЕЛЬНО прочитай AGENTS.MD
+ВНИМАНИЕ: Не надо проводить полную проверку репозитория на факт выполнения предыдущих mailstone. Эти проверки уже были проведены до передачи тебе задачи.

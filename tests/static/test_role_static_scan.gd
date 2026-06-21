@@ -7,6 +7,7 @@ const FORBIDDEN_PATTERNS: Array[String] = [
 	"get_node(",
 	"randf(",
 	"randi(",
+	"randi_range(",
 	"randomize(",
 	"RandomNumberGenerator",
 	"effect_summary",
