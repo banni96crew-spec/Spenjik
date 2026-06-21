@@ -99,10 +99,35 @@ func test_runtime_helpers_for_levels_four_through_nine() -> void:
 	ai["vp"] = 4
 	assert_eq(TurfLevelLogic.get_street_deal_payment_delta(state, human), 1)
 	assert_eq(TurfLevelLogic.get_street_deal_payment_delta(state, ai), 0)
+
+
+func test_level_nine_war_multiplier_requires_strict_human_lead_and_war_card() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state("turf_level_9")
 	state["turf_level"] = 9
-	assert_eq(TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state), 1.2)
+	var human: Dictionary = TestPlayers.find(state, GameIds.PLAYER_HUMAN)
+	var ai: Dictionary = TestPlayers.find(state, GameIds.PLAYER_AI_1)
+	human["vp"] = 5
+	ai["vp"] = 4
+	var war_card: CardDefinition = CardCatalog.get_by_id(GameIds.CARD_THUG)
+	var status_card: CardDefinition = CardCatalog.get_by_id(GameIds.CARD_STASH)
+	assert_eq(
+		TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state, war_card),
+		1.2
+	)
+	assert_eq(
+		TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state, status_card),
+		1.0
+	)
 	ai["vp"] = 5
-	assert_eq(TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state), 1.0)
+	assert_eq(
+		TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state, war_card),
+		1.0
+	)
+	state["turf_level"] = 8
+	assert_eq(
+		TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state, war_card),
+		1.0
+	)
 
 
 func test_level_six_discount_preview_and_consume() -> void:

@@ -39,7 +39,6 @@ func test_production_logic_has_no_hardcoded_turf_thresholds() -> void:
 
 
 func test_turf_level_logic_has_no_forbidden_random_or_ui_patterns() -> void:
-	var path: String = "res://logic/turf_levels/TurfLevelLogic.gd"
 	var forbidden: Array[String] = [
 		"RandomNumberGenerator",
 		"randf(",
@@ -48,9 +47,13 @@ func test_turf_level_logic_has_no_forbidden_random_or_ui_patterns() -> void:
 		"res://scenes/ui/",
 		"effect_summary",
 	]
-	for pattern: String in forbidden:
-		assert_eq(
-			StaticScanHelper.find_pattern(path, [pattern]),
-			"",
-			"Forbidden pattern %s in %s" % [pattern, path]
-		)
+	for path: String in [
+		"res://logic/turf_levels/TurfLevelLogic.gd",
+		"res://logic/turf_levels/TurfWinnerRules.gd",
+	]:
+		for pattern: String in forbidden:
+			assert_eq(
+				StaticScanHelper.find_pattern(path, [pattern]),
+				"",
+				"Forbidden pattern %s in %s" % [pattern, path]
+			)
