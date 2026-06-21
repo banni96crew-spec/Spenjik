@@ -24,7 +24,7 @@ func test_scaled_prices_and_protected_nal_match_owner_rules() -> void:
 	)
 
 
-func test_price_preview_applies_turf_contact_temporary_then_clamps() -> void:
+func test_price_preview_applies_turf_then_temporary_and_clamps() -> void:
 	var state: Dictionary = TestGameStateFactory.base_state("price_order")
 	state["turf_level"] = 6
 	for player: Dictionary in state["players"]:
@@ -35,17 +35,13 @@ func test_price_preview_applies_turf_contact_temporary_then_clamps() -> void:
 	)]
 	var before: Dictionary = state.duplicate(true)
 	var result: Dictionary = PriceLogic.get_card_price(
-		state, ai["id"], GameIds.CARD_THUG, [{
-			"id": "role_ai_1_round_1", "source": "role",
-			"delta": 2, "flag": "", "consume_on_success": false,
-		}]
+		state, ai["id"], GameIds.CARD_THUG
 	)
 	assert_true(result["ok"])
 	assert_eq(result["base_price"], 2)
-	assert_eq(result["modifiers"].size(), 3)
-	assert_eq(result["modifiers"][0]["source"], "role")
-	assert_eq(result["modifiers"][1]["source"], "turf_level")
-	assert_eq(result["modifiers"][2]["source"], "test")
+	assert_eq(result["modifiers"].size(), 2)
+	assert_eq(result["modifiers"][0]["source"], "turf_level")
+	assert_eq(result["modifiers"][1]["source"], "test")
 	assert_eq(result["final_price"], 1)
 	assert_eq(state, before)
 

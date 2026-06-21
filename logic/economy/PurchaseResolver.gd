@@ -14,7 +14,11 @@ static func resolve_purchase(
 	player["nal"] -= int(price_result["final_price"])
 	_place_card(player, definition.id)
 	player["purchased_this_round"].append(definition.id)
-	_consume_modifiers(player, price_result["modifiers"])
+	candidate = RoleLogic.consume_role_flags_after_purchase(
+		candidate, player_id, definition.id, price_result["modifiers"]
+	)
+	player = _find_player(candidate, player_id)
+	_consume_non_role_modifiers(player, price_result["modifiers"])
 	_append_purchase_log(
 		candidate, player_id, definition, price_result, nal_before
 	)
@@ -39,7 +43,11 @@ static func resolve_rebuild(
 	player["status_buildings"]["district_control"] += 1
 	player["status_buildings"]["can_rebuild_district_for_8"] = false
 	player["vp"] += 3
-	_consume_modifiers(player, price_result["modifiers"])
+	candidate = RoleLogic.consume_role_flags_after_rebuild(
+		candidate, player_id, price_result["modifiers"]
+	)
+	player = _find_player(candidate, player_id)
+	_consume_non_role_modifiers(player, price_result["modifiers"])
 	var card: CardDefinition = CardCatalog.get_by_id(
 		GameIds.CARD_DISTRICT_CONTROL
 	)
@@ -91,12 +99,14 @@ static func _add_status(
 	player["vp"] += vp
 
 
-static func _consume_modifiers(
+static func _consume_non_role_modifiers(
 	player: Dictionary,
 	modifiers: Array
 ) -> void:
 	for modifier: Dictionary in modifiers:
 		if not modifier.get("consume_on_success", false):
+			continue
+		if modifier.get("source") == "role":
 			continue
 		var flag: String = str(modifier.get("flag", ""))
 		if modifier.get("source") == "contact":

@@ -16,7 +16,10 @@ static func apply_round_reset(state: Dictionary) -> void:
 		player["ready_for_action"] = false
 		player["action_done"] = false
 		player["purchased_this_round"] = []
-		player["role_flags"]["merchant_first_war_tax_applied_this_round"] = false
+		var reset_player: Dictionary = RoleLogic.reset_round_role_flags(
+			player, state["selected_role_id"]
+		)
+		player["role_flags"] = reset_player["role_flags"]
 		player["turf_flags"]["ai_first_war_discount_used_this_round"] = false
 		player["contacts"]["used_this_round"] = []
 		var modifiers: Array = []

@@ -21,9 +21,13 @@ static func validate_simple_fields(
 		return StateShapeValidator.fail(
 			ValidationErrors.INVALID_ROLE_ID, "state.selected_role_id", "invalid_id"
 		)
-	if not committed and state["selected_role_id"] != "":
+	if (
+		not committed
+		and state["selected_role_id"] != ""
+		and not RoleIds.ALL.has(state["selected_role_id"])
+	):
 		return StateShapeValidator.fail(
-			ValidationErrors.INVALID_ROLE_ID, "state.selected_role_id", "setup_placeholder"
+			ValidationErrors.INVALID_ROLE_ID, "state.selected_role_id", "invalid_id"
 		)
 	if typeof(state["selected_contract_id"]) != TYPE_STRING:
 		return StateShapeValidator.fail(

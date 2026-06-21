@@ -153,6 +153,8 @@ func test_completed_normal_action_starts_next_round() -> void:
 	state["players"][0]["purchased_this_round"] = [GameIds.CARD_STASH]
 	state["players"][0]["contacts"]["unlocked"] = [ContactIds.BLACK_CASH]
 	state["players"][0]["contacts"]["used_this_round"] = [ContactIds.BLACK_CASH]
+	for key: String in state["players"][0]["role_flags"]:
+		state["players"][0]["role_flags"][key] = true
 	var result: Dictionary = GamePhaseController.advance_phase(state)
 	assert_true(result["ok"], str(result))
 	assert_eq(result["state"]["current_phase"], PhaseIds.INCOME)
@@ -162,6 +164,12 @@ func test_completed_normal_action_starts_next_round() -> void:
 	assert_eq(result["state"]["players"][0]["purchased_this_round"], [])
 	assert_eq(result["state"]["players"][0]["contacts"]["unlocked"], [ContactIds.BLACK_CASH])
 	assert_eq(result["state"]["players"][0]["contacts"]["used_this_round"], [])
+	assert_false(result["state"]["players"][0]["role_flags"][
+		"merchant_first_war_tax_applied_this_round"
+	])
+	for key: String in result["state"]["players"][0]["role_flags"]:
+		if key != "merchant_first_war_tax_applied_this_round":
+			assert_true(result["state"]["players"][0]["role_flags"][key], key)
 	assert_eq(
 		result["state"]["combat_log"][-1]["event_type"],
 		LogEventTypes.PHASE_CHANGED

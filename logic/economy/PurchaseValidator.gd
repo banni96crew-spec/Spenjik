@@ -24,7 +24,7 @@ static func validate_purchase(
 		return _failure(
 			ValidationErrors.CARD_ALREADY_PURCHASED_THIS_ROUND, price
 		)
-	var requirement_error: String = _requirement_error(player, card_id)
+	var requirement_error: String = _requirement_error(state, player, card_id)
 	if not requirement_error.is_empty():
 		return _failure(requirement_error, price)
 	return {
@@ -73,6 +73,7 @@ static func _validate_common(
 
 
 static func _requirement_error(
+	state: Dictionary,
 	player: Dictionary,
 	card_id: String
 ) -> String:
@@ -81,7 +82,12 @@ static func _requirement_error(
 	var defense: Dictionary = player["defense"]
 	match card_id:
 		GameIds.CARD_ACCOUNTANT:
-			if player["vp"] < 1:
+			if (
+				player["vp"] < 1
+				and not RoleLogic.can_bypass_purchase_requirement(
+					state, player, card_id, ""
+				)
+			):
 				return ValidationErrors.REQUIREMENT_NOT_MET
 		GameIds.CARD_DISTRICT_CONTROL:
 			if status["district_control"] >= status["workshop"]:

@@ -7,8 +7,7 @@ const REBUILD_BASE_PRICE := 8
 static func get_card_price(
 	state: Dictionary,
 	player_id: String,
-	card_id: String,
-	role_modifiers: Array[Dictionary] = []
+	card_id: String
 ) -> Dictionary:
 	var player: Dictionary = _find_player(state, player_id)
 	var definition: CardDefinition = CardCatalog.get_by_id(card_id)
@@ -16,7 +15,9 @@ static func get_card_price(
 		return _failure(card_id)
 	var scaled_price: int = _scaled_price(player, definition)
 	var modifiers: Array[Dictionary] = []
-	modifiers.append_array(role_modifiers.duplicate(true))
+	modifiers.append_array(
+		RoleLogic.get_role_price_modifiers(state, player, definition)
+	)
 	modifiers.append_array(_turf_modifiers(state, player, definition))
 	modifiers.append_array(_contact_modifiers(state, player, definition))
 	modifiers.append_array(_temporary_modifiers(player, definition))
@@ -37,10 +38,10 @@ static func get_card_price(
 ## Returns the dedicated District Control rebuild preview.
 static func get_rebuild_price(
 	state: Dictionary,
-	player_id: String,
-	role_modifiers: Array[Dictionary] = []
+	player_id: String
 ) -> Dictionary:
-	if _find_player(state, player_id).is_empty():
+	var player: Dictionary = _find_player(state, player_id)
+	if player.is_empty():
 		return {
 			"ok": false,
 			"error": ValidationErrors.INVALID_PLAYER_ID,
@@ -48,6 +49,10 @@ static func get_rebuild_price(
 			"final_rebuild_price": REBUILD_BASE_PRICE,
 			"modifiers": [],
 		}
+	var role_result: Dictionary = RoleLogic.get_district_rebuild_price(
+		state, player
+	)
+	var role_modifiers: Array[Dictionary] = role_result["modifiers"]
 	var final_price: int = REBUILD_BASE_PRICE
 	for modifier: Dictionary in role_modifiers:
 		final_price += int(modifier.get("delta", 0))
