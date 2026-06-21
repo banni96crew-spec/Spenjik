@@ -35,16 +35,16 @@ const PROTECTED_AREAS = Object.freeze([
       "AGENTS.MD defines repository-wide instructions for Cursor and Codex agents.",
   },
   {
-    path: "docs/coding-standards.md",
+    path: ".cursor/docs/coding-standards.md",
     directory: false,
     message:
-      "docs/coding-standards.md defines project-wide implementation and verification rules.",
+      ".cursor/docs/coding-standards.md defines project-wide implementation and verification rules.",
   },
   {
-    path: "docs/technical-preferences.md",
+    path: ".cursor/docs/technical-preferences.md",
     directory: false,
     message:
-      "docs/technical-preferences.md records approved stack and architecture decisions.",
+      ".cursor/docs/technical-preferences.md records approved stack and architecture decisions.",
   },
 ]);
 

@@ -98,10 +98,10 @@ UI → GameStateManager → logic modules → catalogs/resources/constants
 
 ```gdscript
 {
-	"ok": true,
-	"error": ValidationErrors.OK,
-	"state": {},
-	"log_entries": []
+    "ok": true,
+    "error": ValidationErrors.OK,
+    "state": {},
+    "log_entries": []
 }
 ```
 

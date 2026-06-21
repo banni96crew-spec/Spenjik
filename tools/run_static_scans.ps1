@@ -7,12 +7,12 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 function Get-ProjectRelativePath {
 	param([Parameter(Mandatory = $true)][string]$FullName)
 
-	$resolvedRoot = [System.IO.Path]::GetFullPath($projectRoot).TrimEnd("\")
+	$resolvedRoot = [System.IO.Path]::GetFullPath($projectRoot).TrimEnd("\", "/")
 	$resolvedPath = [System.IO.Path]::GetFullPath($FullName)
 	if (-not $resolvedPath.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
 		throw "Path is outside project root: $resolvedPath"
 	}
-	return $resolvedPath.Substring($resolvedRoot.Length).TrimStart("\")
+	return $resolvedPath.Substring($resolvedRoot.Length).TrimStart("\", "/").Replace("\", "/")
 }
 
 $requiredPaths = @(
@@ -39,8 +39,8 @@ if ($missingPaths.Count -gt 0) {
 $sourceFiles = Get-ChildItem -Path $projectRoot -Recurse -Filter "*.gd" -File |
 	Where-Object {
 		$relativePath = Get-ProjectRelativePath -FullName $_.FullName
-		-not $relativePath.StartsWith("addons\gut\") -and
-		-not $relativePath.StartsWith(".godot\")
+		-not $relativePath.StartsWith("addons/gut/") -and
+		-not $relativePath.StartsWith(".godot/")
 	}
 
 $oversizedFiles = @()
@@ -63,14 +63,14 @@ $markerFiles = Get-ChildItem -Path @(
 	(Join-Path $projectRoot "autoload"),
 	(Join-Path $projectRoot "scenes"),
 	(Join-Path $projectRoot "tests"),
-	(Join-Path $projectRoot "docs\prd")
+	(Join-Path $projectRoot "docs/prd")
 ) -Recurse -File -ErrorAction SilentlyContinue |
 	Where-Object {
 		$relativePath = Get-ProjectRelativePath -FullName $_.FullName
 		$markerDefinitionFiles = @(
-			"docs\prd\18_TEST_PLAN.md",
-			"docs\prd\20_LLM_AGENT_RULES.md",
-			"docs\prd\21_OPEN_QUESTIONS_AND_FIXES.md"
+			"docs/prd/18_TEST_PLAN.md",
+			"docs/prd/20_LLM_AGENT_RULES.md",
+			"docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md"
 		)
 		$_.Extension -in @(".gd", ".tscn", ".tres", ".md") -and
 		$relativePath -notin $markerDefinitionFiles
@@ -97,7 +97,7 @@ $forbiddenRandomPatterns = @("randf(", "randi(", "randi_range(", "randomize(", "
 $forbiddenRandomUsages = @()
 foreach ($sourceFile in $sourceFiles) {
 	$relativePath = Get-ProjectRelativePath -FullName $sourceFile.FullName
-	if ($relativePath.StartsWith("tests\")) {
+	if ($relativePath.StartsWith("tests/")) {
 		continue
 	}
 	$lineNumber = 0
@@ -121,10 +121,10 @@ $forbiddenNames = @("package.json", "package-lock.json", "yarn.lock", "pnpm-lock
 $forbiddenArtifacts = Get-ChildItem -Path $projectRoot -Recurse -File |
 	Where-Object {
 		$relativePath = Get-ProjectRelativePath -FullName $_.FullName
-		-not $relativePath.StartsWith(".cursor\") -and
-		-not $relativePath.StartsWith(".git\") -and
-		-not $relativePath.StartsWith("docs\") -and
-		-not $relativePath.StartsWith("addons\gut\") -and
+		-not $relativePath.StartsWith(".cursor/") -and
+		-not $relativePath.StartsWith(".git/") -and
+		-not $relativePath.StartsWith("docs/") -and
+		-not $relativePath.StartsWith("addons/gut/") -and
 		($_.Extension -in $forbiddenExtensions -or $_.Name -in $forbiddenNames)
 	} |
 	ForEach-Object { Get-ProjectRelativePath -FullName $_.FullName }

@@ -448,6 +448,30 @@ Turf implementation не должна содержать:
 При новом противоречии проверь документ 21.
 Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
 
+## Critical M12 implementation constraints
+
+- Do not expand near-limit production files directly.
+- `IncomeLogic.gd`, `StreetDealLogic.gd`, `GamePhaseController.gd`, `CombatEngine.gd` are close to the 250-line limit.
+- If M12 integration requires changes in near-limit files, extract focused helpers instead of increasing file size.
+- Do not raise the 250-line limit.
+
+## Turf Level migration rule
+
+M12 must centralize existing hardcoded Turf Level checks into `TurfLevelLogic.gd`.
+
+Do not add a second layer of Turf effects on top of existing owner-module checks.
+
+Migrate these existing checks to TurfLevelLogic helpers:
+
+- `MarketLogic` rotating slot count → `TurfLevelLogic.get_rotating_market_slot_count(...)`
+- `IncomeLogic` Cops upkeep interval → `TurfLevelLogic.get_cops_upkeep_interval(...)`
+- `PriceLogic` AI War discount → `TurfLevelLogic.get_ai_war_purchase_modifiers(...)`
+- `ContactOfferLogic` strong-AI contact offer count → `TurfLevelLogic.get_strong_ai_victory_contact_offer_count(...)`
+- `StreetDealLogic` human payment delta → `TurfLevelLogic.get_street_deal_payment_delta(...)`
+- `WinnerResolver` Level 10 tie-break → `TurfLevelLogic.resolve_level_10_ai_tie_break(...)`
+
+M12 is a migration/centralization milestone, not a duplicate-effect layer.
+
 ПОРЯДОК РАБОТЫ:
 
 1. Изучи M12 PRD, owner contracts, tests и fixes.
