@@ -474,6 +474,9 @@ Street Deal/debt implementation не должна содержать:
 - direct contract completion;
 - web stack.
 
+StreetDealLogic must call ContractLogic.on_state_changed after successful Street Deal effects that change Nal, VP, buildings, defenses, or other current-state contract conditions.
+Do not implement contract rules inside StreetDealLogic.
+
 ОГРАНИЧЕНИЯ:
 
 - Не меняй IDs, effects, debt amounts, deadlines или penalties.

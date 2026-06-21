@@ -14,7 +14,11 @@ static func can_advance_phase(state: Dictionary) -> Dictionary:
 			var dependency: Dictionary = IncomeLogic.validate_future_income_dependencies(state)
 			return _success(state) if dependency["ok"] else _failure(state, dependency["error"])
 		PhaseIds.STREET_DEAL:
-			return _failure(state, ValidationErrors.PHASE_NOT_READY)
+			return (
+				_success(state)
+				if StreetDealPhaseFlow.is_complete(state)
+				else _failure(state, ValidationErrors.PHASE_NOT_READY)
+			)
 		PhaseIds.MARKET:
 			return (
 				_success(state)
@@ -52,6 +56,8 @@ static func advance_phase(state: Dictionary) -> Dictionary:
 			if STREET_DEAL_ROUNDS.has(state["round"]):
 				return enter_street_deal_phase(state)
 			return enter_income_phase(state)
+		PhaseIds.STREET_DEAL:
+			return enter_income_phase(state)
 	return _failure(state, ValidationErrors.PHASE_NOT_READY)
 
 static func enter_income_phase(state: Dictionary) -> Dictionary:
@@ -59,8 +65,6 @@ static func enter_income_phase(state: Dictionary) -> Dictionary:
 	if not validation["ok"]:
 		return _failure(state, validation["error"])
 	var from_phase: String = state["current_phase"]
-	if from_phase == PhaseIds.STREET_DEAL:
-		return _failure(state, ValidationErrors.PHASE_NOT_READY)
 	if from_phase == PhaseIds.ACTION:
 		if (
 			not PhaseStateHelper.all_players_flag(
@@ -70,16 +74,21 @@ static func enter_income_phase(state: Dictionary) -> Dictionary:
 			or STREET_DEAL_ROUNDS.has(state["round"])
 		):
 			return _failure(state, ValidationErrors.PHASE_NOT_READY)
+	elif from_phase == PhaseIds.STREET_DEAL:
+		if not StreetDealPhaseFlow.is_complete(state):
+			return _failure(state, ValidationErrors.PHASE_NOT_READY)
 	elif from_phase != PhaseIds.SETUP:
 		return _failure(state, ValidationErrors.INVALID_PHASE)
 	var candidate: Dictionary = state.duplicate(true)
 	var log_start: int = candidate["combat_log"].size()
 	var round_before: int = candidate["round"]
-	if from_phase == PhaseIds.ACTION:
+	if from_phase in [PhaseIds.ACTION, PhaseIds.STREET_DEAL]:
 		candidate["round"] += 1
 	else:
 		candidate["round"] = 1
 	candidate["current_phase"] = PhaseIds.INCOME
+	if from_phase == PhaseIds.STREET_DEAL:
+		candidate = StreetDealLogic.reset_for_new_street_deal_phase(candidate)
 	PhaseStateHelper.apply_round_reset(candidate)
 	if candidate["round"] != round_before:
 		PhaseLogBuilder.append_round_started(candidate)
@@ -143,26 +152,7 @@ static func advance_action_player(state: Dictionary) -> Dictionary:
 	return _validated_result(state, candidate, log_start)
 
 static func enter_street_deal_phase(state: Dictionary) -> Dictionary:
-	var validation: Dictionary = GameStateValidator.validate_game_state(state)
-	if not validation["ok"]:
-		return _failure(state, validation["error"])
-	if (
-		state["current_phase"] != PhaseIds.ACTION
-		or not PhaseStateHelper.all_players_flag(
-			state, StateKeys.ACTION_DONE
-		)
-		or not STREET_DEAL_ROUNDS.has(state["round"])
-	):
-		return _failure(state, ValidationErrors.PHASE_NOT_READY)
-	var candidate: Dictionary = state.duplicate(true)
-	var log_start: int = candidate["combat_log"].size()
-	candidate["current_phase"] = PhaseIds.STREET_DEAL
-	candidate["action_order"] = []
-	candidate["active_action_player_id"] = ""
-	PhaseLogBuilder.append_phase_changed(
-		candidate, PhaseIds.ACTION, candidate["round"]
-	)
-	return _validated_result(state, candidate, log_start)
+	return StreetDealPhaseFlow.enter(state)
 
 
 static func enter_game_over_phase(state: Dictionary) -> Dictionary:

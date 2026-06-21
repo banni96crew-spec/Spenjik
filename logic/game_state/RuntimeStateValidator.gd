@@ -159,11 +159,22 @@ static func validate_contact_offer_state(value: Dictionary) -> Dictionary:
 	var expected_count: int = 2 if source == StreetDealIds.INSIDE_CONTACT else 3
 	if source == "strong_ai_victory" and value["contact_offer_ids"].size() == 2:
 		expected_count = 2
+	var is_offer_array: bool = (
+		typeof(value["contact_offer_ids"]) == TYPE_ARRAY
+	)
+	var is_m10_handoff: bool = (
+		is_offer_array
+		and source == StreetDealIds.INSIDE_CONTACT
+		and value["contact_offer_ids"].is_empty()
+	)
 	if (
 		value["player_id"] != GameIds.PLAYER_HUMAN
 		or source not in [StreetDealIds.INSIDE_CONTACT, "strong_ai_victory"]
-		or typeof(value["contact_offer_ids"]) != TYPE_ARRAY
-		or value["contact_offer_ids"].size() != expected_count
+		or not is_offer_array
+		or (
+			not is_m10_handoff
+			and value["contact_offer_ids"].size() != expected_count
+		)
 		or typeof(value["resolved"]) != TYPE_BOOL
 		or value["resolved"]
 		or typeof(value["created_round"]) != TYPE_INT

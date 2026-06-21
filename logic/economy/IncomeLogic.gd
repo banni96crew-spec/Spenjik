@@ -1,9 +1,7 @@
 class_name IncomeLogic
 
-
 static func get_base_starting_resources() -> Dictionary:
 	return {"nal": 5, "vp": 0}
-
 
 ## Resolves one player Income on a deep working copy.
 static func resolve_player(state: Dictionary, player_id: String) -> Dictionary:
@@ -30,6 +28,13 @@ static func resolve_player(state: Dictionary, player_id: String) -> Dictionary:
 		brothel_income, total, nal_before
 	)
 	var upkeep: Dictionary = _resolve_cops_upkeep(candidate, player)
+	var debt_result: Dictionary = DebtLogic.process_debts_for_player(
+		candidate, player_id
+	)
+	if not debt_result["ok"]:
+		return _failure(state, debt_result["error"])
+	candidate = debt_result["state"]
+	player = _find_player(candidate, player_id)
 	var contract_result: Dictionary = ContractLogic.on_income_resolved(
 		candidate,
 		{
@@ -50,8 +55,11 @@ static func resolve_player(state: Dictionary, player_id: String) -> Dictionary:
 		"is_double": dice["is_double"], "laundry_income": laundry_income,
 		"informant_income": informant_income,
 		"brothel_income": brothel_income, "total_income": total,
-		"cops_upkeep_result": upkeep, "debt_results": [],
-		"contract_results": [contract_result], "state": candidate,
+		"cops_upkeep_result": upkeep,
+		"debt_results": debt_result["results"],
+		"contract_results":
+			debt_result["contract_results"] + [contract_result],
+		"state": candidate,
 		"log_entries": _new_logs(state, candidate),
 	}
 
@@ -78,11 +86,7 @@ static func resolve_all_players(state: Dictionary) -> Dictionary:
 
 
 ## Rejects future-owner Income work before any random is consumed.
-static func validate_future_income_dependencies(state: Dictionary) -> Dictionary:
-	for player: Dictionary in state.get("players", []):
-		for debt: Dictionary in player.get("debts", []):
-			if not debt.get("repaid", false):
-				return {"ok": false, "error": ValidationErrors.PHASE_NOT_READY}
+static func validate_future_income_dependencies(_state: Dictionary) -> Dictionary:
 	return {"ok": true, "error": ValidationErrors.OK}
 
 

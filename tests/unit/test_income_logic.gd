@@ -65,15 +65,26 @@ func test_cops_upkeep_interval_payment_and_deactivation() -> void:
 	assert_eq(inactive["nal"], 0)
 
 
-func test_future_debt_dependency_blocks_before_random_without_mutation() -> void:
+func test_income_processes_debt_after_gain_and_cops_upkeep() -> void:
 	var debt_state: Dictionary = TestGameStateFactory.base_state("income_debt")
-	TestPlayers.find(debt_state, GameIds.PLAYER_HUMAN)["debts"] = [
+	var human: Dictionary = TestPlayers.find(
+		debt_state, GameIds.PLAYER_HUMAN
+	)
+	human["defense"]["cops_active"] = true
+	human["defense"]["cops_timer"] = 2
+	human["debts"] = [
 		GameStateFactory.create_debt_state(
-			"loan_shark_round_1_option_a", 12, 3,
+			"loan_shark_round_1_option_a", 100, 3,
 			{"lose_all_nal": true, "vp_delta": -1}, 1
 		)
 	]
 	var before: Dictionary = debt_state.duplicate(true)
-	var result: Dictionary = IncomeLogic.resolve_all_players(debt_state)
-	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+	var result: Dictionary = IncomeLogic.resolve_player(
+		debt_state, GameIds.PLAYER_HUMAN
+	)
+	assert_true(result["ok"], str(result))
+	assert_true(result["cops_upkeep_result"]["paid"])
+	assert_eq(result["debt_results"].size(), 1)
+	assert_false(result["debt_results"][0]["repaid"])
+	assert_eq(result["state"]["random"]["step"], 2)
 	assert_eq(debt_state, before)

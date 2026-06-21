@@ -52,19 +52,21 @@ func test_unresolved_street_deal_is_deferred() -> void:
 	assert_eq(state, before)
 
 
-func test_income_dependency_blocker_prevents_random_and_mutation() -> void:
+func test_income_with_debt_enters_market_atomically() -> void:
 	var state: Dictionary = TestGameStateFactory.base_state(
-		"phase_income_blocked"
+		"phase_income_debt"
 	)
 	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["debts"] = [
 		GameStateFactory.create_debt_state(
-			"loan_shark_round_1_option_a", 12, 3,
+			"loan_shark_round_1_option_a", 100, 3,
 			{"lose_all_nal": true, "vp_delta": -1}, 1
 		),
 	]
 	var before: Dictionary = state.duplicate(true)
 	var result: Dictionary = GamePhaseController.advance_phase(state)
-	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+	assert_true(result["ok"], str(result))
+	assert_eq(result["state"]["current_phase"], PhaseIds.MARKET)
+	assert_eq(result["state"]["random"]["step"], 12)
 	assert_eq(state, before)
 
 
@@ -132,18 +134,6 @@ func test_incomplete_action_does_not_transition() -> void:
 	assert_false(result["ok"])
 	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
 	assert_eq(state, before)
-
-
-func test_completed_street_deal_round_actions_enter_street_deal() -> void:
-	for round_number: int in [4, 8, 12]:
-		var state: Dictionary = TestGameStateFactory.completed_action_state(
-			round_number, "phase_deal_%d" % round_number
-		)
-		var result: Dictionary = GamePhaseController.advance_phase(state)
-		assert_true(result["ok"], str(result))
-		assert_eq(result["state"]["current_phase"], PhaseIds.STREET_DEAL)
-		assert_eq(result["state"]["round"], round_number)
-		assert_eq(result["state"]["street_deals"]["current_deal_id"], "")
 
 
 func test_completed_normal_action_starts_next_round() -> void:

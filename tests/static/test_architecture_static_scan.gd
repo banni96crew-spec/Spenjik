@@ -1,11 +1,12 @@
 extends GutTest
 
-const M8_PATHS: Array[String] = [
+const M10_PATHS: Array[String] = [
 	"res://logic/game_state",
 	"res://logic/economy",
 	"res://logic/combat",
 	"res://logic/roles",
 	"res://logic/contracts",
+	"res://logic/street_deals",
 	"res://tests/fixtures",
 	"res://tests/unit",
 	"res://tests/integration",
@@ -16,9 +17,9 @@ const LOGIC_PATHS: Array[String] = [
 	"res://logic/combat",
 	"res://logic/roles",
 	"res://logic/contracts",
+	"res://logic/street_deals",
 ]
 const FORBIDDEN_FUTURE_GAMEPLAY_FILES: Array[String] = [
-	"res://logic/street_deals/StreetDealLogic.gd",
 	"res://logic/turf_levels/TurfLevelLogic.gd",
 	"res://logic/ai/AIBotController.gd",
 	"res://autoload/GameStateManager.gd",
@@ -68,13 +69,13 @@ func test_game_state_source_has_no_web_stack_artifacts() -> void:
 			assert_eq(pattern, "", "Forbidden stack term %s in %s" % [pattern, path])
 
 
-func test_m8_does_not_create_future_gameplay_modules() -> void:
+func test_m10_does_not_create_future_gameplay_modules() -> void:
 	for path: String in FORBIDDEN_FUTURE_GAMEPLAY_FILES:
-		assert_false(FileAccess.file_exists(path), "M9+ file created: %s" % path)
+		assert_false(FileAccess.file_exists(path), "M11+ file created: %s" % path)
 
 
 func test_project_gdscript_files_stay_under_250_lines() -> void:
-	for root_path: String in M8_PATHS:
+	for root_path: String in M10_PATHS:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
 			assert_lt(
 				StaticScanHelper.count_lines(path),
