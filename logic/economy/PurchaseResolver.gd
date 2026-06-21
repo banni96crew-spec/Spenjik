@@ -38,6 +38,7 @@ static func resolve_purchase(
 		return _failure(state, turf_result["error"])
 	candidate = turf_result["state"]
 	player = _find_player(candidate, player_id)
+	_consume_non_role_modifiers(player, price_result["modifiers"])
 	var contract_result: Dictionary = ContractLogic.on_card_purchased(
 		candidate,
 		{

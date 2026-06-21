@@ -99,7 +99,7 @@ func test_level_ten_human_ai_vp_tie_favors_ai_by_nal_and_stable_order() -> void:
 	TestPlayers.find(state, GameIds.PLAYER_AI_2)["nal"] = 10
 	TestPlayers.find(state, GameIds.PLAYER_AI_3)["nal"] = 30
 	var result: Dictionary = WinnerResolver.resolve(state)
-	assert_eq(result["winner_id"], GameIds.PLAYER_AI_2)
+	assert_eq(result["winner_id"], GameIds.PLAYER_AI_3)
 	assert_true(result["game_result"]["turf_level_10_ai_win_applied"])
 	var tied_nal: Dictionary = TestGameStateFactory.base_state("winner_turf_ai_nal")
 	tied_nal["turf_level"] = 10

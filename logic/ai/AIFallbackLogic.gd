@@ -102,6 +102,8 @@ static func _attack_best_blocked(
 	profile: AIProfileDefinition
 ) -> Dictionary:
 	var built: Dictionary = AIActionLogic.build_attack_options(state, player_id, profile)
+	if not built["options"].is_empty():
+		return _no_action(state)
 	var blocked: Array[Dictionary] = built["blocked_options"]
 	if blocked.is_empty():
 		return _no_action(state)

@@ -105,7 +105,8 @@ static func run_action_for_ai(state: Dictionary, player_id: String) -> Dictionar
 	var war_cards: Array[String] = AIActionLogic.war_cards_in_hand(working, player_id)
 	if not war_cards.is_empty():
 		var roll: Dictionary = SeededRandom.next(
-			working["random"], "ai_attack_probability_%s" % player_id
+			working["random"],
+			"ai_%s_attack_probability_round_%s" % [player_id, working["round"]]
 		)
 		if not roll["ok"]:
 			return _action_failure(state, roll["error"], player_id, profile.id)

@@ -15,6 +15,21 @@ const FORBIDDEN_PATTERNS: Array[String] = [
 	"randomize(",
 	"RandomNumberGenerator",
 ]
+const DIRECT_OWNERSHIP_BYPASS_PATTERNS: Array[String] = [
+	"player[\"nal\"] =",
+	"player[\"nal\"] -=",
+	"player[\"vp\"] =",
+	"player[\"vp\"] +=",
+	"player[\"hand\"].append",
+	"\"market_done\"] =",
+	"\"action_done\"] =",
+	"\"current_phase\"] =",
+	"combat_log.append",
+	"PurchaseResolver.",
+	"CombatEffectResolver.",
+	"_place_card(",
+	"GamePhaseController.advance",
+]
 
 
 func test_ai_files_exist() -> void:
@@ -26,6 +41,18 @@ func test_ai_files_have_no_forbidden_references() -> void:
 	for path: String in StaticScanHelper.get_gd_files_under(AI_ROOT):
 		var pattern: String = StaticScanHelper.find_pattern(path, FORBIDDEN_PATTERNS)
 		assert_eq(pattern, "", "Forbidden pattern %s in %s" % [pattern, path])
+
+
+func test_ai_files_have_no_direct_ownership_bypass() -> void:
+	for path: String in StaticScanHelper.get_gd_files_under(AI_ROOT):
+		var pattern: String = StaticScanHelper.find_pattern(
+			path, DIRECT_OWNERSHIP_BYPASS_PATTERNS
+		)
+		assert_eq(
+			pattern,
+			"",
+			"Direct ownership bypass pattern %s in %s" % [pattern, path]
+		)
 
 
 func test_ai_files_stay_under_250_lines() -> void:
