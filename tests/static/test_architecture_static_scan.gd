@@ -1,13 +1,16 @@
 extends GutTest
 
-const M5_PATHS: Array[String] = [
+const M6_PATHS: Array[String] = [
 	"res://logic/game_state",
+	"res://logic/economy",
 	"res://tests/fixtures",
 	"res://tests/unit",
 ]
+const LOGIC_PATHS: Array[String] = [
+	"res://logic/game_state",
+	"res://logic/economy",
+]
 const FORBIDDEN_FUTURE_GAMEPLAY_FILES: Array[String] = [
-	"res://logic/economy/IncomeLogic.gd",
-	"res://logic/economy/MarketLogic.gd",
 	"res://logic/combat/CombatEngine.gd",
 	"res://logic/street_deals/StreetDealLogic.gd",
 	"res://logic/turf_levels/TurfLevelLogic.gd",
@@ -43,31 +46,29 @@ func test_game_state_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> v
 		"randi(",
 		"randomize(",
 	]
-	for path: String in StaticScanHelper.get_gd_files_under(
-		"res://logic/game_state"
-	):
-		var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
-		assert_eq(pattern, "", "Forbidden pattern %s in %s" % [pattern, path])
+	for root_path: String in LOGIC_PATHS:
+		for path: String in StaticScanHelper.get_gd_files_under(root_path):
+			var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
+			assert_eq(pattern, "", "Forbidden pattern %s in %s" % [pattern, path])
 
 
 func test_game_state_source_has_no_web_stack_artifacts() -> void:
 	var forbidden: Array[String] = [
 		"React", "TypeScript", "Zustand", "Tailwind", "Docker", "WebSocket",
 	]
-	for path: String in StaticScanHelper.get_gd_files_under(
-		"res://logic/game_state"
-	):
-		var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
-		assert_eq(pattern, "", "Forbidden stack term %s in %s" % [pattern, path])
+	for root_path: String in LOGIC_PATHS:
+		for path: String in StaticScanHelper.get_gd_files_under(root_path):
+			var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
+			assert_eq(pattern, "", "Forbidden stack term %s in %s" % [pattern, path])
 
 
-func test_m5_does_not_create_future_gameplay_modules() -> void:
+func test_m6_does_not_create_future_gameplay_modules() -> void:
 	for path: String in FORBIDDEN_FUTURE_GAMEPLAY_FILES:
-		assert_false(FileAccess.file_exists(path), "M6+ file created: %s" % path)
+		assert_false(FileAccess.file_exists(path), "M7+ file created: %s" % path)
 
 
 func test_project_gdscript_files_stay_under_250_lines() -> void:
-	for root_path: String in M5_PATHS:
+	for root_path: String in M6_PATHS:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
 			assert_lt(
 				StaticScanHelper.count_lines(path),

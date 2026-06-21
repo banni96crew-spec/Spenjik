@@ -9,7 +9,10 @@ static func can_advance_phase(state: Dictionary) -> Dictionary:
 	match state["current_phase"]:
 		PhaseIds.SETUP:
 			return _success(state)
-		PhaseIds.INCOME, PhaseIds.STREET_DEAL:
+		PhaseIds.INCOME:
+			var dependency: Dictionary = IncomeLogic.validate_future_income_dependencies(state)
+			return _success(state) if dependency["ok"] else _failure(state, dependency["error"])
+		PhaseIds.STREET_DEAL:
 			return _failure(state, ValidationErrors.PHASE_NOT_READY)
 		PhaseIds.MARKET:
 			return (
@@ -31,7 +34,6 @@ static func can_advance_phase(state: Dictionary) -> Dictionary:
 			return _failure(state, ValidationErrors.GAME_ALREADY_OVER)
 	return _failure(state, ValidationErrors.INVALID_PHASE)
 
-## Performs one legal transition and returns a validated candidate snapshot.
 static func advance_phase(state: Dictionary) -> Dictionary:
 	var readiness: Dictionary = can_advance_phase(state)
 	if not readiness["ok"]:
@@ -39,6 +41,8 @@ static func advance_phase(state: Dictionary) -> Dictionary:
 	match state["current_phase"]:
 		PhaseIds.SETUP:
 			return enter_income_phase(state)
+		PhaseIds.INCOME:
+			return enter_market_phase(state)
 		PhaseIds.MARKET:
 			return enter_action_phase(state)
 		PhaseIds.ACTION:
@@ -48,7 +52,6 @@ static func advance_phase(state: Dictionary) -> Dictionary:
 				return enter_street_deal_phase(state)
 			return enter_income_phase(state)
 	return _failure(state, ValidationErrors.PHASE_NOT_READY)
-
 
 static func enter_income_phase(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = _validate_transition_input(state)
@@ -82,14 +85,13 @@ static func enter_income_phase(state: Dictionary) -> Dictionary:
 	PhaseLogBuilder.append_phase_changed(candidate, from_phase, round_before)
 	return _validated_result(state, candidate, log_start)
 
-
 static func enter_market_phase(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = _validate_transition_input(state)
 	if not validation["ok"]:
 		return _failure(state, validation["error"])
 	if state["current_phase"] != PhaseIds.INCOME:
 		return _failure(state, ValidationErrors.INVALID_PHASE)
-	return _failure(state, ValidationErrors.PHASE_NOT_READY)
+	return MarketLogic.resolve_income_and_enter_market(state)
 
 
 static func enter_action_phase(state: Dictionary) -> Dictionary:

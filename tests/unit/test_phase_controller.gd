@@ -16,16 +16,56 @@ func test_completed_setup_transitions_to_income() -> void:
 	assert_true(GameStateValidator.validate_game_state(result["state"])["ok"])
 
 
-func test_income_and_unresolved_street_deal_are_deferred() -> void:
-	for state: Dictionary in [
-		TestGameStateFactory.base_state("phase_income_deferred"),
-		TestGameStateFactory.street_deal_state("phase_deal_deferred"),
-	]:
+func test_income_enters_market_atomically_with_exact_random_steps() -> void:
+	for turf_level: int in [0, 4]:
+		var state: Dictionary = TestGameStateFactory.base_state(
+			"phase_income_%d" % turf_level
+		)
+		state["turf_level"] = turf_level
+		for player: Dictionary in state["players"]:
+			player["turf_level"] = turf_level
 		var before: Dictionary = state.duplicate(true)
 		var result: Dictionary = GamePhaseController.advance_phase(state)
-		assert_false(result["ok"])
-		assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+		var market_steps: int = 3 if turf_level >= 4 else 4
+		assert_true(result["ok"], str(result))
+		assert_eq(result["state"]["current_phase"], PhaseIds.MARKET)
+		assert_eq(result["state"]["random"]["step"], 8 + market_steps)
+		assert_eq(
+			result["state"]["combat_log"][-2]["event_type"],
+			LogEventTypes.MARKET_STARTED
+		)
+		assert_eq(
+			result["state"]["combat_log"][-1]["event_type"],
+			LogEventTypes.PHASE_CHANGED
+		)
 		assert_eq(state, before)
+
+
+func test_unresolved_street_deal_is_deferred() -> void:
+	var state: Dictionary = TestGameStateFactory.street_deal_state(
+		"phase_deal_deferred"
+	)
+	var before: Dictionary = state.duplicate(true)
+	var result: Dictionary = GamePhaseController.advance_phase(state)
+	assert_false(result["ok"])
+	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+	assert_eq(state, before)
+
+
+func test_income_dependency_blocker_prevents_random_and_mutation() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state(
+		"phase_income_blocked"
+	)
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["debts"] = [
+		GameStateFactory.create_debt_state(
+			"loan_shark_round_1_option_a", 12, 3,
+			{"lose_all_nal": true, "vp_delta": -1}, 1
+		),
+	]
+	var before: Dictionary = state.duplicate(true)
+	var result: Dictionary = GamePhaseController.advance_phase(state)
+	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+	assert_eq(state, before)
 
 
 func test_market_waits_until_all_players_are_ready() -> void:

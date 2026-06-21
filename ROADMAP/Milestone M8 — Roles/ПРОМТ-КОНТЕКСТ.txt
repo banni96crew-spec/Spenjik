@@ -102,8 +102,6 @@ M7 — Combat System:
 - Enforcer starting Cops использует существующую defense schema;
 - M8 не меняет combat effects.
 
-Перед работой coding-agent проверяет фактическое состояние M0–M7.
-
 ## Что сейчас делаю
 
 Реализую M8 — Roles:
