@@ -177,6 +177,47 @@ func test_passed_probability_plays_multiple_war_cards() -> void:
 	assert_eq(result["attacks"].size(), 2)
 	assert_eq(TestPlayers.find(result["state"], GameIds.PLAYER_AI_1)["hand"].size(), 0)
 
+func test_discard_action_cards_runs_after_successful_unblocked_attack() -> void:
+	var seed_value: String = _seed_for_roll(1.0, true)
+	var first: Dictionary = _discard_after_successful_attack(seed_value)
+	assert_eq(first["discarded"], [GameIds.CARD_THUG])
+	assert_eq(first["fallback_used"], "discard_action_cards")
+	assert_eq(_discard_after_successful_attack(seed_value), first)
+
+
+func _discard_after_successful_attack(seed_value: String) -> Dictionary:
+	var state: Dictionary = _action_state(
+		[GameIds.CARD_THUG, GameIds.CARD_INSIDER, GameIds.CARD_THUG], seed_value
+	)
+	_all_opponents_get_cops(state)
+	var profile: AIProfileDefinition = _discard_profile()
+	var built: Dictionary = AIActionLogic.build_attack_options(
+		state, GameIds.PLAYER_AI_1, profile
+	)
+	var choice: Dictionary = AIActionLogic.choose_attack_option(state, built["options"])
+	var working: Dictionary = state.duplicate(true)
+	working["random"] = choice["random"]
+	var resolved: Dictionary = CombatEngine.resolve_attack(
+		working, AIActionLogic.build_payload_from_option(choice["option"])
+	)
+	var fb: Dictionary = AIFallbackLogic.apply_action_fallback(
+		resolved["state"], GameIds.PLAYER_AI_1, profile, {}
+	)
+	return {
+		"discarded": fb["discarded"],
+		"fallback_used": fb["fallback_used"],
+		"state": fb["state"],
+	}
+
+
+func _discard_profile() -> AIProfileDefinition:
+	var profile: AIProfileDefinition = AIProfileDefinition.new()
+	profile.id = "test_discard"
+	profile.fallback = "discard_action_cards"
+	profile.attack_probability = 1.0
+	profile.minimum_reserve_nal = 0
+	return profile
+
 
 func _target_has(options: Array, target_id: String, card_id: String, mode: String) -> bool:
 	for option: Dictionary in options:

@@ -120,10 +120,7 @@ static func run_action_for_ai(state: Dictionary, player_id: String) -> Dictionar
 			var remaining: Dictionary = AIActionLogic.build_attack_options(
 				working, player_id, profile
 			)
-			var should_fallback: bool = remaining["options"].is_empty()
-			if should_fallback and (
-				attacks.is_empty() or profile.fallback == "attack_best_target"
-			):
+			if remaining["options"].is_empty():
 				var fb: Dictionary = AIFallbackLogic.apply_action_fallback(
 					working, player_id, profile, {}
 				)
