@@ -1,591 +1,789 @@
-﻿РОЛЬ:
+﻿ПРОМТ-ЗАДАЧА
+Роль
 
 Ты senior Godot 4.6.2 AI/gameplay architect и coding-agent.
-Ты реализуешь deterministic rule-based AI на typed GDScript,
-пишешь GUT tests и строго соблюдаешь PRD.
 
-Сначала изучи репозиторий и contracts M0–M12.
-До подтверждения пользователя не изменяй файлы.
+Ты реализуешь Milestone M13 — AI System в проекте The Turf / Передел.
 
-КОНТЕКСТ ПРОЕКТА:
+До моего явного ок не изменяй production files.
 
-The Turf / «Передел» — desktop single-player card/board mini-game
-с одним human и тремя локальными AI.
+Цель
 
-Стек:
+Реализовать deterministic rule-based AI, который:
 
-- Godot 4.6.2 stable;
-- GDScript;
-- GUT;
-- `.tres` Resources;
-- Windows/Linux;
-- без web stack.
+назначает strong AI и profiles;
+покупает карты в Market;
+выбирает цели;
+строит attack payloads;
+играет Action phase;
+использует fallbacks;
+соблюдает deterministic random contract;
+проходит unit/integration/replay/static tests.
 
-Архитектура:
+AI должен использовать уже существующие owner modules, а не дублировать их правила.
 
-- AI координирует decisions, но не владеет game rules;
-- purchases проходят через MarketLogic/PriceLogic;
-- attacks проходят через CombatEngine;
-- gameplay RNG только через SeededRandom/SeededPicker;
-- UI не содержит AI logic;
-- Resources являются immutable definitions.
+1. Preflight перед кодом
 
-Источники истины:
+Сделай только lightweight preflight:
 
-- `docs/prd/13_AI_SYSTEM.md`
-- `docs/prd/03_IDS_AND_CONSTANTS.md`
-- `docs/prd/04_GAME_STATE_SCHEMA.md`
-- `docs/prd/06_ECONOMY_AND_MARKET.md`
-- `docs/prd/07_COMBAT_SYSTEM.md`
-- `docs/prd/12_TURF_LEVELS.md`
-- `docs/prd/14_DETERMINISTIC_RANDOM.md`
-- `docs/prd/15_GODOT_ARCHITECTURE.md`
-- `docs/prd/18_TEST_PLAN.md`
-- `docs/prd/19_IMPLEMENTATION_ORDER.md`
-- `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+git status
+проверка AGENTS.MD
+проверка owner PRD M13
+проверка AIProfileIds / Resources / Catalog
+проверка current architecture scan guard
+проверка line-count для файлов, которые будешь менять
 
-ЗАДАЧА:
+Не проводить глубокий аудит M0–M12.
 
-Реализовать Milestone M13 — AI System:
+До кода дай план и отдельно отчитайся по merchant profile ID audit.
 
-- deterministic strong AI и profile setup;
-- multi-purchase Market decisions;
-- purchase scoring/reserve/tie-breaks;
-- target scoring;
-- attack option construction;
-- one-roll multi-card Action behavior;
-- profile fallbacks;
-- owner-module integrations;
-- unit, integration, replay и static tests.
+2. Merchant profile ID audit
 
-ОБЯЗАТЕЛЬНЫЕ ВЫХОДНЫЕ ФАЙЛЫ И ПАПКИ:
+Перед реализацией проверь конфликт:
 
-- `res://logic/ai/AIBotController.gd`
-- `res://logic/ai/AIPurchaseLogic.gd`
-- `res://logic/ai/AITargetLogic.gd`
-- `res://logic/ai/AIFallbackLogic.gd`
-- `res://logic/ai/AIActionLogic.gd`
-- `res://tests/unit/test_ai_bot_controller.gd`
-- `res://tests/unit/test_ai_purchase_logic.gd`
-- `res://tests/unit/test_ai_target_logic.gd`
-- `res://tests/unit/test_ai_action_logic.gd`
+03_IDS_AND_CONSTANTS.md может использовать `merchant_ai`
+13_AI_SYSTEM.md может называть runtime ID `merchant`
+Resource file: merchant_ai.tres
 
-Проверь и точечно обнови при необходимости:
+Порядок:
 
-- `res://data/ids/AIProfileIds.gd`
-- `res://data/ids/ValidationErrors.gd`
-- `res://data/resources/ai_profiles/AIProfileDefinition.gd`
-- шесть AI profile `.tres`;
-- `res://logic/catalog/AIProfileCatalog.gd`
-- `res://logic/game_state/GameStateFactory.gd`
-- `res://logic/game_state/GameStateValidator.gd`
-- `res://logic/economy/MarketLogic.gd`
-- `res://logic/economy/PriceLogic.gd`
-- `res://logic/combat/CombatEngine.gd`
-- `res://logic/turf_levels/TurfLevelLogic.gd`
-- fixtures, integration и replay tests.
+Проверь res://data/ids/AIProfileIds.gd.
+Проверь res://data/resources/ai_profiles/*.tres.
+Проверь res://logic/catalog/AIProfileCatalog.gd.
+Проверь docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md.
+Если authoritative ID уже установлен — следуй ему.
+Если нет — добавь новый OQ-* и останови ID-dependent implementation.
+Не меняй profile ID молча.
+Не делай migration без подтверждения.
 
-M14 GameStateManager ещё не реализуется.
-Используй существующие pure logic APIs и phase-safe internal boundaries.
-Не создавай facade mega-logic раньше M14.
-Каждый `.gd` файл должен быть меньше 250 строк.
+Остальной план можно описать, но несовместимые AI IDs не внедрять.
 
-ОБЯЗАТЕЛЬНЫЙ PRE-IMPLEMENTATION AUDIT:
+3. Разрешить M13 files в static guard
 
-Документы содержат конфликт AI merchant profile ID:
+M12 уже завершён.
 
-- `03_IDS_AND_CONSTANTS.md`: `merchant_ai`;
-- `13_AI_SYSTEM.md`: Resource-файл `merchant_ai.tres`, runtime ID `merchant`.
+В M13 нужно разрешить AI owner files в architecture static scan:
 
-`21_OPEN_QUESTIONS_AND_FIXES.md` не содержит явного resolution.
+res://logic/ai/AIBotController.gd
+res://logic/ai/AIPurchaseLogic.gd
+res://logic/ai/AITargetLogic.gd
+res://logic/ai/AIFallbackLogic.gd
+res://logic/ai/AIActionLogic.gd
 
-До кода:
+При этом всё ещё запрещать:
 
-1. Проверь фактические `AIProfileIds`, Resource и catalog M1/M2.
-2. Проверь, существует ли более новый resolved decision.
-3. Не меняй ID молча.
-4. Если единый authoritative ID не установлен, добавь новый `OQ-*`
-   в `21_OPEN_QUESTIONS_AND_FIXES.md`.
-5. Укажи blocker в плане и останови только ID-зависимую часть.
+res://autoload/GameStateManager.gd
+res://scenes/**
+UI gameplay logic
+M14–M17 files
 
-Остальной M13 может планироваться, но implementation не должен
-создавать несовместимые IDs или migration без решения.
+Не удалять static scan. Обновить его точечно.
 
-AI PROFILE CONTRACT:
+4. Required source files
 
-Шесть profiles:
+Создать:
 
-- Builder;
-- Racketeer;
-- Merchant AI;
-- Paranoid;
-- Schemer;
-- Avenger.
+res://logic/ai/AIBotController.gd
+res://logic/ai/AIPurchaseLogic.gd
+res://logic/ai/AITargetLogic.gd
+res://logic/ai/AIFallbackLogic.gd
+res://logic/ai/AIActionLogic.gd
 
-Не меняй значения section 6.1 `13_AI_SYSTEM.md`:
+Добавить tests:
 
-- purchase scores;
-- attack probabilities;
-- target weights;
-- minimum reserves;
-- fallbacks.
+res://tests/unit/test_ai_bot_controller.gd
+res://tests/unit/test_ai_purchase_logic.gd
+res://tests/unit/test_ai_target_logic.gd
+res://tests/unit/test_ai_action_logic.gd
+res://tests/static/test_ai_static_scan.gd
 
-Каждый Resource обязан содержать:
+Добавить integration/replay tests при необходимости:
 
-- valid unique ID;
-- `purchase_scores`;
-- probability 0..1;
-- все required target weight keys;
-- nonnegative reserve;
-- valid fallback.
+res://tests/integration/test_ai_market_flow.gd
+res://tests/integration/test_ai_action_flow.gd
+res://tests/replay/test_ai_replay.gd
+5. Required public API
+AIBotController.gd
 
-Gameplay не парсит filename/display text.
-AI profile Resources нельзя мутировать.
+Required functions:
 
-AI STATE:
+static func setup_ai_bosses(state: Dictionary) -> Dictionary
+static func run_market_for_ai(state: Dictionary, player_id: String) -> Dictionary
+static func run_action_for_ai(state: Dictionary, player_id: String) -> Dictionary
+static func get_ai_boss_state(state: Dictionary, player_id: String) -> Dictionary
+static func get_ai_profile(profile_id: String)
 
-Ровно три AI players:
+Role:
 
-- `ai_1`;
-- `ai_2`;
-- `ai_3`.
+facade/orchestrator for AI only;
+delegates purchase to AIPurchaseLogic;
+delegates targets to AITargetLogic;
+delegates action options to AIActionLogic;
+delegates fallbacks to AIFallbackLogic;
+does not own market/combat/turf rules.
+AIPurchaseLogic.gd
 
-`state["ai_bosses"]` содержит три records:
+Required functions:
 
-- profile ID;
-- strong flag;
-- assigned player ID.
+static func build_purchase_candidates(state: Dictionary, player_id: String, profile: AIProfileDefinition) -> Dictionary
+static func score_purchase_candidate(state: Dictionary, player_id: String, card_def, profile: AIProfileDefinition) -> Dictionary
+static func choose_purchase_candidate(state: Dictionary, candidates: Array, random_state: Dictionary) -> Dictionary
 
-Инварианты:
+Role:
 
-- каждый AI имеет один record;
-- profiles unique;
-- ровно один record strong;
-- ровно один player `is_strong_ai`;
-- record/player strong flags совпадают.
+read-only scoring;
+no price mutation;
+no Resource mutation;
+no direct placement;
+purchase execution only through MarketLogic.
+AITargetLogic.gd
 
-ОБЯЗАТЕЛЬНЫЙ API:
+Required functions:
 
-`AIBotController`:
+static func get_valid_targets_for_ai(state: Dictionary, attacker_id: String, profile: AIProfileDefinition) -> Dictionary
+static func score_target(state: Dictionary, attacker_id: String, target_id: String, profile: AIProfileDefinition) -> Dictionary
+static func choose_target(state: Dictionary, attacker_id: String, targets: Array, random_state: Dictionary) -> Dictionary
 
-- `setup_ai_bosses(state)`
-- `run_market_for_ai(state, player_id)`
-- `run_action_for_ai(state, player_id)`
-- `get_ai_boss_state(state, player_id)`
-- `get_ai_profile(profile_id)`
+Role:
 
-`AIPurchaseLogic`:
+read-only target scoring;
+no combat mutation;
+tie RNG only on real tie.
+AIActionLogic.gd
 
-- `build_purchase_candidates(...)`
-- `score_purchase_candidate(...)`
-- `choose_purchase_candidate(...)`
-- Market fallback delegation.
+Required functions:
 
-`AITargetLogic`:
+static func build_attack_options(state: Dictionary, attacker_id: String, profile: AIProfileDefinition) -> Dictionary
+static func choose_attack_option(state: Dictionary, options: Array, random_state: Dictionary) -> Dictionary
+static func build_payload_from_option(option: Dictionary) -> Dictionary
 
-- `score_target(...)`
-- `get_valid_targets_for_ai(...)`
-- `choose_target(...)`
+Role:
 
-`AIFallbackLogic`:
+builds legal combat payload candidates;
+uses Combat validation/preview;
+does not resolve effects directly;
+does not mutate hand/state directly.
+AIFallbackLogic.gd
 
-- `apply_market_fallback(...)`
-- `apply_action_fallback(...)`
+Required functions:
 
-`AIActionLogic`:
+static func apply_market_fallback(state: Dictionary, player_id: String, profile: AIProfileDefinition) -> Dictionary
+static func apply_action_fallback(state: Dictionary, player_id: String, profile: AIProfileDefinition) -> Dictionary
 
-- `build_attack_options(...)`
-- `choose_attack_option(...)`
-- `build_payload_from_option(...)`
+Role:
 
-Сохрани existing result conventions.
-Scoring/build functions должны быть read-only.
+fallback actions only;
+no validation bypass;
+no direct phase advancement.
+6. AI setup contract
 
-DETERMINISTIC RNG CONTRACT:
+There are exactly three AI players:
 
-Все calls используют общий `state["random"]`.
-Никаких отдельных seeds/streams.
+ai_1
+ai_2
+ai_3
+
+state["ai_bosses"] must contain three records:
+
+profile_id
+is_strong
+assigned_player_id
+
+Invariants:
+
+each AI player has exactly one boss record;
+profiles are unique;
+exactly one boss record has is_strong == true;
+exactly one AI player has is_strong_ai == true;
+boss record strong flag matches player flag;
+human never receives AI profile or strong flag.
 
 Setup order:
 
-1. `SeededPicker.pick_one` выбирает strong AI.
-2. `SeededPicker.pick_unique` выбирает 3 profiles.
-3. Returned random записывается после каждого call.
+1. Work on deep copy.
+2. Pick strong AI via SeededPicker.pick_one.
+3. Set exactly one strong flag.
+4. Pick 3 unique profiles via SeededPicker.pick_unique.
+5. Assign selected profiles to ai_1, ai_2, ai_3 in stable order.
+6. Create state["ai_bosses"].
+7. Apply M12 Turf setup modifiers if required by current setup flow.
+8. Validate final state.
 
-Setup расходует:
+RNG consumption:
 
-- 1 step на strong AI;
-- 3 steps на profiles;
-- всего 4 steps.
+1 step for strong AI
+3 steps for profiles
+total setup AI RNG = 4 steps
 
-Probability:
+Failed setup must not mutate input state or random.
 
-- если в hand нет War cards, roll не выполняется;
-- иначе один `SeededRandom.next` на AI Action;
-- tag:
-  `ai_%s_attack_probability_round_%s`;
-- дополнительных probability rolls в этом turn нет.
+7. AI profile contract
 
-Tie-break:
+Six profiles:
 
-- purchase tie: +1 step только при real tie;
-- target tie: +1 step только при real tie;
-- attack-option tie: SeededPicker только при real tie;
-- unique best не consume-ит tie RNG;
-- Saboteur engine priority не использует RNG.
+builder
+racketeer
+merchant_ai / authoritative merchant ID from audit
+paranoid
+schemer
+avenger
 
-SETUP:
+Do not change:
 
-Required order:
+purchase scores;
+attack probabilities;
+target weights;
+minimum reserves;
+fallbacks.
 
-1. Создать base players.
-2. Выбрать strong AI.
-3. Установить strong flags.
-4. Выбрать 3 unique profiles.
-5. Assign selected profiles в order `ai_1`, `ai_2`, `ai_3`.
-6. Создать `ai_bosses`.
-7. Применить Turf setup Levels 1/2.
-8. Провалидировать state.
+Each profile Resource must validate:
 
-Same seed/state даёт identical setup.
-Failed setup не мутирует players, bosses или random.
+unique valid ID;
+purchase_scores dictionary;
+attack_probability in 0.0..1.0;
+all required target weight keys;
+nonnegative minimum_reserve_nal;
+valid fallback ID.
 
-AI MARKET:
+AI profile Resources must not be mutated.
 
-AI действует только:
+8. Deterministic RNG contract
 
-- в Market phase;
-- для valid AI player;
-- с assigned valid profile.
+All M13 random calls use state["random"].
 
-Loop:
+Forbidden:
 
-1. Получить current available card IDs.
-2. Для каждой card вызвать MarketLogic validation.
-3. Получить final price preview из PriceLogic.
-4. Проверить reserve.
-5. Получить base profile score.
-6. Применить Level 9 multiplier к War score при необходимости.
-7. Выбрать highest final score.
-8. При tie использовать SeededPicker.
-9. Купить через MarketLogic.
-10. После success полностью re-evaluate state/market.
-11. Повторять, пока есть normal/fallback purchase.
-12. Завершить Market через phase-safe owner boundary.
+randf(
+randi(
+randi_range(
+randomize(
+RandomNumberGenerator
+Time
+OS.get_ticks
+
+Allowed:
+
+SeededRandom
+SeededPicker
+
+Required RNG rules:
+
+Setup:
+- strong AI pick: 1 step
+- profile pick_unique count 3: 3 steps
+
+Market:
+- purchase tie: consumes RNG only on real tie
+- cheapest fallback tie: consumes RNG only on real tie
+- unique best: no tie RNG
+
+Action:
+- if AI hand has no War cards: no probability roll
+- if hand has War cards: exactly one probability roll
+- probability tag: ai_%s_attack_probability_round_%s
+- target tie consumes RNG only on real tie
+- attack option tie consumes RNG only on real tie
+- Saboteur engine selection uses no RNG
+9. AI Market behavior
+
+AI Market call is valid only if:
+
+current phase is Market;
+player is AI;
+player has assigned valid AI profile;
+state validates.
+
+Market loop:
+
+1. Read current market.
+2. Build valid purchase candidates.
+3. Score candidates.
+4. Choose best candidate.
+5. Buy through MarketLogic only.
+6. After success, re-evaluate state and market.
+7. Repeat until no normal/fallback purchase.
+8. End market participation through phase-safe existing boundary.
+
+AI can buy multiple cards in one Market.
 
 Loop guard:
 
-- максимум available market IDs + 1 iterations;
-- unexpected failed candidate исключается без state corruption;
-- infinite loop запрещён.
+max iterations = available market card count + 1
 
-AI может купить несколько cards в один Market.
-One-copy-per-ID-per-round и все limits сохраняются.
+If a candidate unexpectedly fails:
 
-PURCHASE CANDIDATES:
+- do not corrupt state;
+- exclude failed candidate for this loop;
+- continue only if safe;
+- otherwise fallback/end.
 
-Normal candidate требует:
+Normal candidate requires:
 
-- card доступна в market;
-- MarketLogic validation succeeds;
-- final price доступна;
-- `nal - price >= minimum_reserve_nal`;
-- base profile score > 0.
+card exists in market;
+Market validation succeeds;
+final price preview succeeds;
+player can afford;
+nal - price >= profile.minimum_reserve_nal;
+profile base score > 0.
 
-Missing score = 0.
-Reserve не меняет цену и не bypass-ит affordability.
+Reserve does not change price and does not bypass validation.
 
-Level 9:
+Level 9
 
-- если human strictly leads every AI by VP;
-- только War candidate score ×1.2;
-- price не меняется;
-- Resource score не мутируется.
+Use only:
 
-Candidate содержит player/card, base/final score, price,
-reserve after purchase и applied modifiers.
+TurfLevelLogic.get_ai_war_purchase_weight_multiplier(state, card_def)
 
-PURCHASE TIE:
+Rules:
 
-- unique highest score выбирается без RNG;
-- equal highest final scores выбираются SeededPicker;
-- returned random сохраняется;
-- stable order не заменяет required random tie-break.
+Level 9+;
+human strictly leads all AI by VP;
+candidate card is War;
+score multiplier 1.2.
 
-MARKET FALLBACKS:
+Do not duplicate Level 9 logic inside AI.
 
-- `end_phase`: завершить Market без purchase;
-- `hold_nal`: завершить без purchase;
-- `buy_cheapest_valid`: купить cheapest valid reserve-safe card;
-- `discard_action_cards`: в Market завершить без purchase;
-- `attack_best_target`: в Market завершить без purchase.
+Purchase tie
+unique highest score => no RNG;
+equal highest final score => SeededPicker tie-break;
+returned random stored in state.
+10. Market fallbacks
 
-Cheapest price tie использует SeededPicker.
-Fallback не bypass-ит MarketLogic validation/reserve.
-После successful fallback purchase loop re-evaluates.
+Fallbacks:
 
-TARGET SCORING:
+end_phase
+hold_nal
+buy_cheapest_valid
+discard_action_cards
+attack_best_target
 
-Исключи attacker из targets.
-Каждый target должен быть legal для хотя бы одной attack option.
+In Market:
 
-Формула:
+end_phase => end Market;
+hold_nal => end Market;
+discard_action_cards => end Market;
+attack_best_target => end Market;
+buy_cheapest_valid => buy cheapest valid reserve-safe card through MarketLogic.
 
-```text
+Cheapest tie uses SeededPicker only on real tie.
+
+Fallback never bypasses:
+
+Market validation;
+reserve;
+affordability;
+one-copy-per-round;
+card limits.
+
+After successful fallback purchase, loop re-evaluates.
+
+11. Target scoring
+
+Exclude attacker from targets.
+
+A target is valid only if there is at least one legal attack option against it.
+
+Formula:
+
 vp lead * vpLead weight
 + available Nal * availableNal weight
 + missing active defenses * lowDefense weight
 + destructible Status count * destructibleBuildings weight
 + revenge flag * revenge weight
 + human flag * humanBias weight
-```
 
-Feature definitions:
+Definitions:
 
-- VP lead: `max(0, target VP - attacker VP)`;
-- available Nal: target Nal minus protected Nal, minimum 0;
-- missing defenses: inactive Cops/Cartel/Judge, range 0..3;
-- destructible: Stash + Workshop + District Control;
-- revenge: target ID equals attacker `last_attacked_by`;
-- human bias: target is human.
+VP lead: max(0, target.vp - attacker.vp);
+available Nal: max(0, target.nal - protected_nal);
+protected Nal comes from existing protected Nal API;
+missing active defenses: inactive Cops + inactive Cartel + inactive Judge;
+destructible status: stash + workshop + district_control;
+revenge: target_id == attacker["last_attacked_by"];
+human bias: target is human.
 
-Protected Nal бери из M6 `PriceLogic`.
-Scoring не мутирует state.
-Target tie использует SeededPicker только при real tie.
+Scoring is read-only.
 
-AI ACTION PROBABILITY:
+Target tie:
 
-В начале active AI Action:
+unique best => no RNG;
+real tie => SeededPicker.
+12. AI Action probability
 
-- если hand не содержит War, завершить Action без RNG;
-- иначе выполнить ровно один probability roll;
-- pass при `roll <= attack_probability`;
-- fail при `roll > attack_probability`.
+At start of AI Action:
+
+if hand has no War cards:
+    end Action without RNG
+else:
+    roll exactly once via SeededRandom.next
+
+Probability tag:
+
+ai_%s_attack_probability_round_%s
+
+Pass/fail:
+
+roll <= profile.attack_probability => may attack
+roll > profile.attack_probability => end Action
 
 Failed roll:
 
-- немедленно завершает Action;
-- fallback не может заставить атаковать;
-- random step сохраняется;
-- War cards остаются в hand.
+random step is saved;
+no attack;
+no discard unless explicitly allowed by PRD fallback after passed roll;
+hand remains unchanged;
+end Action through phase-safe boundary.
+13. AI Action loop
 
-AI ACTION LOOP:
+After passed probability roll:
 
-После passed roll AI может сыграть несколько War cards.
+1. Record count of War cards in hand at Action start.
+2. Build attack options.
+3. Prefer unblocked options.
+4. Choose highest option score.
+5. Tie => SeededPicker.
+6. Resolve through CombatEngine only.
+7. Re-evaluate hand and board.
+8. Repeat until no unblocked option or loop limit.
+9. Apply action fallback if needed.
+10. End Action through phase-safe boundary.
 
-1. Зафиксировать число War cards в hand на Action start.
-2. Построить valid attack options.
-3. Предпочесть unblocked options.
-4. Выбрать highest final option score.
-5. При tie использовать SeededPicker.
-6. Resolve через CombatEngine.
-7. Re-evaluate hand и board.
-8. Повторять до отсутствия unblocked option или loop limit.
-9. Применить Action fallback при необходимости.
-10. Завершить Action через phase-safe owner boundary.
+Maximum resolved attacks:
 
-Maximum attack resolutions не превышает стартовое число War cards.
-Новые War cards, появившиеся в этом Action, не играются до будущего turn.
-Unused cards остаются в hand, кроме explicit discard fallback.
+<= War cards in hand at Action start
 
-ATTACK OPTION SCORE:
+New War cards appearing during Action are not played until a future turn.
 
-```text
-final score = card preference score + target score
-```
+AI must not directly remove cards from hand except through CombatEngine discard API for discard fallback.
 
-Card preference берётся из profile purchase scores.
-Missing/zero score допускается только как fallback candidate.
+14. Attack options
 
-Каждый option проходит:
+Final option score:
 
-- CombatEngine validation;
-- read-only combat preview;
-- mode/target/engine/modifier validation.
+card preference score + target score
 
-AI не мутирует hand или combat state напрямую.
+Card preference comes from profile purchase scores.
 
-CARD/MODE RULES:
+Missing/zero score is allowed only for fallback candidate.
 
-- Thug: без mode.
-- Bruiser: valid unblocked destroy Stash, иначе steal Nal.
-- Cleaner: valid unblocked destroy Workshop, иначе steal Nal.
-- Federal Raid: только `destroy_district`.
-- Saboteur: без mode, но с explicit engine target.
-- Insider: только modifier для Thug.
+Each option must pass:
 
-Blocked destroy не превращается в invalid hidden effect:
-AI строит отдельный legal steal option через Combat API.
+Combat validation;
+combat preview;
+mode requirements;
+target requirements;
+engine target requirements;
+modifier requirements.
 
-SABOTEUR:
+Rules:
 
-Engine priority строго:
+Thug:
+- no mode.
 
-1. Brothel.
-2. Laundry.
-3. Accountant.
-4. Informant.
+Bruiser:
+- prefer valid unblocked destroy_stash;
+- otherwise steal_nal.
 
-Выбери первый owned valid engine.
-RNG не использовать.
-Без valid engine Saboteur option не создаётся.
+Cleaner:
+- prefer valid unblocked destroy_workshop;
+- otherwise steal_nal.
 
-INSIDER:
+Federal Raid:
+- only destroy_district.
 
-Использовать только если:
+Saboteur:
+- no mode;
+- explicit engine target required.
 
-- AI имеет Thug и Insider;
-- target имеет active Cops;
-- Thug без Insider blocked;
-- Thug с Insider unblocked.
+Insider:
+- only modifier for Thug.
 
-Insider нельзя использовать primary или с другими War cards.
+Blocked preference:
 
-BLOCKED OPTIONS:
+if unblocked options exist, exclude blocked options;
+blocked option allowed only if no unblocked options and fallback is attack_best_target;
+blocked resolution still goes through CombatEngine and consumes card by M7 rules.
+15. Saboteur
 
-- при наличии unblocked options blocked options исключаются;
-- blocked option разрешён только если unblocked нет
-  и fallback = `attack_best_target`;
-- probability roll уже должен быть passed;
-- resolution всё равно идёт через CombatEngine и расходует card по M7.
+Engine target priority:
 
-ACTION FALLBACKS:
+1. brothel
+2. laundry
+3. accountant
+4. informant
 
-- `end_phase`: завершить Action;
-- `hold_nal`: завершить Action;
-- `buy_cheapest_valid`: в Action завершить;
-- `discard_action_cards`: discard War cards без valid unblocked option
-  через CombatEngine discard API, затем завершить;
-- `attack_best_target`: разрешить best blocked valid option
-  только после passed roll и при отсутствии unblocked options.
+Use first owned valid engine target.
 
-Fallback не bypass-ит validation и probability.
+No RNG.
 
-PHASE/PLAYER RULES:
+If target has no valid engine target, Saboteur option is not created.
 
-- Market AI call для human fails.
-- Action AI call для human fails.
-- Action player должен совпадать с `active_action_player_id`.
-- `skip_next_action` обрабатывает phase owner, AI его не отменяет.
-- AI не вызывает direct phase transition.
-- До M14 используй существующий phase-safe internal completion API.
+16. Insider
 
-AI не получает roles, contracts, contacts и не выбирает Street Deals.
-Explicit M10 side effects на AI остаются допустимыми.
+Use Insider only when:
 
-RESULT CONTRACT:
+AI has Thug;
+AI has Insider;
+target has active Cops;
+Thug without Insider would be blocked;
+Thug with Insider is valid/unblocked.
 
-Используй stable structured results из PRD:
+Insider cannot be primary card.
 
-- setup: bosses, strong AI, random, state;
-- Market: player/profile, purchases, fallback, random, state/logs;
-- Action: player/profile, roll/probability, attacks, fallback,
-  random, state/logs.
+Insider cannot be used with other War cards.
 
-Failed public call сохраняет input snapshot.
+17. Action fallbacks
 
-TESTS:
+In Action:
 
-Добавь targeted GUT tests для:
+end_phase => end Action
+hold_nal => end Action
+buy_cheapest_valid => end Action
+discard_action_cards => discard War cards with no valid unblocked option through CombatEngine discard API, then end
+attack_best_target => allow best blocked valid option only after passed probability roll and only if no unblocked options exist
 
-- profiles/exact values и merchant ID audit/OQ;
-- deterministic setup, +4 RNG steps и state invariants;
-- Market validation, reserve, multi-buy, Level 6/9 и fallbacks;
-- purchase tie/no-tie RNG;
-- target features, protected Nal и target tie/no-tie RNG;
-- no-War/no-roll и exactly one probability roll;
-- failed roll, multi-War re-evaluation и loop guard;
-- all combat payloads, Insider, Saboteur и blocked preference;
-- Action fallbacks и phase/player validation;
-- human-only exclusions и failed-candidate immutability;
-- replay determinism, final random step и static boundaries.
+Fallback does not bypass validation or probability.
 
-Запусти relevant unit, integration, replay и static suites.
+18. Phase and player rules
 
-STATIC SCAN:
+Reject with stable error/result if:
 
-AI implementation не должна содержать:
+Market AI call is for human;
+Action AI call is for human;
+player has no AI boss/profile;
+Action player is not state["active_action_player_id"];
+current phase is invalid.
 
-- `randf(`, `randi(`, `randomize(`;
-- `RandomNumberGenerator`;
-- UI/scene access;
-- Resource mutation;
-- direct price/card placement;
-- direct combat effect mutation;
-- Market/Combat validation bypass;
-- direct phase advancement;
-- human roles/contracts/contacts для AI;
-- AI Street Deal choices;
-- web stack.
+AI must not:
 
-ОГРАНИЧЕНИЯ:
+call direct phase transition;
+set readiness/action_done manually unless existing phase-safe owner boundary requires it;
+cancel skip_next_action;
+choose Street Deals;
+assign roles/contracts/contacts to AI.
+19. Result contracts
 
-- Не меняй profile values или gameplay rules.
-- Не добавляй profiles/actions.
-- Не реализуй M14–M17 заранее.
-- Не создавай GameStateManager mega-logic.
-- Не дублируй Market, Combat или Turf rules.
-- Не выполняй unrelated refactor.
-- Каждый `.gd` файл меньше 250 строк.
-- Ориентиры длины промтов приблизительны.
+Use stable structured results.
 
-Обязательные fixes:
+Setup result:
 
-- `FIX-014` strong AI deterministic selection;
-- `FIX-015` three unique deterministic profiles;
-- `FIX-016` multiple Market purchases;
-- `FIX-017` purchase tie RNG only on tie;
-- `FIX-018` one probability roll;
-- `FIX-019` multiple War cards with start-hand guard;
-- `FIX-020` target tie RNG only on tie;
-- `FIX-021` unified random state.
+ok
+error
+state
+random
+bosses
+strong_ai_player_id
+profile_ids
+log_entries
 
-Неразрешённый вопрос запиши как `OQ-*`, не изобретая правило.
+Market result:
 
-ПОРЯДОК РАБОТЫ:
+ok
+error
+state
+player_id
+profile_id
+purchases
+fallback
+random
+log_entries
 
-1. Изучи M13 PRD, owner APIs, RNG contract, tests и fixes.
-3. Выполни merchant profile ID audit.
-4. Сопоставь APIs, random call order и phase boundaries.
-5. Выяви blockers и минимальные integration edits.
-6. Дай план без кода и дождись моего «ок».
-7. После «ок» реализуй setup и Market modules.
-8. Реализуй target, Action и fallback modules.
-9. Добавь/запусти tests, replay и static scan.
-10. Исправь M13 errors и представь итог.
+Action result:
 
-ФОРМАТ ОТВЕТА:
+ok
+error
+state
+player_id
+profile_id
+probability_roll
+attacks
+fallback
+random
+log_entries
 
-1. Сначала дай план без кода.
-2. Отдельно сообщи результат merchant profile ID audit.
-3. Укажи dependencies, blockers и OQ.
-4. Дождись моего «ок».
-5. До «ок» не изменяй production files.
-6. После «ок» показывай изменения с путями `res://...`.
-7. Перечисли проверки и результаты.
-8. В конце дай заполненный M13 gate checklist.
+Failed public call returns input snapshot and does not mutate state.
 
-Не пиши общие советы и не подменяй реализацию псевдокодом.
-Не отмечай gate пройденным без успешных проверок.
+20. Tests
 
-M13 GATE CHECKLIST:
+Add/cover:
 
-- [ ] Profile ID contradiction разрешён или оформлен как OQ.
-- [ ] Все шесть profiles валидны и immutable.
-- [ ] Strong AI selected deterministically.
-- [ ] Три unique profiles assigned deterministically.
-- [ ] Setup расходует expected RNG steps.
-- [ ] AI Market использует MarketLogic и может multi-buy.
-- [ ] Reserve, scoring, Turf modifiers и fallbacks работают.
-- [ ] Purchase ties consume RNG only on tie.
-- [ ] Target scoring использует все required features.
-- [ ] Target ties consume RNG only on tie.
-- [ ] Probability rolls once per AI Action with War cards.
-- [ ] AI может сыграть multiple War cards после passed roll.
-- [ ] Combat payloads, Insider и Saboteur корректны.
-- [ ] Blocked/unblocked preference и fallbacks работают.
-- [ ] AI не получает roles/contracts/contacts/Street Deal choices.
-- [ ] Failed calls/candidates не corrupt state.
-- [ ] Unit, integration, replay и static tests проходят.
-- [ ] Каждый `.gd` файл меньше 250 строк.
-- [ ] Gameplay вне M13 и web stack не добавлены.
+Setup
+profile IDs/resources exact values;
+merchant ID audit/OQ;
+deterministic strong AI;
+deterministic unique profiles;
+setup consumes exactly 4 RNG steps;
+state/boss/player invariants;
+failed setup no mutation.
+Market
+AI rejects human player;
+invalid phase rejected;
+reserve respected;
+multi-buy works;
+purchase through MarketLogic;
+Level 6 AI War discount still works through PriceLogic;
+Level 9 multiplier applies only to War score;
+normal candidate tie consumes RNG;
+unique best consumes no tie RNG;
+fallbacks work;
+failed candidate no corruption.
+Target
+scoring features all used;
+protected Nal affects available Nal;
+invalid targets excluded;
+unique best no RNG;
+tie consumes RNG.
+Action
+no War hand => no probability roll;
+War hand => exactly one probability roll;
+failed roll ends Action without attack;
+multi-War after passed roll;
+loop guard;
+payloads for Thug/Bruiser/Cleaner/Federal Raid/Saboteur;
+Insider only as Thug modifier;
+blocked preference;
+discard fallback;
+attack_best_target fallback.
+Replay/static
+same seed gives same AI setup and decisions;
+final random step deterministic;
+forbidden RNG/static boundary scan;
+no UI/web stack;
+no direct Resource mutation;
+every .gd file <250.
+21. Static scan requirements
+
+Add res://tests/static/test_ai_static_scan.gd.
+
+It must fail if res://logic/ai/ contains:
+
+randf(
+randi(
+randi_range(
+randomize(
+RandomNumberGenerator
+get_node(
+extends Control
+res://scenes
+React
+TypeScript
+Tailwind
+Zustand
+Docker
+WebSocket
+
+Also scan for suspicious direct ownership bypasses:
+
+state["market"] =
+state["combat_log"] =
+player["hand"].append
+player["hand"].erase
+player["nal"] -=
+player["vp"] +=
+
+Do not make this too dumb: allow read-only access and result dictionaries, but reject obvious direct mutation if found in AI files.
+
+22. Verification commands
+
+Run targeted first:
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ai_bot_controller.gd -gexit
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ai_purchase_logic.gd -gexit
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ai_target_logic.gd -gexit
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/unit/test_ai_action_logic.gd -gexit
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/static/test_ai_static_scan.gd -gexit
+
+Then affected suites:
+
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+
+.\tools\run_static_scans.ps1
+
+git diff --check
+
+If full suite fails, do not hide it. Report failing test, reason, file and minimal fix.
+
+23. Forbidden changes
+
+Do not:
+
+change AI profile values;
+add AI profiles;
+change card prices;
+change card effects;
+change combat rules;
+change market pools;
+change Turf Level rules;
+duplicate Turf Level 9 logic;
+create GameStateManager.gd;
+create UI/scenes;
+add save/load;
+add web stack;
+bypass MarketLogic;
+bypass CombatEngine;
+mutate Resources;
+increase 250-line limit;
+do broad unrelated refactor.
+24. Work order
+Read AGENTS.MD and required PRDs.
+Run lightweight preflight.
+Perform merchant profile ID audit.
+Report blockers/OQ before code.
+Give implementation plan without changing files.
+Wait for my ок.
+After ок, implement AI setup + profile validation.
+Implement Market AI.
+Implement Target AI.
+Implement Action AI.
+Implement fallbacks.
+Add static/integration/replay tests.
+Run checks.
+Report changed files, test results and gate checklist.
+25. Response format before code
+
+Before ок, reply with:
+
+Plan M13 — AI System
+
+1. Preflight result
+2. Merchant profile ID audit
+3. Blockers / OQ
+4. Files to create/change
+5. API plan
+6. RNG plan
+7. Test plan
+8. Static scan plan
+9. Risks
+10. Waiting for ok
+
+Do not write code before ок.
+
+26. Final M13 gate checklist
+ Profile ID contradiction resolved or recorded as OQ.
+ All six profiles valid and immutable.
+ Strong AI selected deterministically.
+ Three unique profiles assigned deterministically.
+ Setup consumes expected RNG steps.
+ AI Market uses MarketLogic and can multi-buy.
+ Reserve, scoring, Turf modifiers and fallbacks work.
+ Purchase ties consume RNG only on tie.
+ Target scoring uses all required features.
+ Target ties consume RNG only on tie.
+ Probability rolls once per AI Action with War cards.
+ No-War Action consumes no probability RNG.
+ AI can play multiple War cards after passed roll.
+ Combat payloads, Insider and Saboteur are correct.
+ Blocked/unblocked preference works.
+ Action fallbacks work.
+ AI does not receive roles/contracts/contacts/Street Deal choices.
+ Failed calls/candidates do not corrupt state.
+ Unit tests pass.
+ Integration/replay tests pass.
+ Static scans pass.
+ Every .gd file is under 250 lines.
+ No M14–M17 files added.
+ No web stack added.

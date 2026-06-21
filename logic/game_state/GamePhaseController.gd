@@ -203,6 +203,14 @@ static func reset_action_flags(state: Dictionary) -> Dictionary:
 	return _validated_result(state, candidate)
 
 
+static func end_market_for_player(state: Dictionary, player_id: String) -> Dictionary:
+	return PlayerPhaseEndLogic.end_market_for_player(state, player_id)
+
+
+static func end_action_for_player(state: Dictionary, player_id: String) -> Dictionary:
+	return PlayerPhaseEndLogic.end_action_for_player(state, player_id)
+
+
 static func _validate_transition_input(state: Dictionary) -> Dictionary:
 	if state.is_empty():
 		return {"ok": false, "error": ValidationErrors.GAME_NOT_STARTED}

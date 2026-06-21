@@ -11,7 +11,6 @@ const PROJECT_GDSCRIPT_PATHS: Array[String] = [
 	"res://tests/smoke",
 ]
 const FORBIDDEN_UNTIL_FUTURE_MILESTONES: Array[String] = [
-	"res://logic/ai/AIBotController.gd",
 	"res://autoload/GameStateManager.gd",
 ]
 const FORBIDDEN_LOGIC_PATTERNS: Array[String] = [
