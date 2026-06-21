@@ -148,7 +148,12 @@ func test_attack_result_logs_and_hook_boundaries_are_structured() -> void:
 	assert_true(result["success"])
 	assert_eq(result["contract_results"].size(), 1)
 	assert_false(result["contract_results"][0]["changed"])
-	assert_eq(result["contact_results"], [])
+	assert_eq(result["contact_results"].size(), 1)
+	assert_eq(result["contact_results"][0]["contact_offer_ids"].size(), 3)
+	assert_eq(
+		result["state"]["contacts"]["pending_offer"]["source"],
+		"strong_ai_victory"
+	)
 	assert_false(result["resolved_attack_event"]["blocked"])
 	assert_true(result["resolved_attack_event"]["success"])
 	assert_eq(result["contract_hook_events"].size(), 1)
@@ -157,9 +162,13 @@ func test_attack_result_logs_and_hook_boundaries_are_structured() -> void:
 		result["contract_hook_events"][0]["destroyed_status_card_id"],
 		GameIds.CARD_STASH
 	)
-	var log_entry: Dictionary = result["log_entries"][0]
-	assert_eq(log_entry["event_type"], LogEventTypes.ATTACK_EXECUTED)
-	assert_eq(log_entry["details"].keys().size(), 7)
+	var attack_log: Dictionary = {}
+	for entry: Dictionary in result["log_entries"]:
+		if entry["event_type"] == LogEventTypes.ATTACK_EXECUTED:
+			attack_log = entry
+			break
+	assert_eq(attack_log["event_type"], LogEventTypes.ATTACK_EXECUTED)
+	assert_eq(attack_log["details"].keys().size(), 7)
 	assert_eq(
 		result["state"]["active_action_player_id"],
 		GameIds.PLAYER_HUMAN

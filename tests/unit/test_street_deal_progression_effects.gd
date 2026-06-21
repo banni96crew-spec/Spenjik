@@ -27,7 +27,17 @@ func test_inside_contact_options_create_handoff_or_cash() -> void:
 	)
 	var offer: Dictionary = result["state"]["contacts"]["pending_offer"]
 	assert_eq(offer["source"], StreetDealIds.INSIDE_CONTACT)
-	assert_eq(offer["contact_offer_ids"], [])
+	assert_eq(offer["contact_offer_ids"].size(), 2)
+	assert_true(
+		ContactIds.ALL.has(offer["contact_offer_ids"][0])
+	)
+	assert_true(
+		ContactIds.ALL.has(offer["contact_offer_ids"][1])
+	)
+	assert_ne(
+		offer["contact_offer_ids"][0],
+		offer["contact_offer_ids"][1]
+	)
 	assert_eq(
 		TestPlayers.find(
 			result["state"], GameIds.PLAYER_HUMAN

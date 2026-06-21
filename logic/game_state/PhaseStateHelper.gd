@@ -21,7 +21,7 @@ static func apply_round_reset(state: Dictionary) -> void:
 		)
 		player["role_flags"] = reset_player["role_flags"]
 		player["turf_flags"]["ai_first_war_discount_used_this_round"] = false
-		player["contacts"]["used_this_round"] = []
+		ContactLogic.reset_round_contact_usage(player)
 		var modifiers: Array = []
 		for modifier: Dictionary in player["temporary_modifiers"]:
 			if modifier["expires_at"] != "end_of_round":

@@ -434,3 +434,7 @@ M11 GATE CHECKLIST:
 - [ ] Tests и static scan проходят.
 - [ ] Каждый `.gd` файл меньше 250 строк.
 - [ ] Gameplay вне M11 и web stack не добавлены.
+
+ContactLogic must consume `state["contacts"]["pending_offer"]`.
+Do not add contact ownership or unlock logic into StreetDealLogic.
+Do not expand IncomeLogic.gd directly; it is at 249 lines.

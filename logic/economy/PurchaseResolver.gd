@@ -19,6 +19,18 @@ static func resolve_purchase(
 		candidate, player_id, definition.id, price_result["modifiers"]
 	)
 	player = _find_player(candidate, player_id)
+	var contact_result: Dictionary = (
+		ContactLogic.consume_contact_flags_after_purchase(
+			candidate,
+			player_id,
+			definition.id,
+			price_result["modifiers"]
+		)
+	)
+	if not contact_result["ok"]:
+		return _failure(state, contact_result["error"])
+	candidate = contact_result["state"]
+	player = _find_player(candidate, player_id)
 	_consume_non_role_modifiers(player, price_result["modifiers"])
 	var contract_result: Dictionary = ContractLogic.on_card_purchased(
 		candidate,
@@ -135,10 +147,10 @@ static func _consume_non_role_modifiers(
 			continue
 		if modifier.get("source") == "role":
 			continue
-		var flag: String = str(modifier.get("flag", ""))
 		if modifier.get("source") == "contact":
-			player["role_flags"]["used_one_time_contact_bonus"] = true
-		elif modifier.get("source") == "turf_level":
+			continue
+		var flag: String = str(modifier.get("flag", ""))
+		if modifier.get("source") == "turf_level":
 			player["turf_flags"][flag] = true
 		elif not flag.is_empty() and player["role_flags"].has(flag):
 			player["role_flags"][flag] = true

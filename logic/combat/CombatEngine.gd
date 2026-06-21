@@ -55,7 +55,6 @@ static func resolve_attack(
 	if not contract_result["ok"]:
 		return _failure(state, contract_result["error"])
 	candidate = contract_result["state"]
-	result["state"] = candidate
 	result["contract_results"] = [contract_result]
 	result["contract_hook_events"] = [
 		result["resolved_attack_event"].duplicate(true)
@@ -66,6 +65,18 @@ static func resolve_attack(
 				candidate, normalized, effect
 			)
 		]
+		var contact_result: Dictionary = ContactLogic.on_attack_resolved(
+			candidate, result["resolved_attack_event"]
+		)
+		if not contact_result["ok"]:
+			return _failure(state, contact_result["error"])
+		candidate = contact_result["state"]
+		result["contact_results"] = (
+			[contact_result]
+			if contact_result["contact_offer_ids"].size() > 0
+			else []
+		)
+	result["state"] = candidate
 	candidate["combat_log"].append(
 		CombatLogBuilder.build_attack_log(result)
 	)

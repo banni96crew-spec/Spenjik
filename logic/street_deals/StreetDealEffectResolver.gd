@@ -116,10 +116,7 @@ static func _apply_effect(
 			)
 			player["debts"].append(debt)
 		EffectTypes.UNLOCK_CONTACT:
-			contact_offer = GameStateFactory.create_contact_offer_state(
-				target_id, StreetDealIds.INSIDE_CONTACT, [], state["round"]
-			)
-			state["contacts"]["pending_offer"] = contact_offer
+			pass
 		_:
 			return _failure(state, ValidationErrors.REQUIREMENT_NOT_MET)
 	return {

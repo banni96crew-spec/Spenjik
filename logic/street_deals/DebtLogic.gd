@@ -56,9 +56,27 @@ static func process_debts_for_player(
 			)
 			source_event_type = LogEventTypes.DEBT_REPAID
 		elif candidate["round"] > debt["deadline_round"]:
-			var hook_result: Dictionary = DebtResolver.run_penalty_hook(
-				candidate, player_id, debt, before_penalty_hook
-			)
+			var hook_result: Dictionary
+			if before_penalty_hook.is_valid():
+				hook_result = DebtResolver.run_penalty_hook(
+					candidate, player_id, debt, before_penalty_hook
+				)
+			else:
+				var medic_result: Dictionary = (
+					ContactLogic.before_debt_penalty_applied(
+						candidate, player_id, debt
+					)
+				)
+				if not medic_result["ok"]:
+					return _failure(
+						state, medic_result["error"], player_id
+					)
+				hook_result = {
+					"ok": true,
+					"error": ValidationErrors.OK,
+					"state": medic_result["state"],
+					"vp_loss_prevented": medic_result.get("prevented", false),
+				}
 			if not hook_result["ok"]:
 				return _failure(state, hook_result["error"], player_id)
 			candidate = hook_result["state"]

@@ -15,7 +15,6 @@ const FORBIDDEN: Array[String] = [
 	"Panel",
 	"get_node(",
 	"advance_phase",
-	"ContactLogic",
 	"React",
 	"TypeScript",
 	"Zustand",

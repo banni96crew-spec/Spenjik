@@ -82,9 +82,9 @@ func test_street_medic_hook_boundary_prevents_only_vp_loss() -> void:
 	human["nal"] = 5
 	human["vp"] = 2
 	human["debts"] = [_debt(8, StreetDealOptionIds.OPTION_A)]
-	var hook: Callable = Callable(self, "_prevent_vp_loss")
+	human["contacts"]["unlocked"] = [ContactIds.STREET_MEDIC]
 	var result: Dictionary = DebtLogic.process_debts_for_player(
-		state, GameIds.PLAYER_HUMAN, hook
+		state, GameIds.PLAYER_HUMAN
 	)
 	assert_true(result["ok"], str(result))
 	human = TestPlayers.find(result["state"], GameIds.PLAYER_HUMAN)
@@ -92,6 +92,26 @@ func test_street_medic_hook_boundary_prevents_only_vp_loss() -> void:
 	assert_eq(human["vp"], 2)
 	assert_true(result["results"][0]["vp_loss_prevented"])
 	assert_eq(result["results"][0]["vp_lost"], 0)
+	assert_true(human["role_flags"]["used_emergency_protection"])
+
+
+func test_custom_debt_hook_still_overrides_default_medic_hook() -> void:
+	var state: Dictionary = _income_state(11)
+	var human: Dictionary = TestPlayers.find(
+		state, GameIds.PLAYER_HUMAN
+	)
+	human["nal"] = 5
+	human["vp"] = 2
+	human["debts"] = [_debt(8, StreetDealOptionIds.OPTION_A)]
+	human["contacts"]["unlocked"] = [ContactIds.STREET_MEDIC]
+	var hook: Callable = Callable(self, "_prevent_vp_loss")
+	var result: Dictionary = DebtLogic.process_debts_for_player(
+		state, GameIds.PLAYER_HUMAN, hook
+	)
+	assert_true(result["ok"], str(result))
+	human = TestPlayers.find(result["state"], GameIds.PLAYER_HUMAN)
+	assert_eq(human["vp"], 2)
+	assert_false(human["role_flags"]["used_emergency_protection"])
 
 
 func test_failed_validation_does_not_mutate_state() -> void:

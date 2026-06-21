@@ -90,6 +90,12 @@ static func select_street_deal(
 	if not effect_result["ok"]:
 		return _choice_failure(state, payload, effect_result["error"])
 	var candidate: Dictionary = effect_result["state"]
+	var handoff: Dictionary = StreetDealContactHandoff.apply_inside_contact_offer(
+		candidate, deal_id, option_id
+	)
+	if not handoff["ok"]:
+		return _choice_failure(state, payload, handoff["error"])
+	candidate = handoff["state"]
 	candidate["street_deals"]["choices_by_player"][player_id] = option_id
 	candidate["street_deals"]["used_deal_ids"].append(deal_id)
 	candidate["street_deals"]["current_deal_id"] = ""
@@ -110,10 +116,6 @@ static func select_street_deal(
 	)
 	for debt: Dictionary in effect_result["created_debts"]:
 		StreetDealLogBuilder.append_debt_created(candidate, player_id, debt)
-	if not effect_result["contact_offer"].is_empty():
-		StreetDealLogBuilder.append_contact_handoff(
-			candidate, player_id, effect_result["contact_offer"]
-		)
 	var final_validation: Dictionary = GameStateValidator.validate_game_state(
 		candidate
 	)
@@ -128,7 +130,7 @@ static func select_street_deal(
 		"effects_applied": effect_result["effects_applied"],
 		"selected_ai_id": effect_result["selected_ai_id"],
 		"random_steps_used": effect_result["random_steps_used"],
-		"contact_offer": effect_result["contact_offer"],
+		"contact_offer": candidate["contacts"]["pending_offer"].duplicate(true),
 		"contract_results": [contract_result],
 		"state": candidate,
 		"log_entries": candidate["combat_log"].slice(

@@ -123,16 +123,9 @@ static func _contact_modifiers(
 	player: Dictionary,
 	definition: CardDefinition
 ) -> Array[Dictionary]:
-	if (
-		definition.type != CardTypes.STATUS
-		or not player["contacts"]["unlocked"].has(ContactIds.CORRUPT_CLERK)
-		or player["role_flags"]["used_one_time_contact_bonus"]
-	):
-		return []
-	return [_modifier(
-		"corrupt_clerk_%s_round_%d" % [player["id"], state["round"]],
-		"contact", -1, "used_one_time_contact_bonus"
-	)]
+	return ContactLogic.get_contact_price_modifiers(
+		state, player, definition
+	)
 
 
 static func _temporary_modifiers(
