@@ -42,6 +42,23 @@ static func completed_setup_state(
 	return state
 
 
+static func setup_with_turf_modifiers(
+	turf_level: int,
+	role_id: String = RoleIds.MERCHANT,
+	game_seed: String = "test_turf_setup"
+) -> Dictionary:
+	var state: Dictionary = GameStateFactory.create_new_game_state(
+		game_seed, turf_level
+	)
+	var role_result: Dictionary = RoleSetupResolver.apply(state, role_id)
+	if not role_result["ok"]:
+		return role_result["state"]
+	state = role_result["state"]
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["is_strong_ai"] = true
+	var turf_result: Dictionary = TurfLevelLogic.apply_setup_modifiers(state)
+	return turf_result["state"] if turf_result["ok"] else state
+
+
 static func market_state(
 	game_seed: String = "test_seed_market",
 	round_number: int = 1

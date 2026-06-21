@@ -2,7 +2,9 @@ class_name ContactOfferLogic
 
 
 static func get_strong_ai_offer_count(state: Dictionary) -> int:
-	return 2 if int(state.get("turf_level", 0)) >= 7 else 3
+	return TurfLevelLogic.get_strong_ai_victory_contact_offer_count(
+		state["turf_level"]
+	)
 
 
 static func generate_contact_offer(

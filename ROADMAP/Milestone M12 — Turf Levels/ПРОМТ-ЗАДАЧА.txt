@@ -398,6 +398,8 @@ TESTS:
 - Level 5 human/AI intervals;
 - Level 6 AI-only success/failure/reset cases;
 - Level 7 source-specific counts;
+- ContactOfferLogic, GameStateRootValidator and TurfLevelLogic agree on strong-AI offer count;
+- PhaseStateHelper resets turf flags through TurfLevelLogic helper;
 - Level 8 affected/unaffected payments;
 - Level 9 strict VP lead и Resource immutability;
 - Level 10 sole leader, human/AI tie, multiple AI/Nal/stable order;
@@ -467,8 +469,10 @@ Migrate these existing checks to TurfLevelLogic helpers:
 - `IncomeLogic` Cops upkeep interval → `TurfLevelLogic.get_cops_upkeep_interval(...)`
 - `PriceLogic` AI War discount → `TurfLevelLogic.get_ai_war_purchase_modifiers(...)`
 - `ContactOfferLogic` strong-AI contact offer count → `TurfLevelLogic.get_strong_ai_victory_contact_offer_count(...)`
+- `GameStateRootValidator.validate_contact_offer_for_turf(...)` → `TurfLevelLogic.get_strong_ai_victory_contact_offer_count(...)`
 - `StreetDealLogic` human payment delta → `TurfLevelLogic.get_street_deal_payment_delta(...)`
 - `WinnerResolver` Level 10 tie-break → `TurfLevelLogic.resolve_level_10_ai_tie_break(...)`
+- `PhaseStateHelper.apply_round_reset(...)` → `TurfLevelLogic.reset_round_turf_flags(...)`
 
 M12 is a migration/centralization milestone, not a duplicate-effect layer.
 
@@ -514,3 +518,7 @@ M12 GATE CHECKLIST:
 - [ ] Owner-module integrations и tests проходят.
 - [ ] Каждый `.gd` файл меньше 250 строк.
 - [ ] Gameplay вне M12 и web stack не добавлены.
+
+migration list:
+- GameStateRootValidator strong-AI contact offer count validation → TurfLevelLogic.get_strong_ai_victory_contact_offer_count(...)
+- PhaseStateHelper turf flag reset → TurfLevelLogic.reset_round_turf_flags(...)

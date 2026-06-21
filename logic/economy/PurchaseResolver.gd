@@ -31,7 +31,13 @@ static func resolve_purchase(
 		return _failure(state, contact_result["error"])
 	candidate = contact_result["state"]
 	player = _find_player(candidate, player_id)
-	_consume_non_role_modifiers(player, price_result["modifiers"])
+	var turf_result: Dictionary = TurfLevelLogic.consume_turf_flags_after_purchase(
+		candidate, player_id, price_result["modifiers"]
+	)
+	if not turf_result["ok"]:
+		return _failure(state, turf_result["error"])
+	candidate = turf_result["state"]
+	player = _find_player(candidate, player_id)
 	var contract_result: Dictionary = ContractLogic.on_card_purchased(
 		candidate,
 		{
@@ -149,10 +155,10 @@ static func _consume_non_role_modifiers(
 			continue
 		if modifier.get("source") == "contact":
 			continue
-		var flag: String = str(modifier.get("flag", ""))
 		if modifier.get("source") == "turf_level":
-			player["turf_flags"][flag] = true
-		elif not flag.is_empty() and player["role_flags"].has(flag):
+			continue
+		var flag: String = str(modifier.get("flag", ""))
+		if not flag.is_empty() and player["role_flags"].has(flag):
 			player["role_flags"][flag] = true
 		for stored: Dictionary in player["temporary_modifiers"]:
 			if stored["id"] == modifier.get("id"):

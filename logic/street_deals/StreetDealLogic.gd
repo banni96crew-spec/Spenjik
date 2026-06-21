@@ -160,8 +160,10 @@ static func get_payment_amount(
 		and option_id == StreetDealOptionIds.OPTION_A
 	):
 		payment = 3
-	if payment > 0 and int(state.get("turf_level", 0)) >= 8:
-		payment += 1
+	if payment > 0:
+		payment += TurfLevelLogic.get_street_deal_payment_delta(
+			state, _find_player(state, player_id)
+		)
 	return payment
 
 

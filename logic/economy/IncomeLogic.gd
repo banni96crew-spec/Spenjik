@@ -94,7 +94,7 @@ static func get_cops_upkeep_interval(
 	state: Dictionary,
 	player: Dictionary
 ) -> int:
-	return 2 if state["turf_level"] >= 5 and not player["is_ai"] else 3
+	return TurfLevelLogic.get_cops_upkeep_interval(state, player)
 
 
 ## Purely resolves Cops upkeep on an already-owned working state.

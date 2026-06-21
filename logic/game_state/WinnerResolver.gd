@@ -7,13 +7,11 @@ const STATUS_VALUES := {
 }
 
 
-## Resolves the normal Turf Level 0-9 winner without mutating the input state.
+## Resolves the match winner without mutating the input state.
 static func resolve(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(state)
 	if not validation["ok"]:
 		return _failure(state, validation["error"])
-	if state["turf_level"] >= 10:
-		return _failure(state, ValidationErrors.PHASE_NOT_READY)
 	var scores: Array[Dictionary] = _build_scores(state["players"])
 	var candidates: Array = GameIds.PLAYER_IDS.duplicate()
 	var steps: Array = []
@@ -21,39 +19,58 @@ static func resolve(state: Dictionary) -> Dictionary:
 		candidates, scores, "vp", TieBreakIds.VICTORY_POINTS, steps
 	)
 	var tie_break_used: bool = candidates.size() > 1
-	if candidates.size() > 1:
-		candidates = _filter_max(
-			candidates, scores, "nal", TieBreakIds.NAL, steps
+	var turf_applied: bool = false
+	var winner_id: String = ""
+	if tie_break_used:
+		var tied_players: Array[Dictionary] = _tied_players(
+			state["players"], candidates
 		)
-	if candidates.size() > 1:
-		candidates = _filter_max(
-			candidates,
-			scores,
-			"status_building_vp_value",
-			TieBreakIds.STATUS_BUILDING_VP_VALUE,
-			steps
+		var turf_result: Dictionary = TurfLevelLogic.resolve_level_10_ai_tie_break(
+			state, tied_players
 		)
-	if candidates.size() > 1:
-		candidates = _filter_max(
-			candidates,
-			scores,
-			"status_building_count",
-			TieBreakIds.STATUS_BUILDING_COUNT,
-			steps
-		)
-	if candidates.size() > 1:
-		var before: Array = candidates.duplicate()
-		candidates = [_first_in_stable_order(candidates)]
-		steps.append(_step(
-			TieBreakIds.FIXED_PLAYER_ORDER, before, candidates
-		))
-	var winner_id: String = candidates[0]
+		if turf_result["applied"]:
+			turf_applied = true
+			winner_id = turf_result["winner_id"]
+			steps.append({
+				"tie_break_id": TieBreakIds.TURF_LEVEL_10_AI_PRIORITY,
+				"candidates_before": candidates.duplicate(),
+				"candidates_after": [winner_id],
+				"explanation": turf_result["reason"],
+			})
+	if winner_id.is_empty():
+		if candidates.size() > 1:
+			candidates = _filter_max(
+				candidates, scores, "nal", TieBreakIds.NAL, steps
+			)
+		if candidates.size() > 1:
+			candidates = _filter_max(
+				candidates,
+				scores,
+				"status_building_vp_value",
+				TieBreakIds.STATUS_BUILDING_VP_VALUE,
+				steps
+			)
+		if candidates.size() > 1:
+			candidates = _filter_max(
+				candidates,
+				scores,
+				"status_building_count",
+				TieBreakIds.STATUS_BUILDING_COUNT,
+				steps
+			)
+		if candidates.size() > 1:
+			var before: Array = candidates.duplicate()
+			candidates = [_first_in_stable_order(candidates)]
+			steps.append(_step(
+				TieBreakIds.FIXED_PLAYER_ORDER, before, candidates
+			))
+		winner_id = candidates[0]
 	var game_result: Dictionary = {
 		"winner_id": winner_id,
 		"final_scores": scores,
 		"tie_break_used": tie_break_used,
 		"tie_break_steps": steps,
-		"turf_level_10_ai_win_applied": false,
+		"turf_level_10_ai_win_applied": turf_applied,
 	}
 	var result_validation: Dictionary = GameResultValidator.validate(game_result)
 	if not result_validation["ok"]:
@@ -66,6 +83,17 @@ static func resolve(state: Dictionary) -> Dictionary:
 		"winner_id": winner_id,
 		"game_result": game_result,
 	}
+
+
+static func _tied_players(
+	players: Array,
+	candidate_ids: Array
+) -> Array[Dictionary]:
+	var tied: Array[Dictionary] = []
+	for player: Dictionary in players:
+		if candidate_ids.has(player["id"]):
+			tied.append(player)
+	return tied
 
 
 static func _build_scores(players: Array) -> Array[Dictionary]:

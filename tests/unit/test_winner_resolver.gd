@@ -54,7 +54,7 @@ func test_status_count_then_stable_order_break_remaining_ties() -> void:
 	var stable_state: Dictionary = TestGameStateFactory.base_state("winner_stable")
 	for player: Dictionary in stable_state["players"]:
 		player["vp"] = 2
-		player["nal"] = 5
+		player["nal"] = 4
 	var stable_result: Dictionary = WinnerResolver.resolve(stable_state)
 	assert_eq(stable_result["winner_id"], GameIds.PLAYER_HUMAN)
 	assert_eq(
@@ -63,10 +63,9 @@ func test_status_count_then_stable_order_break_remaining_ties() -> void:
 	)
 
 
-func test_resolution_does_not_mutate_input_vp_or_random() -> void:
-	var state: Dictionary = TestGameStateFactory.base_state("winner_immutable")
+func test_resolve_does_not_mutate_state_or_random() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state("winner_no_mutate")
 	TestPlayers.find(state, GameIds.PLAYER_AI_1)["vp"] = 3
-	TestPlayers.find(state, GameIds.PLAYER_AI_1)["status_buildings"]["workshop"] = 2
 	var before: Dictionary = state.duplicate(true)
 	var result: Dictionary = WinnerResolver.resolve(state)
 	assert_true(result["ok"])
@@ -75,17 +74,52 @@ func test_resolution_does_not_mutate_input_vp_or_random() -> void:
 	assert_eq(TestPlayers.find(state, GameIds.PLAYER_AI_1)["vp"], 3)
 
 
-func test_turf_level_10_is_deferred_without_mutation() -> void:
-	var state: Dictionary = TestGameStateFactory.base_state("winner_turf_10")
+func test_human_sole_vp_leader_wins_at_level_ten() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state("winner_turf_human")
 	state["turf_level"] = 10
 	for player: Dictionary in state["players"]:
 		player["turf_level"] = 10
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["vp"] = 9
 	var before: Dictionary = state.duplicate(true)
 	var result: Dictionary = WinnerResolver.resolve(state)
-	assert_false(result["ok"])
-	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
-	assert_eq(result["state"], before)
+	assert_true(result["ok"], str(result))
+	assert_eq(result["winner_id"], GameIds.PLAYER_HUMAN)
+	assert_false(result["game_result"]["turf_level_10_ai_win_applied"])
 	assert_eq(state, before)
+
+
+func test_level_ten_human_ai_vp_tie_favors_ai_by_nal_and_stable_order() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state("winner_turf_ai")
+	state["turf_level"] = 10
+	for player: Dictionary in state["players"]:
+		player["turf_level"] = 10
+		player["vp"] = 8
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["nal"] = 20
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["nal"] = 5
+	TestPlayers.find(state, GameIds.PLAYER_AI_2)["nal"] = 10
+	TestPlayers.find(state, GameIds.PLAYER_AI_3)["nal"] = 30
+	var result: Dictionary = WinnerResolver.resolve(state)
+	assert_eq(result["winner_id"], GameIds.PLAYER_AI_2)
+	assert_true(result["game_result"]["turf_level_10_ai_win_applied"])
+	var tied_nal: Dictionary = TestGameStateFactory.base_state("winner_turf_ai_nal")
+	tied_nal["turf_level"] = 10
+	for player: Dictionary in tied_nal["players"]:
+		player["turf_level"] = 10
+		player["vp"] = 4
+		player["nal"] = 5
+	var stable: Dictionary = WinnerResolver.resolve(tied_nal)
+	assert_eq(stable["winner_id"], GameIds.PLAYER_AI_1)
+
+
+func test_below_level_ten_uses_normal_tie_break() -> void:
+	var state: Dictionary = TestGameStateFactory.base_state("winner_turf_normal")
+	for player: Dictionary in state["players"]:
+		player["vp"] = 5
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["nal"] = 1
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["nal"] = 9
+	var result: Dictionary = WinnerResolver.resolve(state)
+	assert_eq(result["winner_id"], GameIds.PLAYER_AI_1)
+	assert_false(result["game_result"]["turf_level_10_ai_win_applied"])
 
 
 func _tie_ids(game_result: Dictionary) -> Array:

@@ -183,17 +183,24 @@ func test_round_15_enters_game_over_without_round_16() -> void:
 	assert_eq(result["state"], before)
 
 
-func test_turf_10_game_over_is_deferred() -> void:
+func test_turf_10_game_over_resolves_ai_favored_winner() -> void:
 	var state: Dictionary = TestGameStateFactory.completed_action_state(
 		15, "phase_turf_10"
 	)
 	state["turf_level"] = 10
 	for player: Dictionary in state["players"]:
 		player["turf_level"] = 10
+		player["vp"] = 6
+	TestPlayers.find(state, GameIds.PLAYER_HUMAN)["nal"] = 20
+	TestPlayers.find(state, GameIds.PLAYER_AI_3)["nal"] = 12
 	var before: Dictionary = state.duplicate(true)
 	var result: Dictionary = GamePhaseController.advance_phase(state)
-	assert_false(result["ok"])
-	assert_eq(result["error"], ValidationErrors.PHASE_NOT_READY)
+	assert_true(result["ok"], str(result))
+	assert_eq(result["state"]["current_phase"], PhaseIds.GAME_OVER)
+	assert_eq(result["state"]["winner_id"], GameIds.PLAYER_AI_3)
+	assert_true(
+		result["state"]["game_result"]["turf_level_10_ai_win_applied"]
+	)
 	assert_eq(state, before)
 
 

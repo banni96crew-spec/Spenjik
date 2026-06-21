@@ -8,7 +8,7 @@
 
 Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают, playable UI через Godot Run пока нет.
 
-**Последняя проверка:** full GUT suite 225/225 tests, 3059 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
+**Последняя проверка:** full GUT suite 226/226 tests, 3061 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
 
 **Ожидаемо отсутствует до своих milestone:**
 

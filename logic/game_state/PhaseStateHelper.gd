@@ -20,7 +20,7 @@ static func apply_round_reset(state: Dictionary) -> void:
 			player, state["selected_role_id"]
 		)
 		player["role_flags"] = reset_player["role_flags"]
-		player["turf_flags"]["ai_first_war_discount_used_this_round"] = false
+		TurfLevelLogic.reset_round_turf_flags(player)
 		ContactLogic.reset_round_contact_usage(player)
 		var modifiers: Array = []
 		for modifier: Dictionary in player["temporary_modifiers"]:

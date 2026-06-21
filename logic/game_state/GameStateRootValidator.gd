@@ -171,7 +171,9 @@ static func validate_contact_offer_for_turf(state: Dictionary) -> Dictionary:
 	var offer: Dictionary = state["contacts"]["pending_offer"]
 	if offer.is_empty() or offer["source"] != "strong_ai_victory":
 		return StateShapeValidator.ok()
-	var expected_count: int = 2 if state["turf_level"] >= 7 else 3
+	var expected_count: int = TurfLevelLogic.get_strong_ai_victory_contact_offer_count(
+		state["turf_level"]
+	)
 	if offer["contact_offer_ids"].size() != expected_count:
 		return StateShapeValidator.fail(
 			ValidationErrors.INVALID_STATE,

@@ -105,17 +105,9 @@ static func _turf_modifiers(
 	player: Dictionary,
 	definition: CardDefinition
 ) -> Array[Dictionary]:
-	if (
-		int(state.get("turf_level", 0)) < 6
-		or not player["is_ai"]
-		or definition.type != CardTypes.WAR
-		or player["turf_flags"]["ai_first_war_discount_used_this_round"]
-	):
-		return []
-	return [_modifier(
-		"turf_level_6_%s_round_%d" % [player["id"], state["round"]],
-		"turf_level", -1, "ai_first_war_discount_used_this_round"
-	)]
+	return TurfLevelLogic.get_ai_war_purchase_modifiers(
+		state, player, definition
+	)
 
 
 static func _contact_modifiers(

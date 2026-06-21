@@ -18,7 +18,7 @@ static func generate_market(state: Dictionary) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(state)
 	if not validation["ok"]:
 		return _failure(state, validation["error"])
-	var slots: int = get_rotating_slot_count(state["turf_level"])
+	var slots: int = TurfLevelLogic.get_rotating_market_slot_count(state["turf_level"])
 	var picked: Dictionary = SeededPicker.pick_unique(
 		state["random"], ROTATING_MARKET_POOL, slots,
 		"market_round_%s" % state["round"]
@@ -113,10 +113,6 @@ static func rebuild_district_control(
 	return PurchaseResolver.resolve_rebuild(
 		state, player_id, validation["price_result"]
 	)
-
-
-static func get_rotating_slot_count(turf_level: int) -> int:
-	return 3 if turf_level >= 4 else 4
 
 
 static func _append_market_started(state: Dictionary) -> void:

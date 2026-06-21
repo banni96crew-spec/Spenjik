@@ -103,7 +103,7 @@ static func create_role_flags() -> Dictionary:
 
 
 static func create_turf_flags() -> Dictionary:
-	return {"ai_first_war_discount_used_this_round": false}
+	return TurfLevelLogic.create_empty_turf_flags()
 
 
 static func create_street_deal_state() -> Dictionary:
