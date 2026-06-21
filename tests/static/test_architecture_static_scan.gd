@@ -1,28 +1,40 @@
 extends GutTest
 
-const M10_PATHS: Array[String] = [
-	"res://logic/game_state",
-	"res://logic/economy",
-	"res://logic/combat",
-	"res://logic/roles",
-	"res://logic/contracts",
-	"res://logic/street_deals",
+const LOGIC_ROOT: Array[String] = ["res://logic"]
+const PROJECT_GDSCRIPT_PATHS: Array[String] = [
+	"res://logic",
 	"res://tests/fixtures",
 	"res://tests/unit",
 	"res://tests/integration",
+	"res://tests/replay",
+	"res://tests/static",
+	"res://tests/smoke",
 ]
-const LOGIC_PATHS: Array[String] = [
-	"res://logic/game_state",
-	"res://logic/economy",
-	"res://logic/combat",
-	"res://logic/roles",
-	"res://logic/contracts",
-	"res://logic/street_deals",
-]
-const FORBIDDEN_FUTURE_GAMEPLAY_FILES: Array[String] = [
-	"res://logic/turf_levels/TurfLevelLogic.gd",
+const FORBIDDEN_UNTIL_FUTURE_MILESTONES: Array[String] = [
 	"res://logic/ai/AIBotController.gd",
 	"res://autoload/GameStateManager.gd",
+]
+const FORBIDDEN_LOGIC_PATTERNS: Array[String] = [
+	"res://scenes/ui/",
+	"extends Control",
+	"Button",
+	"Label",
+	"TextureRect",
+	"Panel",
+	"get_node(",
+	"RandomNumberGenerator",
+	"randf(",
+	"randi(",
+	"randi_range(",
+	"randomize(",
+]
+const FORBIDDEN_WEB_STACK_PATTERNS: Array[String] = [
+	"React",
+	"TypeScript",
+	"Zustand",
+	"Tailwind",
+	"Docker",
+	"WebSocket",
 ]
 
 
@@ -39,43 +51,30 @@ func test_runtime_states_are_json_compatible_without_objects() -> void:
 		assert_false(_contains_forbidden_runtime_type(state))
 
 
-func test_game_state_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> void:
-	var forbidden: Array[String] = [
-		"res://scenes/ui/",
-		"extends Control",
-		"Button",
-		"Label",
-		"TextureRect",
-		"Panel",
-		"get_node(",
-		"RandomNumberGenerator",
-		"randf(",
-		"randi(",
-		"randomize(",
-	]
-	for root_path: String in LOGIC_PATHS:
+func test_logic_has_no_ui_dependency_or_forbidden_runtime_apis() -> void:
+	for root_path: String in LOGIC_ROOT:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
-			var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
+			var pattern: String = StaticScanHelper.find_pattern(path, FORBIDDEN_LOGIC_PATTERNS)
 			assert_eq(pattern, "", "Forbidden pattern %s in %s" % [pattern, path])
 
 
-func test_game_state_source_has_no_web_stack_artifacts() -> void:
-	var forbidden: Array[String] = [
-		"React", "TypeScript", "Zustand", "Tailwind", "Docker", "WebSocket",
-	]
-	for root_path: String in LOGIC_PATHS:
+func test_logic_source_has_no_web_stack_artifacts() -> void:
+	for root_path: String in LOGIC_ROOT:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
-			var pattern: String = StaticScanHelper.find_pattern(path, forbidden)
+			var pattern: String = StaticScanHelper.find_pattern(path, FORBIDDEN_WEB_STACK_PATTERNS)
 			assert_eq(pattern, "", "Forbidden stack term %s in %s" % [pattern, path])
 
 
-func test_m10_does_not_create_future_gameplay_modules() -> void:
-	for path: String in FORBIDDEN_FUTURE_GAMEPLAY_FILES:
-		assert_false(FileAccess.file_exists(path), "M11+ file created: %s" % path)
+func test_premature_future_modules_not_created() -> void:
+	for path: String in FORBIDDEN_UNTIL_FUTURE_MILESTONES:
+		assert_false(
+			FileAccess.file_exists(path),
+			"Future milestone file created prematurely: %s" % path
+		)
 
 
 func test_project_gdscript_files_stay_under_250_lines() -> void:
-	for root_path: String in M10_PATHS:
+	for root_path: String in PROJECT_GDSCRIPT_PATHS:
 		for path: String in StaticScanHelper.get_gd_files_under(root_path):
 			assert_lt(
 				StaticScanHelper.count_lines(path),

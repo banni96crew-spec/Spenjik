@@ -4,35 +4,28 @@
 
 ## Статус
 
-Проект находится на стадии подготовки к реализации.
+**Current status:** M0–M11 completed. **Next milestone:** M12 — Turf Levels.
 
-Готовы:
+Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают, playable UI через Godot Run пока нет.
 
-- модульный PRD;
-- архитектура Godot-проекта;
-- схема состояния и публичный API;
-- тестовая стратегия;
-- roadmap M0–M17;
-- правила для Cursor/Codex.
+**Последняя проверка:** full GUT suite 225/225 tests, 3059 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
 
-Ещё не выполнены:
+**Ожидаемо отсутствует до своих milestone:**
 
-- M0 Project Bootstrap;
-- `project.godot`;
-- подключение GUT;
-- исходный GDScript-код;
-- сцены, Resources и тесты.
+- main scene и playable build — до M16 (UI/UX);
+- `GameStateManager.gd` — до M14;
+- `test_smoke_mvp.gd` как обязательный gate — не позднее M15.
 
-Наличие команд и ожидаемой структуры в документации не означает, что Godot-проект уже создан или проверки уже запускались.
+Source of truth: [`docs/prd/`](docs/prd/) и фактический код/tests. README — статусный обзор, не PRD.
 
 ## Технологический стек
 
 - Godot 4.6.2 stable;
 - GDScript со статической типизацией;
-- Godot `Control`, `Container` и `Theme` для UI;
+- Godot `Control`, `Container` и `Theme` для UI (M16+);
 - `.tres` Resources для статических данных;
 - `Dictionary` snapshots для runtime-состояния;
-- `GameStateManager.gd` как единственный UI-facing gameplay facade;
+- `GameStateManager.gd` как UI-facing facade (M14+);
 - GUT 9.6.0;
 - Windows и Linux как первые целевые платформы.
 
@@ -40,36 +33,30 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 
 ## Источники истины
 
-Начальная точка документации:
-
-- [`docs/prd/00_INDEX.md`](docs/prd/00_INDEX.md)
-
-Основные документы:
-
-- [`.cursor/docs/prd/01_PRODUCT_OVERVIEW.md`](docs/prd/01_PRODUCT_OVERVIEW.md) — продукт и scope;
-- [`.cursor/docs/prd/15_GODOT_ARCHITECTURE.md`](docs/prd/15_GODOT_ARCHITECTURE.md) — архитектура и структура проекта;
-- [`.cursor/docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md) — GUT, smoke, replay и static tests;
-- [`.cursor/docs/prd/19_IMPLEMENTATION_ORDER.md`](docs/prd/19_IMPLEMENTATION_ORDER.md) — порядок M0–M17;
-- [`.cursor/docs/prd/20_LLM_AGENT_RULES.md`](docs/prd/20_LLM_AGENT_RULES.md) — правила coding-agent;
-- [`.cursor/docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`](docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md) — принятые исправления и открытые вопросы;
+- [`docs/prd/00_INDEX.md`](docs/prd/00_INDEX.md) — индекс owner PRD;
+- [`docs/prd/15_GODOT_ARCHITECTURE.md`](docs/prd/15_GODOT_ARCHITECTURE.md) — архитектура;
+- [`docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md) — тесты;
+- [`docs/prd/19_IMPLEMENTATION_ORDER.md`](docs/prd/19_IMPLEMENTATION_ORDER.md) — порядок M0–M17;
+- [`docs/prd/20_LLM_AGENT_RULES.md`](docs/prd/20_LLM_AGENT_RULES.md) — правила coding-agent;
 - [`AGENTS.MD`](AGENTS.MD) — практическое руководство для Cursor/Codex.
-
-При конфликте owner PRD имеет приоритет над roadmap, общими шаблонами и старыми материалами.
 
 ## Структура репозитория
 
 ```text
-.cursor/                         Cursor agents, rules, skills and hooks
-docs/
-  prd/                           Modular product and engineering specification
-  engine-reference/godot/        Pinned Godot 4.6 reference
-  templates/                     Documentation templates
-ROADMAP/                         Milestone context and implementation tasks
-AGENTS.MD                        Repository instructions for AI agents
-README.md                        Repository overview
+project.godot                  Godot 4.6.2 project (GUT enabled)
+addons/gut/                    GUT 9.6.0
+logic/                         gameplay owner modules (M0–M11)
+data/ids/                      stable IDs and validation errors
+data/resources/                .tres Resources and schemas
+tests/                         unit, integration, replay, static, smoke
+autoload/                      placeholder until M14 GameStateManager
+docs/prd/                      modular product specification
+ROADMAP/                       milestone context
+.cursor/                       agents, rules, skills
+AGENTS.MD                      agent instructions
 ```
 
-Будущая структура Godot-проекта описана в `docs/prd/15_GODOT_ARCHITECTURE.md`. Не следует создавать gameplay-файлы будущих milestone как пустые заглушки.
+Полная каноническая структура: `docs/prd/15_GODOT_ARCHITECTURE.md`.
 
 ## Архитектурная граница
 
@@ -80,51 +67,32 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 Ключевые ограничения:
 
 - UI не содержит gameplay logic;
-- AI использует те же валидаторы и resolver-модули, что и человек;
 - failed validation не мутирует состояние;
 - selectors и previews read-only;
-- gameplay random проходит только через `SeededRandom.gd` и `SeededPicker.gd`;
+- gameplay random только через `SeededRandom.gd` и `SeededPicker.gd`;
 - каждый `.gd` source file короче 250 строк.
 
 ## Тестовые контракты
 
-После выполнения M0:
+Команды выполняются из корня репозитория (каталог с `project.godot`):
 
-- `tests/smoke/test_gut_bootstrap.gd` проверяет только импорт проекта и работоспособность GUT;
-- `tests/integration/test_smoke_mvp.gd` проверяет интегрированный MVP flow и становится обязательным не позднее M15;
-- полный suite запускается из каталога с `project.godot`.
+```powershell
+# bootstrap smoke
+& $env:GODOT_BIN --headless -d -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gtest=res://tests/smoke/test_gut_bootstrap.gd -gexit
 
-Команды задокументированы в:
+# full suite
+& $env:GODOT_BIN --headless -s --path (Get-Location).Path addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
+```
 
-- [`docs/coding-standards.md`](docs/coding-standards.md);
-- [`docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md).
-
-До выполнения M0 эти команды неприменимы.
+- `tests/smoke/test_gut_bootstrap.gd` — import, GUT и минимальная core-state проверка;
+- `tests/integration/test_smoke_mvp.gd` — обязателен не позднее M15;
+- подробности: [`docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md).
 
 ## Порядок разработки
 
 ```text
-M0 bootstrap
--> constants and IDs
--> Resources and catalogs
--> deterministic random
--> state factory and validator
--> gameplay owner modules
--> GameStateManager facade
--> integration and replay
--> UI/UX
--> polish and hardening
+M0–M11 (done) -> M12 Turf Levels -> M13 AI -> M14 GameStateManager
+-> M15 integration/replay -> M16 UI -> M17 polish
 ```
 
 Не переходить к следующему milestone, если обязательный gate предыдущего не пройден.
-
-## Правила участия
-
-- Перед изменением определить owner PRD и текущий milestone.
-- Не менять баланс, ID, игровые правила и API без обновления owner PRD.
-- Не выдумывать отсутствующее поведение; использовать процесс `OQ-*`.
-- Добавлять тесты вместе с изменением поведения.
-- Не утверждать, что непроведённая проверка прошла.
-- Использовать Conventional Commits.
-
-Подробные правила: [`docs/coding-standards.md`](docs/coding-standards.md) и [`AGENTS.MD`](AGENTS.MD).

@@ -14,7 +14,7 @@ Before starting work:
 
 **The Turf** — локальная пошаговая карточная мини-игра о борьбе за влияние, управлении ресурсами и тактических атаках. Матч рассчитан ровно на 15 раундов и включает человека и трёх локальных AI-соперников.
 
-Текущий репозиторий находится на стадии подготовки к реализации: в нём есть модульный PRD, roadmap и агентные правила, но фактический Godot-проект и исходный код ещё не созданы.
+M0–M11 завершены. Следующий milestone: M12 — Turf Levels. Проект сейчас logic-first / test-driven / headless: Godot-проект, GUT, logic modules, Resources и tests существуют; playable UI и main scene — до M16, `GameStateManager` — до M14.
 
 Зафиксированный стек:
 
@@ -44,14 +44,12 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 - `README.md` — краткий обзор статуса, стека, источников истины и порядка разработки.
 - `.git/` — локальный Git-репозиторий для сохранения контрольных точек разработки.
 
-В текущем состоянии не обнаружены:
+Godot-проект и gameplay code:
 
-- `project.godot`;
-- исходные `.gd`, сцены `.tscn` и ресурсы `.tres`;
-- каталоги `autoload/`, `logic/`, `data/`, `scenes/`, `tests/`;
-- подключённый `addons/gut/`;
-- CI-конфигурация;
-- `package.json`;
+- `project.godot`, `addons/gut/`, `logic/`, `data/`, `tests/` — присутствуют;
+- `autoload/` — placeholder до M14;
+- `scenes/` — до M16 (UI/playable build);
+- CI-конфигурация — не обнаружена.
 
 Предписанная будущая структура Godot-проекта определена в `docs/prd/15_GODOT_ARCHITECTURE.md`:
 
@@ -169,7 +167,7 @@ UI → GameStateManager → logic modules → catalogs/resources/constants
 
 ## Commands
 
-Команды выполняются из каталога, содержащего `project.godot`. В текущем репозитории такого каталога пока нет, поэтому команды сейчас неприменимы.
+Команды выполняются из корня репозитория (каталог с `project.godot`). `GODOT_BIN` должен указывать на Godot 4.6.2.
 
 M0 bootstrap smoke в PowerShell:
 
