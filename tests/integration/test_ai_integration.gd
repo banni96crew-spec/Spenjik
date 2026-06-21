@@ -60,7 +60,9 @@ func test_action_runs_in_player_order_after_human() -> void:
 		assert_eq(state["active_action_player_id"], ai_id)
 		var result: Dictionary = AIBotController.run_action_for_ai(state, ai_id)
 		assert_true(result["ok"], "action ok for %s" % ai_id)
-		state = GamePhaseController.advance_action_player(result["state"])["state"]
+		state = result["state"]
+		if not state["active_action_player_id"].is_empty():
+			state = GamePhaseController.advance_action_player(state)["state"]
 	for player_id: String in GameIds.PLAYER_IDS:
 		assert_true(TestPlayers.find(state, player_id)["action_done"])
 

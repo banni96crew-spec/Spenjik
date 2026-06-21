@@ -137,6 +137,29 @@ func test_run_market_wrong_phase_is_safe_failure() -> void:
 	assert_eq(state, before)
 
 
+func test_failed_owner_buy_does_not_commit_tiebreak_random() -> void:
+	var state: Dictionary = _market_state([GameIds.CARD_WORKSHOP])
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["nal"] = 40
+	state["random"] = SeededRandom.create_random_state("ai_buy_fail_seed")
+	var candidates: Array[Dictionary] = [
+		_candidate(GameIds.CARD_STASH, 100.0),
+		_candidate(GameIds.CARD_WORKSHOP, 100.0),
+	]
+	var choice: Dictionary = AIPurchaseLogic.choose_purchase_candidate(
+		state, candidates
+	)
+	assert_true(choice["ok"])
+	assert_eq(int(choice["random"]["step"]), 1)
+	var trial: Dictionary = state.duplicate(true)
+	trial["random"] = choice["random"]
+	trial["current_phase"] = PhaseIds.ACTION
+	var bought: Dictionary = MarketLogic.buy_card(
+		trial, GameIds.PLAYER_AI_1, choice["candidate"]["card_id"]
+	)
+	assert_false(bought["ok"])
+	assert_eq(int(state["random"]["step"]), 0)
+
+
 func _turf9_state(human_vp: int, ai_vp: int) -> Dictionary:
 	var state: Dictionary = TestStates.committed_state("ai_turf9_seed")
 	state["turf_level"] = 9

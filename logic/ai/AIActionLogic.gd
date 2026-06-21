@@ -152,19 +152,21 @@ static func _destructive_payloads(
 	card_id: String,
 	destroy_mode: String
 ) -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
 	var destroy: Dictionary = _payload(
 		attacker["id"], target_id, card_id, destroy_mode, [], ""
 	)
 	if CombatEngine.validate_attack(state, destroy)["ok"]:
+		results.append(destroy)
 		var preview: Dictionary = CombatEngine.get_combat_preview(state, destroy)
 		if preview["ok"] and not preview["would_be_blocked"]:
-			return [destroy]
+			return results
 	var steal: Dictionary = _payload(
 		attacker["id"], target_id, card_id, AttackModes.STEAL_NAL, [], ""
 	)
 	if CombatEngine.validate_attack(state, steal)["ok"]:
-		return [steal]
-	return []
+		results.append(steal)
+	return results
 
 
 static func _saboteur_payloads(

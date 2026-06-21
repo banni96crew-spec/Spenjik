@@ -23,12 +23,19 @@ static func run_purchase_loop(
 			var choice: Dictionary = choose_purchase_candidate(working, candidates)
 			if not choice["ok"]:
 				break
-			working = _with_random(working, choice["random"])
+			var trial: Dictionary = _with_random(working, choice["random"])
 			var bought: Dictionary = MarketLogic.buy_card(
-				working, player_id, choice["candidate"]["card_id"]
+				trial, player_id, choice["candidate"]["card_id"]
 			)
 			if not bought["ok"]:
-				break
+				return {
+					"ok": false,
+					"error": bought["error"],
+					"state": working,
+					"purchases": purchases,
+					"fallback_used": fallback_used,
+					"log_entries": log_entries,
+				}
 			working = bought["state"]
 			purchases.append(_purchase_record(choice["candidate"]))
 			log_entries.append_array(bought["log_entries"])

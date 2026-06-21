@@ -95,9 +95,14 @@ func test_bruiser_prefers_destroy_then_falls_back_to_steal() -> void:
 		"unblocked destroy_stash preferred"
 	)
 	assert_true(
+		_target_has(built["blocked_options"], GameIds.PLAYER_AI_3,
+			GameIds.CARD_BRUISER, AttackModes.DESTROY_STASH),
+		"cartel-blocked destroy stays in blocked_options"
+	)
+	assert_true(
 		_target_has(built["options"], GameIds.PLAYER_AI_3,
 			GameIds.CARD_BRUISER, AttackModes.STEAL_NAL),
-		"cartel-blocked destroy falls back to steal_nal"
+		"steal_nal remains the unblocked fallback"
 	)
 
 

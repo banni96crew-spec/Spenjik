@@ -14,7 +14,7 @@ Before starting work:
 
 **The Turf** — локальная пошаговая карточная мини-игра о борьбе за влияние, управлении ресурсами и тактических атаках. Матч рассчитан ровно на 15 раундов и включает человека и трёх локальных AI-соперников.
 
-M0–M11 завершены. Следующий milestone: M12 — Turf Levels. Проект сейчас logic-first / test-driven / headless: Godot-проект, GUT, logic modules, Resources и tests существуют; playable UI и main scene — до M16, `GameStateManager` — до M14.
+M0–M13 завершены. Следующий milestone: M14 — GameStateManager API. Проект сейчас logic-first / test-driven / headless: Godot-проект, GUT, logic modules, Resources и tests существуют; playable UI и main scene — до M16, `GameStateManager` — до M14. Последний full GUT suite: 307/307 pass.
 
 Зафиксированный стек:
 

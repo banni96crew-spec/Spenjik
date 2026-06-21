@@ -42,7 +42,9 @@ static func end_action_for_player(
 	_append_player_event(
 		candidate, LogEventTypes.ACTION_ENDED_FOR_PLAYER, player_id
 	)
-	return _validated_action(state, candidate, log_start)
+	if PhaseStateHelper.all_players_flag(candidate, StateKeys.ACTION_DONE):
+		candidate["active_action_player_id"] = ""
+	return _validated(state, candidate, log_start)
 
 
 static func _append_player_event(
@@ -68,27 +70,6 @@ static func _validated(
 	log_start: int
 ) -> Dictionary:
 	var validation: Dictionary = GameStateValidator.validate_game_state(candidate)
-	if not validation["ok"]:
-		return _failure(original, validation["error"])
-	return _success(candidate, log_start)
-
-
-## Validates the post-turn-advance equivalent so ending the last player's
-## action (all done, active still set) is accepted without advancing the turn.
-static func _validated_action(
-	original: Dictionary,
-	candidate: Dictionary,
-	log_start: int
-) -> Dictionary:
-	var check: Dictionary = candidate
-	var all_done: bool = true
-	for player: Dictionary in candidate["players"]:
-		if not player["action_done"]:
-			all_done = false
-	if all_done:
-		check = candidate.duplicate(true)
-		check["active_action_player_id"] = ""
-	var validation: Dictionary = GameStateValidator.validate_game_state(check)
 	if not validation["ok"]:
 		return _failure(original, validation["error"])
 	return _success(candidate, log_start)

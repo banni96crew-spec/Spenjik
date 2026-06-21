@@ -4,11 +4,11 @@
 
 ## Статус
 
-**Current status:** M0–M11 completed. **Next milestone:** M12 — Turf Levels.
+**Current status:** M0–M13 completed. **Next milestone:** M14 — GameStateManager API.
 
 Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают, playable UI через Godot Run пока нет.
 
-**Последняя проверка:** full GUT suite 226/226 tests, 3061 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
+**Последняя проверка:** full GUT suite 307/307 tests, 4750 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
 
 **Ожидаемо отсутствует до своих milestone:**
 
@@ -45,7 +45,7 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 ```text
 project.godot                  Godot 4.6.2 project (GUT enabled)
 addons/gut/                    GUT 9.6.0
-logic/                         gameplay owner modules (M0–M11)
+logic/                         gameplay owner modules (M0–M13)
 data/ids/                      stable IDs and validation errors
 data/resources/                .tres Resources and schemas
 tests/                         unit, integration, replay, static, smoke
@@ -91,8 +91,8 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 ## Порядок разработки
 
 ```text
-M0–M11 (done) -> M12 Turf Levels -> M13 AI -> M14 GameStateManager
--> M15 integration/replay -> M16 UI -> M17 polish
+M0–M13 (done) -> M14 GameStateManager -> M15 integration/replay
+-> M16 UI -> M17 polish
 ```
 
 Не переходить к следующему milestone, если обязательный gate предыдущего не пройден.

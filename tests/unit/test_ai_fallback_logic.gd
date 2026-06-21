@@ -98,6 +98,35 @@ func test_attack_best_target_no_blocked_option_is_no_op() -> void:
 	assert_eq(result["fallback_used"], "")
 
 
+func test_attack_best_target_runs_after_successful_unblocked_attack() -> void:
+	var seed_value: String = _seed_for_roll(0.8, true)
+	var state: Dictionary = _action_state_active_ai1(seed_value)
+	_all_opponents_get_cops(state)
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["hand"] = [
+		GameIds.CARD_THUG, GameIds.CARD_INSIDER, GameIds.CARD_THUG,
+	]
+	TestPlayers.find(state, GameIds.PLAYER_AI_1)["is_strong_ai"] = true
+	state["ai_bosses"] = [
+		GameStateFactory.create_ai_boss_state(
+			AIProfileIds.RACKETEER, true, GameIds.PLAYER_AI_1
+		),
+		GameStateFactory.create_ai_boss_state(
+			AIProfileIds.BUILDER, false, GameIds.PLAYER_AI_2
+		),
+		GameStateFactory.create_ai_boss_state(
+			AIProfileIds.MERCHANT, false, GameIds.PLAYER_AI_3
+		),
+	]
+	var result: Dictionary = AIBotController.run_action_for_ai(
+		state, GameIds.PLAYER_AI_1
+	)
+	assert_true(result["ok"], str(result))
+	assert_eq(result["attacks"].size(), 2)
+	assert_false(result["attacks"][0]["blocked"])
+	assert_true(result["attacks"][1]["blocked"])
+	assert_eq(result["fallback_used"], "attack_best_target")
+
+
 func test_discard_action_cards_discards_unusable_war_cards() -> void:
 	var state: Dictionary = _action_state_active_ai1("fallback_discard")
 	_all_opponents_get_cops(state)
@@ -111,6 +140,17 @@ func test_discard_action_cards_discards_unusable_war_cards() -> void:
 	assert_false(
 		TestPlayers.find(result["state"], GameIds.PLAYER_AI_1)["hand"].has(GameIds.CARD_THUG)
 	)
+
+
+func _seed_for_roll(threshold: float, below: bool) -> String:
+	for index: int in 1000:
+		var candidate: String = "fb_roll_%s_%d" % ["lo" if below else "hi", index]
+		var value: float = SeededRandom.seeded_random(candidate, 0)
+		if below and value <= threshold:
+			return candidate
+		if not below and value > threshold:
+			return candidate
+	return "fallback_after_success"
 
 
 func _discard_profile() -> AIProfileDefinition:

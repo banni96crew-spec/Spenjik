@@ -98,3 +98,44 @@ func test_end_action_already_done_is_safe_failure() -> void:
 	)
 	assert_false(result["ok"])
 	assert_eq(result["error"], ValidationErrors.PLAYER_ALREADY_ACTION_DONE)
+
+
+func _last_active_action_state(seed_value: String) -> Dictionary:
+	var state: Dictionary = TestGameStateFactory.action_state(seed_value, 1)
+	for player_id: String in [GameIds.PLAYER_HUMAN, GameIds.PLAYER_AI_1, GameIds.PLAYER_AI_2]:
+		TestPlayers.find(state, player_id)["action_done"] = true
+	state["active_action_player_id"] = GameIds.PLAYER_AI_3
+	return state
+
+
+func test_last_active_player_end_action_returns_valid_state() -> void:
+	var state: Dictionary = _last_active_action_state("phase_last_active")
+	var result: Dictionary = PlayerPhaseEndLogic.end_action_for_player(
+		state, GameIds.PLAYER_AI_3
+	)
+	assert_true(result["ok"], str(result))
+	assert_eq(result["state"]["active_action_player_id"], "")
+	assert_true(
+		GameStateValidator.validate_game_state(result["state"])["ok"],
+		"last end_action state must validate"
+	)
+
+
+func test_last_action_end_allows_advance_phase() -> void:
+	var state: Dictionary = _last_active_action_state("phase_last_advance")
+	var result: Dictionary = PlayerPhaseEndLogic.end_action_for_player(
+		state, GameIds.PLAYER_AI_3
+	)
+	assert_true(result["ok"])
+	var advanced: Dictionary = GamePhaseController.advance_phase(result["state"])
+	assert_true(advanced["ok"], str(advanced))
+	assert_eq(advanced["state"]["current_phase"], PhaseIds.INCOME)
+
+
+func test_non_last_action_end_keeps_active_player() -> void:
+	var state: Dictionary = _action_state_active(GameIds.PLAYER_AI_1, "phase_non_last")
+	var result: Dictionary = PlayerPhaseEndLogic.end_action_for_player(
+		state, GameIds.PLAYER_AI_1
+	)
+	assert_true(result["ok"])
+	assert_eq(result["state"]["active_action_player_id"], GameIds.PLAYER_AI_1)

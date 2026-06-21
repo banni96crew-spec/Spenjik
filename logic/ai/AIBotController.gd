@@ -117,12 +117,18 @@ static func run_action_for_ai(state: Dictionary, player_id: String) -> Dictionar
 			working = loop["state"]
 			attacks = loop["attacks"]
 			log_entries = loop["log_entries"]
-			if attacks.is_empty():
+			var remaining: Dictionary = AIActionLogic.build_attack_options(
+				working, player_id, profile
+			)
+			var should_fallback: bool = remaining["options"].is_empty()
+			if should_fallback and (
+				attacks.is_empty() or profile.fallback == "attack_best_target"
+			):
 				var fb: Dictionary = AIFallbackLogic.apply_action_fallback(
 					working, player_id, profile, {}
 				)
 				working = fb["state"]
-				attacks = fb["attacks"]
+				attacks.append_array(fb["attacks"])
 				fallback_used = fb["fallback_used"]
 				log_entries.append_array(fb["log_entries"])
 	var ended: Dictionary = GamePhaseController.end_action_for_player(working, player_id)
