@@ -16,6 +16,7 @@ func get_view() -> Dictionary:
 	return GameViewBuilder.build_view(state)
 func reset_game() -> Dictionary:
 	state = {}
+	state_changed.emit({})
 	return {"ok": true, "error": ValidationErrors.OK, "state": {}}
 func start_new_game(config: Dictionary) -> Dictionary:
 	var result: Dictionary = GameSetupCoordinator.start(config)
@@ -46,7 +47,12 @@ func end_action_for_player(player_id: String) -> Dictionary:
 		result = _combine_with_advance(result)
 	return _commit(result)
 func skip_action_for_player(player_id: String) -> Dictionary:
-	return _commit(PlayerPhaseEndLogic.skip_action_for_player(_working(), player_id))
+	var result: Dictionary = PlayerPhaseEndLogic.skip_action_for_player(
+		_working(), player_id
+	)
+	if result["ok"] and not result["state"]["active_action_player_id"].is_empty():
+		result = _combine_with_advance(result)
+	return _commit(result)
 func get_current_phase() -> String:
 	return str(state.get("current_phase", ""))
 func get_round() -> int:

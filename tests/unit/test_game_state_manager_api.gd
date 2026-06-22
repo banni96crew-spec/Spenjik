@@ -98,9 +98,13 @@ func test_snapshot_and_signal_payloads_are_isolated() -> void:
 
 func test_reset_game_clears_state_without_exposing_live_reference() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config("reset_seed"))["ok"])
+	watch_signals(GameStateManager)
 	var result: Dictionary = GameStateManager.reset_game()
 	assert_true(result["ok"])
 	assert_false(GameStateManager.has_active_game())
+	assert_signal_emitted(GameStateManager, "state_changed")
+	var payloads: Array = get_signal_parameters(GameStateManager, "state_changed")
+	assert_eq(payloads[0], {})
 	result["state"]["unexpected"] = true
 	assert_eq(GameStateManager.get_state_snapshot(), {})
 

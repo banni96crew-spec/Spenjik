@@ -14,7 +14,7 @@ Before starting work:
 
 **The Turf** — локальная пошаговая карточная мини-игра о борьбе за влияние, управлении ресурсами и тактических атаках. Матч рассчитан ровно на 15 раундов и включает человека и трёх локальных AI-соперников.
 
-M0–M13 завершены. Следующий milestone: M14 — GameStateManager API. Проект сейчас logic-first / test-driven / headless: Godot-проект, GUT, logic modules, Resources и tests существуют; playable UI и main scene — до M16, `GameStateManager` — до M14. Последний full GUT suite: 307/307 pass.
+M0–M14 завершены. Следующий milestone: M15 — Integration and Replay. Проект сейчас logic-first / test-driven / headless: Godot-проект, GUT, logic modules, Resources и tests существуют; playable UI и main scene — до M16. `GameStateManager.gd` существует и зарегистрирован как Autoload. Последний full GUT suite: 329/329 pass.
 
 Зафиксированный стек:
 
@@ -47,7 +47,7 @@ Web-стек, backend и C# не входят в проект: React, TypeScript
 Godot-проект и gameplay code:
 
 - `project.godot`, `addons/gut/`, `logic/`, `data/`, `tests/` — присутствуют;
-- `autoload/` — placeholder до M14;
+- `autoload/` — содержит зарегистрированный `GameStateManager.gd` Autoload;
 - `scenes/` — до M16 (UI/playable build);
 - CI-конфигурация — не обнаружена.
 

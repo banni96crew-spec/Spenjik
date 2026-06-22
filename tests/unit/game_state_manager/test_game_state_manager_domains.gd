@@ -101,34 +101,37 @@ func test_end_action_advances_turn_only_when_next_player_exists() -> void:
 	assert_eq(GameStateManager.get_state_snapshot()["active_action_player_id"], "")
 
 
-func test_skip_action_ends_active_player_without_advancing_turn() -> void:
+func test_skip_action_ends_active_player_and_advances_turn() -> void:
 	var state: Dictionary = TestGameStateFactory.action_state("skip_facade")
 	GameStateManager.state = state
+	watch_signals(GameStateManager)
 	var result: Dictionary = GameStateManager.skip_action_for_player(
 		GameIds.PLAYER_HUMAN
 	)
 	assert_true(result["ok"], str(result))
+	var snapshot: Dictionary = GameStateManager.get_state_snapshot()
 	var human: Dictionary = TestPlayers.find(
-		GameStateManager.get_state_snapshot(), GameIds.PLAYER_HUMAN
+		snapshot, GameIds.PLAYER_HUMAN
 	)
 	assert_true(human["action_done"])
 	assert_false(human["skip_next_action"])
-	assert_eq(
-		GameStateManager.get_state_snapshot()["active_action_player_id"],
-		GameIds.PLAYER_HUMAN
-	)
+	assert_eq(snapshot["active_action_player_id"], GameIds.PLAYER_AI_1)
+	assert_true(GameStateValidator.validate_game_state(snapshot)["ok"])
+	assert_signal_emitted(GameStateManager, "state_changed")
 
 
 func test_skip_action_invalid_or_non_active_player_is_read_only() -> void:
 	var state: Dictionary = TestGameStateFactory.action_state("skip_invalid")
 	GameStateManager.state = state
 	var before: Dictionary = GameStateManager.get_state_snapshot()
+	watch_signals(GameStateManager)
 	var non_active: Dictionary = GameStateManager.skip_action_for_player(
 		GameIds.PLAYER_AI_1
 	)
 	assert_false(non_active["ok"])
 	assert_eq(non_active["error"], ValidationErrors.NOT_ACTIVE_PLAYER)
 	assert_eq(GameStateManager.get_state_snapshot(), before)
+	assert_signal_not_emitted(GameStateManager, "state_changed")
 	GameStateManager.state = TestGameStateFactory.market_state("skip_phase")
 	before = GameStateManager.get_state_snapshot()
 	var wrong_phase: Dictionary = GameStateManager.skip_action_for_player(
@@ -137,3 +140,26 @@ func test_skip_action_invalid_or_non_active_player_is_read_only() -> void:
 	assert_false(wrong_phase["ok"])
 	assert_eq(wrong_phase["error"], ValidationErrors.INVALID_PHASE)
 	assert_eq(GameStateManager.get_state_snapshot(), before)
+	assert_signal_not_emitted(GameStateManager, "state_changed")
+
+
+func test_skip_then_all_ai_actions_completes_action_phase_flow() -> void:
+	GameStateManager.state = TestGameStateFactory.action_state("skip_ai_flow")
+	var skipped: Dictionary = GameStateManager.skip_action_for_player(
+		GameIds.PLAYER_HUMAN
+	)
+	assert_true(skipped["ok"], str(skipped))
+	assert_eq(
+		GameStateManager.get_state_snapshot()["active_action_player_id"],
+		GameIds.PLAYER_AI_1
+	)
+	var ai_result: Dictionary = GameStateManager.run_all_ai_actions()
+	assert_true(ai_result["ok"], str(ai_result))
+	var completed: Dictionary = GameStateManager.get_state_snapshot()
+	for player: Dictionary in completed["players"]:
+		assert_true(player["action_done"], str(player))
+	assert_eq(completed["active_action_player_id"], "")
+	assert_true(GameStateValidator.validate_game_state(completed)["ok"])
+	var advanced: Dictionary = GameStateManager.advance_phase()
+	assert_true(advanced["ok"], str(advanced))
+	assert_eq(GameStateManager.get_current_phase(), PhaseIds.INCOME)

@@ -4,16 +4,16 @@
 
 ## Статус
 
-**Current status:** M0–M13 completed. **Next milestone:** M14 — GameStateManager API.
+**Current status:** M0–M14 completed. **Next milestone:** M15 — Integration and Replay.
 
 Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают, playable UI через Godot Run пока нет.
 
-**Последняя проверка:** full GUT suite 307/307 tests, 4750 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
+**Последняя проверка:** full GUT suite 329/329 tests, 5131 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
 
-**Ожидаемо отсутствует до своих milestone:**
+**Текущие milestone-границы:**
 
 - main scene и playable build — до M16 (UI/UX);
-- `GameStateManager.gd` — до M14;
+- `GameStateManager.gd` существует и зарегистрирован как Autoload;
 - `test_smoke_mvp.gd` как обязательный gate — не позднее M15.
 
 Source of truth: [`docs/prd/`](docs/prd/) и фактический код/tests. README — статусный обзор, не PRD.
@@ -45,11 +45,11 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 ```text
 project.godot                  Godot 4.6.2 project (GUT enabled)
 addons/gut/                    GUT 9.6.0
-logic/                         gameplay owner modules (M0–M13)
+logic/                         gameplay owner modules (M0–M14)
 data/ids/                      stable IDs and validation errors
 data/resources/                .tres Resources and schemas
 tests/                         unit, integration, replay, static, smoke
-autoload/                      placeholder until M14 GameStateManager
+autoload/                      registered GameStateManager Autoload
 docs/prd/                      modular product specification
 ROADMAP/                       milestone context
 .cursor/                       agents, rules, skills
@@ -91,7 +91,7 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 ## Порядок разработки
 
 ```text
-M0–M13 (done) -> M14 GameStateManager -> M15 integration/replay
+M0–M14 (done) -> M15 Integration and Replay
 -> M16 UI -> M17 polish
 ```
 
