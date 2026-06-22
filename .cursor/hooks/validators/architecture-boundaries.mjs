@@ -318,7 +318,10 @@ export async function architectureBoundariesValidator(context) {
     context.filePath,
   );
   const isLogic = isUnder(relativePath, "logic/");
-  const isUi = isUnder(relativePath, "scenes/ui/");
+  const isUi =
+    isUnder(relativePath, "scenes/ui/") ||
+    isUnder(relativePath, "scenes/game/") ||
+    isUnder(relativePath, "scenes/main/");
   const isResourceSchema =
     isUnder(relativePath, "data/resources/") ||
     isUnder(relativePath, "resources/");

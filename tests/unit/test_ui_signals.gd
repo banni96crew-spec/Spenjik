@@ -27,6 +27,32 @@ func test_setup_screen_starts_game_through_facade() -> void:
 	assert_eq(GameStateManager.get_current_phase(), PhaseIds.INCOME)
 
 
+func test_setup_input_change_invalidates_generated_contract_offer() -> void:
+	var screen: SetupScreen = _add_scene(
+		"res://scenes/ui/screens/SetupScreen.tscn"
+	)
+	if screen == null:
+		return
+	screen.seed_input.text = "ui_stale_offer"
+	screen.selected_turf_level = TurfLevelIds.BASE
+	screen.selected_role_id = RoleIds.MERCHANT
+	screen.call("_on_generate_offers")
+	assert_gt(screen.contract_options.item_count, 1)
+	screen.contract_options.select(1)
+	screen.call("_on_contract_selected", 1)
+	assert_false(screen.selected_contract_id.is_empty())
+	assert_false(screen.start_button.disabled)
+	screen.seed_input.text = "ui_stale_offer_changed"
+	screen.seed_input.text_changed.emit(screen.seed_input.text)
+	assert_eq(screen.selected_contract_id, "")
+	assert_eq(screen.contract_options.item_count, 1)
+	assert_eq(
+		screen.contract_options.get_item_text(0),
+		"Generate contract offers"
+	)
+	assert_true(screen.start_button.disabled)
+
+
 func test_game_root_switches_and_displays_failed_action() -> void:
 	var root: GameRoot = _add_scene("res://scenes/game/GameRoot.tscn")
 	if root == null:

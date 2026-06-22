@@ -22,11 +22,17 @@ func _ready() -> void:
 	turf_options.item_selected.connect(_on_turf_selected)
 	role_options.item_selected.connect(_on_role_selected)
 	contract_options.item_selected.connect(_on_contract_selected)
-	seed_input.text_changed.connect(func(_text: String) -> void: _update_buttons())
+	seed_input.text_changed.connect(
+		func(_text: String) -> void: _invalidate_contract_offers()
+	)
 	_load_setup_options()
 
 
 func reset() -> void:
+	_invalidate_contract_offers()
+
+
+func _invalidate_contract_offers() -> void:
 	selected_contract_id = ""
 	contract_options.clear()
 	contract_options.add_item("Generate contract offers")
@@ -110,16 +116,14 @@ func _on_turf_selected(index: int) -> void:
 	selected_turf_level = (
 		int(turf_options.get_item_metadata(index)) if index > 0 else -1
 	)
-	selected_contract_id = ""
-	_update_buttons()
+	_invalidate_contract_offers()
 
 
 func _on_role_selected(index: int) -> void:
 	selected_role_id = (
 		str(role_options.get_item_metadata(index)) if index > 0 else ""
 	)
-	selected_contract_id = ""
-	_update_buttons()
+	_invalidate_contract_offers()
 
 
 func _on_contract_selected(index: int) -> void:

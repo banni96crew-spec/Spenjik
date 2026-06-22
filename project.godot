@@ -14,6 +14,10 @@ config/name="The Turf"
 run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.6")
 
+[autoload]
+
+GameStateManager="*res://autoload/GameStateManager.gd"
+
 [display]
 
 window/size/viewport_width=1920
@@ -21,10 +25,6 @@ window/size/viewport_height=1080
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-
-[autoload]
-
-GameStateManager="*res://autoload/GameStateManager.gd"
 
 [editor_plugins]
 
