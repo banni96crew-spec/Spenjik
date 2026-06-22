@@ -105,6 +105,51 @@ func test_reset_game_clears_state_without_exposing_live_reference() -> void:
 	assert_eq(GameStateManager.get_state_snapshot(), {})
 
 
+func test_every_public_mutator_is_invoked_without_crashing() -> void:
+	GameStateManager.reset_game()
+	var calls: Array[Callable] = [
+		func() -> Dictionary: return GameStateManager.start_new_game({}),
+		func() -> Dictionary: return GameStateManager.advance_phase(),
+		func() -> Dictionary:
+			return GameStateManager.end_market_for_player(GameIds.PLAYER_HUMAN),
+		func() -> Dictionary:
+			return GameStateManager.end_action_for_player(GameIds.PLAYER_HUMAN),
+		func() -> Dictionary:
+			return GameStateManager.skip_action_for_player(GameIds.PLAYER_HUMAN),
+		func() -> Dictionary:
+			return GameStateManager.buy_card(
+				GameIds.PLAYER_HUMAN, GameIds.CARD_STASH
+			),
+		func() -> Dictionary:
+			return GameStateManager.rebuild_district_control(
+				GameIds.PLAYER_HUMAN
+			),
+		func() -> Dictionary: return GameStateManager.execute_attack({}),
+		func() -> Dictionary:
+			return GameStateManager.discard_war_card(
+				GameIds.PLAYER_HUMAN, GameIds.CARD_THUG
+			),
+		func() -> Dictionary:
+			return GameStateManager.claim_contract(
+				GameIds.PLAYER_HUMAN, ContractIds.SILENT_EXPANSION
+			),
+		func() -> Dictionary: return GameStateManager.select_street_deal({}),
+		func() -> Dictionary: return GameStateManager.select_contact({}),
+		func() -> Dictionary: return GameStateManager.activate_contact({}),
+		func() -> Dictionary:
+			return GameStateManager.run_market_for_ai(GameIds.PLAYER_AI_1),
+		func() -> Dictionary:
+			return GameStateManager.run_action_for_ai(GameIds.PLAYER_AI_1),
+		func() -> Dictionary: return GameStateManager.run_all_ai_market(),
+		func() -> Dictionary: return GameStateManager.run_all_ai_actions(),
+	]
+	for invoke: Callable in calls:
+		var result: Dictionary = invoke.call()
+		assert_false(result["ok"], str(result))
+	var reset: Dictionary = GameStateManager.reset_game()
+	assert_true(reset["ok"])
+
+
 func _valid_config(seed_value: String) -> Dictionary:
 	var preview: Dictionary = GameStateManager.generate_contract_offers({
 		"game_seed": seed_value,

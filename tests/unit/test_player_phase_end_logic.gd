@@ -139,3 +139,33 @@ func test_non_last_action_end_keeps_active_player() -> void:
 	)
 	assert_true(result["ok"])
 	assert_eq(result["state"]["active_action_player_id"], GameIds.PLAYER_AI_1)
+
+
+func test_skip_action_alias_ends_active_player_without_advancing() -> void:
+	var state: Dictionary = TestGameStateFactory.action_state("phase_skip_alias")
+	var result: Dictionary = PlayerPhaseEndLogic.skip_action_for_player(
+		state, GameIds.PLAYER_HUMAN
+	)
+	assert_true(result["ok"], str(result))
+	assert_true(TestPlayers.find(result["state"], GameIds.PLAYER_HUMAN)["action_done"])
+	assert_eq(
+		result["state"]["active_action_player_id"],
+		GameIds.PLAYER_HUMAN
+	)
+
+
+func test_skip_action_alias_rejects_wrong_phase_and_non_active_player() -> void:
+	var market: Dictionary = TestGameStateFactory.market_state("skip_wrong_phase")
+	var before: Dictionary = market.duplicate(true)
+	var result: Dictionary = PlayerPhaseEndLogic.skip_action_for_player(
+		market, GameIds.PLAYER_HUMAN
+	)
+	assert_eq(result["error"], ValidationErrors.INVALID_PHASE)
+	assert_eq(market, before)
+	var action: Dictionary = TestGameStateFactory.action_state("skip_non_active")
+	before = action.duplicate(true)
+	result = PlayerPhaseEndLogic.skip_action_for_player(
+		action, GameIds.PLAYER_AI_1
+	)
+	assert_eq(result["error"], ValidationErrors.NOT_ACTIVE_PLAYER)
+	assert_eq(action, before)

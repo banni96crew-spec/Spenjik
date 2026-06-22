@@ -47,7 +47,7 @@ static func end_action_for_player(
 	return _validated(state, candidate, log_start)
 
 
-## Consumes an already-marked skip through the phase owner's advancement API.
+## Ends the active player's Action through the canonical phase-safe owner path.
 static func skip_action_for_player(
 	state: Dictionary,
 	player_id: String
@@ -56,12 +56,7 @@ static func skip_action_for_player(
 		return _failure(state, ValidationErrors.INVALID_PHASE)
 	if state.get("active_action_player_id") != player_id:
 		return _failure(state, ValidationErrors.NOT_ACTIVE_PLAYER)
-	var player: Dictionary = _find_player(state, player_id)
-	if player.is_empty():
-		return _failure(state, ValidationErrors.INVALID_PLAYER_ID)
-	if not player["skip_next_action"]:
-		return _failure(state, ValidationErrors.REQUIREMENT_NOT_MET)
-	return GamePhaseController.advance_action_player(state)
+	return end_action_for_player(state, player_id)
 
 
 static func _append_player_event(
