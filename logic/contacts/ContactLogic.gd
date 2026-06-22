@@ -49,6 +49,26 @@ static func select_contact(
 	return ContactSelectionLogic.select_contact(state, payload)
 
 
+## Manual activation is API-compatible but no active contact supports it in MVP.
+static func activate_contact(
+	state: Dictionary,
+	payload: Dictionary
+) -> Dictionary:
+	var player_id: String = str(payload.get("player_id", ""))
+	var contact_id: String = str(payload.get("contact_id", ""))
+	if not GameIds.PLAYER_IDS.has(player_id):
+		return _activation_failure(
+			state, ValidationErrors.INVALID_PLAYER_ID, player_id, contact_id
+		)
+	if not ContactIds.ALL.has(contact_id):
+		return _activation_failure(
+			state, ValidationErrors.INVALID_CONTACT_ID, player_id, contact_id
+		)
+	return _activation_failure(
+		state, ValidationErrors.REQUIREMENT_NOT_MET, player_id, contact_id
+	)
+
+
 static func get_contact_price_modifiers(
 	state: Dictionary,
 	player: Dictionary,
@@ -89,3 +109,16 @@ static func on_attack_resolved(
 
 static func reset_round_contact_usage(player: Dictionary) -> Dictionary:
 	return ContactEffectResolver.reset_round_contact_usage(player)
+
+
+static func _activation_failure(
+	state: Dictionary,
+	error: String,
+	player_id: String,
+	contact_id: String
+) -> Dictionary:
+	return {
+		"ok": false, "error": error,
+		"player_id": player_id, "contact_id": contact_id,
+		"state": state, "log_entries": [],
+	}

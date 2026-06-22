@@ -1,6 +1,6 @@
 ﻿M13 completed and full suite is green.
-GameStateManager is now allowed.
-Do not add UI/scenes.
+GameStateManager is now allowed only in M14.
+Do not create UI/scenes.
 Do not expand GamePhaseController.gd; it is near the 250-line limit.
 Update architecture static scan to allow autoload/GameStateManager.gd and add facade boundary checks.
 

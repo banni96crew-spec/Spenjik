@@ -13,6 +13,10 @@ config_version=5
 config/name="The Turf"
 config/features=PackedStringArray("4.6")
 
+[autoload]
+
+GameStateManager="*res://autoload/GameStateManager.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")

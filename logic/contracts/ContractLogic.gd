@@ -87,3 +87,11 @@ static func claim_contract(
 	contract_id: String
 ) -> Dictionary:
 	return ContractClaimLogic.claim(state, player_id, contract_id)
+
+
+static func validate_contract_claim(
+	state: Dictionary,
+	player_id: String,
+	contract_id: String
+) -> Dictionary:
+	return ContractClaimLogic.validate_claim(state, player_id, contract_id)

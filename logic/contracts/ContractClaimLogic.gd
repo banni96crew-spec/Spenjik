@@ -54,6 +54,14 @@ static func claim(
 	}
 
 
+static func validate_claim(
+	state: Dictionary,
+	player_id: String,
+	contract_id: String
+) -> Dictionary:
+	return _validate(state, player_id, contract_id)
+
+
 static func _validate(
 	state: Dictionary,
 	player_id: String,
