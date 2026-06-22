@@ -145,3 +145,52 @@ M15:
 - M17 production polish, analytics и final hardening.
 - Mobile-first layout или обязательный drag-and-drop.
 - React, TypeScript, Tailwind, Zustand, Docker, backend и routing.
+
+ВИЗУАЛЬНЫЙ ЭТАЛОН UI / CARD STYLE REFERENCES:
+
+Пользователь утвердил 4 визуальных эталона карт:
+
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+
+Эта папка является обязательным visual source of truth для CardView и карточного UI.
+
+До реализации UI агент обязан:
+
+1. Найти и изучить все 4 reference-карты в `CARD_STYLE_REFERENCE`.
+2. Определить соответствие:
+   - Engine card reference;
+   - Status card reference;
+   - War card reference;
+   - Defense card reference.
+3. Использовать их как style lock, а не как пример “для вдохновения”.
+4. Все карты в UI должны выглядеть как часть одной физической колоды с этими reference-картами.
+5. Если reference-файлы нужно использовать в Godot, копировать/импортировать их только в project-local путь, например:
+   `res://assets/ui/card_style_reference/`
+   Не хардкодить Windows absolute path в production `.gd` / `.tscn`.
+
+Важное решение по CardView:
+
+M16 UI должен использовать template-based CardView, а не показывать full-card PNG как готовую карту.
+
+То есть CardView собирает карту из данных:
+- type;
+- title;
+- price;
+- effect text;
+- card state;
+- type icon;
+- illustration/placeholder;
+
+но визуально обязан повторять утверждённые reference-карты:
+- композицию;
+- рамку;
+- палитру;
+- нижнюю title-панель;
+- расположение цены;
+- type icon;
+- грязную печатную текстуру;
+- pixel-art engraving / worn ink style.
+
+Full-card reference PNG не должен становиться единственным способом отображения карты в игре.
+
+Пока не пиши код, твоя задача - только ознакомиться с контекстом проекта и зафиксировать правила разработки.

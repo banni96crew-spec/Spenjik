@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/panels/ContractPanel.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/widgets/DisabledReasonLabel.tscn" id="2"]
+
+[node name="ContractPanel" type="PanelContainer"]
+script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+
+[node name="TitleLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+text = "CONTRACT"
+theme_override_font_sizes/font_size = 21
+
+[node name="DescriptionLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+autowrap_mode = 2
+
+[node name="ProgressLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+autowrap_mode = 2
+
+[node name="ReasonLabel" parent="Layout" instance=ExtResource("2")]
+unique_name_in_owner = true
+
+[node name="ClaimButton" type="Button" parent="Layout"]
+unique_name_in_owner = true
+text = "CLAIM REWARD"

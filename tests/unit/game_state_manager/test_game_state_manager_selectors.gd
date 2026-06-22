@@ -74,6 +74,53 @@ func test_selector_results_do_not_expose_nested_active_references() -> void:
 	)
 
 
+func test_ui_views_include_dictionary_only_presentation_data() -> void:
+	GameStateManager.state["market"]["always_available_card_ids"] = [
+		GameIds.CARD_THUG
+	]
+	GameStateManager.state["market"]["all_available_card_ids"] = [
+		GameIds.CARD_THUG
+	]
+	TestPlayers.find(
+		GameStateManager.state, GameIds.PLAYER_HUMAN
+	)["contracts"] = [
+		GameStateFactory.create_contract_runtime(
+			ContractIds.GRAY_CAPITAL, 10
+		)
+	]
+	var market: Dictionary = GameStateManager.get_market_view(
+		GameIds.PLAYER_HUMAN
+	)
+	assert_true(market["ok"], str(market))
+	assert_true(market["view"].has("cards"))
+	if not market["view"].has("cards"):
+		return
+	assert_eq(
+		market["view"]["cards"].size(),
+		market["view"]["market"]["all_available_card_ids"].size()
+	)
+	var card: Dictionary = market["view"]["cards"][0]
+	assert_true(card.has("id"))
+	assert_true(card.has("title"))
+	assert_true(card.has("type"))
+	assert_true(card.has("base_price"))
+	assert_true(card.has("effect_summary"))
+	var contract: Dictionary = GameStateManager.get_contract_state(
+		GameIds.PLAYER_HUMAN
+	)
+	assert_true(contract["ok"], str(contract))
+	assert_true(contract["view"].has("contract"))
+	if not contract["view"].has("contract"):
+		return
+	assert_true(contract["view"]["contract"].has("title"))
+	var view: Dictionary = GameStateManager.get_view()
+	assert_true(view["ok"], str(view))
+	assert_true(view["view"].has("card_definitions"))
+	if not view["view"].has("card_definitions"):
+		return
+	assert_true(view["view"]["card_definitions"].has(GameIds.CARD_THUG))
+
+
 func test_selectors_before_setup_fail_safely() -> void:
 	GameStateManager.reset_game()
 	var selectors: Array[Callable] = [

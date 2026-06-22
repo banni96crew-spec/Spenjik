@@ -13,12 +13,10 @@ func test_market_waits_then_enters_action_in_fixed_order() -> void:
 	assert_false(early["ok"])
 	assert_eq(early["error"], ValidationErrors.PHASE_NOT_READY)
 	assert_eq(GameStateManager.get_state_snapshot(), before)
-	assert_true(GameStateManager.end_market_for_player(
+	var completed: Dictionary = GameStateManager.end_market_for_player(
 		GameIds.PLAYER_HUMAN
-	)["ok"])
-	assert_true(GameStateManager.run_all_ai_market()["ok"])
-	var advanced: Dictionary = GameStateManager.advance_phase()
-	assert_true(advanced["ok"], str(advanced))
+	)
+	assert_true(completed["ok"], str(completed))
 	var state: Dictionary = GameStateManager.get_state_snapshot()
 	assert_eq(state["current_phase"], PhaseIds.ACTION)
 	assert_eq(state["action_order"], GameIds.PLAYER_IDS)

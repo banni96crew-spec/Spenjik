@@ -4,15 +4,15 @@
 
 ## Статус
 
-**Current status:** M0–M15 completed. **Next milestone:** M16 — UI/UX.
+**Current status:** M0–M16 completed. **Next milestone:** M17 — Polish and Hardening.
 
-Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают. Playable UI и main scene начинаются в M16.
+Проект содержит проверенный gameplay core и функциональный desktop UI на Godot `Control`/`Container`/`Theme`.
 
-**Последняя проверка:** full GUT suite 347/347 pass; canonical MVP smoke pass (Godot 4.6.2, GUT 9.6.0).
+**Последняя проверка:** full GUT suite 365/365 pass; canonical MVP smoke pass (Godot 4.6.2, GUT 9.6.0).
 
 **Текущие milestone-границы:**
 
-- main scene и playable build начинаются в M16 (UI/UX);
+- main scene и functional playable UI реализованы в M16;
 - `GameStateManager.gd` существует и зарегистрирован как Autoload;
 - canonical `test_smoke_mvp.gd` — pass.
 
@@ -45,11 +45,13 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 ```text
 project.godot                  Godot 4.6.2 project (GUT enabled)
 addons/gut/                    GUT 9.6.0
-logic/                         gameplay owner modules (M0–M15)
+logic/                         gameplay owner modules and presentation views
 data/ids/                      stable IDs and validation errors
 data/resources/                .tres Resources and schemas
 tests/                         unit, integration, replay, static, smoke
 autoload/                      registered GameStateManager Autoload
+scenes/                        Main, GameRoot, screens, panels, widgets
+themes/                        desktop UI Theme
 docs/prd/                      modular product specification
 ROADMAP/                       milestone context
 .cursor/                       agents, rules, skills
@@ -91,7 +93,7 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 ## Порядок разработки
 
 ```text
-M0–M15 (done) -> M16 UI/UX -> M17 polish
+M0–M16 (done) -> M17 polish
 ```
 
 Не переходить к следующему milestone, если обязательный gate предыдущего не пройден.

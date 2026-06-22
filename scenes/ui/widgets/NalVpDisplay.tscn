@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/widgets/NalVpDisplay.gd" id="1"]
+
+[node name="NalVpDisplay" type="HBoxContainer"]
+script = ExtResource("1")
+
+[node name="NalLabel" type="Label" parent="."]
+unique_name_in_owner = true
+text = "NAL 0"
+theme_override_font_sizes/font_size = 20
+
+[node name="Spacer" type="Control" parent="."]
+size_flags_horizontal = 3
+
+[node name="VpLabel" type="Label" parent="."]
+unique_name_in_owner = true
+text = "VP 0"
+theme_override_font_sizes/font_size = 20

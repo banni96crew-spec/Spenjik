@@ -52,13 +52,9 @@ static func _normal_round_commands() -> Array[Dictionary]:
 		_command("end_market_for_player", {
 			"player_id": GameIds.PLAYER_HUMAN,
 		}),
-		_command("run_all_ai_market"),
-		_command("advance_phase"),
 		_command("end_action_for_player", {
 			"player_id": GameIds.PLAYER_HUMAN,
 		}),
-		_command("run_all_ai_actions"),
-		_command("advance_phase"),
 	]
 
 

@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/panels/StreetDealPanel.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/widgets/DisabledReasonLabel.tscn" id="2"]
+
+[node name="StreetDealPanel" type="PanelContainer"]
+script = ExtResource("1")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+
+[node name="TitleLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+text = "STREET DEAL"
+theme_override_font_sizes/font_size = 26
+
+[node name="DescriptionLabel" type="Label" parent="Layout"]
+unique_name_in_owner = true
+autowrap_mode = 2
+
+[node name="OptionA" type="Button" parent="Layout"]
+unique_name_in_owner = true
+text = "OPTION A"
+alignment = 0
+
+[node name="OptionB" type="Button" parent="Layout"]
+unique_name_in_owner = true
+text = "OPTION B"
+alignment = 0
+
+[node name="ReasonLabel" parent="Layout" instance=ExtResource("2")]
+unique_name_in_owner = true

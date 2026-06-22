@@ -32,14 +32,26 @@ func get_available_roles() -> Dictionary:
 func get_available_turf_levels() -> Dictionary:
 	return GameViewBuilder.get_available_turf_levels()
 func generate_contract_offers(config: Dictionary) -> Dictionary:
-	return GameSetupCoordinator.preview_contract_offers(config).duplicate(true)
+	var result: Dictionary = (
+		GameSetupCoordinator.preview_contract_offers(config).duplicate(true)
+	)
+	result["contract_offers"] = (
+		PresentationViewBuilder.contracts_for_ids(
+			result.get("contract_offer_ids", [])
+		)
+	)
+	return result
 func get_contract_offers() -> Dictionary:
 	return GameViewBuilder.get_contract_offers(state)
 func advance_phase() -> Dictionary:
 	return _commit(GamePhaseController.advance_phase(_working()), get_current_phase())
 func end_market_for_player(player_id: String) -> Dictionary:
+	if player_id == GameIds.PLAYER_HUMAN:
+		return _commit(AIPhaseCoordinator.complete_human_market(_working()))
 	return _commit(GamePhaseController.end_market_for_player(_working(), player_id))
 func end_action_for_player(player_id: String) -> Dictionary:
+	if player_id == GameIds.PLAYER_HUMAN:
+		return _commit(AIPhaseCoordinator.complete_human_action(_working()))
 	var result: Dictionary = GamePhaseController.end_action_for_player(
 		_working(), player_id
 	)

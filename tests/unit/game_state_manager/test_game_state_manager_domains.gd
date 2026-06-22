@@ -78,25 +78,30 @@ func test_phase_transition_commits_and_emits_after_validation() -> void:
 	assert_signal_emitted(GameStateManager, "phase_changed")
 
 
-func test_end_action_advances_turn_only_when_next_player_exists() -> void:
+func test_human_end_action_completes_ai_turns_and_advances_phase() -> void:
 	var state: Dictionary = TestGameStateFactory.action_state("action_advance")
 	GameStateManager.state = state
 	var ended: Dictionary = GameStateManager.end_action_for_player(
 		GameIds.PLAYER_HUMAN
 	)
 	assert_true(ended["ok"], str(ended))
-	assert_eq(
-		GameStateManager.get_state_snapshot()["active_action_player_id"],
-		GameIds.PLAYER_AI_1
-	)
-	state = TestGameStateFactory.action_state("action_last")
+	var snapshot: Dictionary = GameStateManager.get_state_snapshot()
+	assert_eq(snapshot["active_action_player_id"], "")
+	assert_eq(snapshot["current_phase"], PhaseIds.INCOME)
+	assert_eq(ended.get("results", []).size(), 3)
+
+
+func test_ai_end_action_advances_turn_only_when_next_player_exists() -> void:
+	var state: Dictionary = TestGameStateFactory.action_state("action_last")
 	for player_id: String in [
 		GameIds.PLAYER_HUMAN, GameIds.PLAYER_AI_1, GameIds.PLAYER_AI_2,
 	]:
 		TestPlayers.find(state, player_id)["action_done"] = true
 	state["active_action_player_id"] = GameIds.PLAYER_AI_3
 	GameStateManager.state = state
-	ended = GameStateManager.end_action_for_player(GameIds.PLAYER_AI_3)
+	var ended: Dictionary = GameStateManager.end_action_for_player(
+		GameIds.PLAYER_AI_3
+	)
 	assert_true(ended["ok"], str(ended))
 	assert_eq(GameStateManager.get_state_snapshot()["active_action_player_id"], "")
 

@@ -1,0 +1,55 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/SetupScreen.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/ui/widgets/DisabledReasonLabel.tscn" id="2"]
+
+[node name="SetupScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Center" type="CenterContainer" parent="."]
+
+[node name="Layout" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(720, 0)
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Layout"]
+text = "THE TURF"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 46
+
+[node name="Subtitle" type="Label" parent="Center/Layout"]
+text = "FIFTEEN ROUNDS. FOUR CREWS. ONE DISTRICT."
+horizontal_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="Center/Layout"]
+text = "GAME SEED"
+
+[node name="SeedInput" type="LineEdit" parent="Center/Layout"]
+unique_name_in_owner = true
+placeholder_text = "Enter deterministic seed"
+
+[node name="TurfOptions" type="OptionButton" parent="Center/Layout"]
+unique_name_in_owner = true
+
+[node name="RoleOptions" type="OptionButton" parent="Center/Layout"]
+unique_name_in_owner = true
+
+[node name="OffersButton" type="Button" parent="Center/Layout"]
+unique_name_in_owner = true
+text = "GENERATE CONTRACT OFFERS"
+
+[node name="ContractOptions" type="OptionButton" parent="Center/Layout"]
+unique_name_in_owner = true
+
+[node name="ReasonLabel" parent="Center/Layout" instance=ExtResource("2")]
+unique_name_in_owner = true
+
+[node name="StartButton" type="Button" parent="Center/Layout"]
+unique_name_in_owner = true
+text = "START MATCH"
+disabled = true

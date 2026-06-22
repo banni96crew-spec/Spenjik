@@ -1,0 +1,47 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/screens/GameOverScreen.gd" id="1"]
+
+[node name="GameOverScreen" type="PanelContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Center" type="CenterContainer" parent="."]
+
+[node name="Layout" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(680, 0)
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Center/Layout"]
+text = "GAME OVER"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 42
+
+[node name="WinnerLabel" type="Label" parent="Center/Layout"]
+unique_name_in_owner = true
+text = "WINNER"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="ScoresLabel" type="Label" parent="Center/Layout"]
+unique_name_in_owner = true
+horizontal_alignment = 1
+
+[node name="SummaryLabel" type="Label" parent="Center/Layout"]
+unique_name_in_owner = true
+horizontal_alignment = 1
+
+[node name="Actions" type="HBoxContainer" parent="Center/Layout"]
+alignment = 1
+
+[node name="NewGameButton" type="Button" parent="Center/Layout/Actions"]
+unique_name_in_owner = true
+text = "NEW GAME"
+
+[node name="MainMenuButton" type="Button" parent="Center/Layout/Actions"]
+unique_name_in_owner = true
+text = "MAIN MENU"

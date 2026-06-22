@@ -4,7 +4,15 @@ class_name GameViewBuilder
 static func build_view(state: Dictionary) -> Dictionary:
 	if state.is_empty():
 		return _failure()
-	return _success(state.duplicate(true))
+	var view: Dictionary = state.duplicate(true)
+	view["card_definitions"] = PresentationViewBuilder.cards_by_id()
+	view["selected_role"] = PresentationViewBuilder.role(
+		RoleCatalog.get_by_id(state["selected_role_id"])
+	)
+	view["selected_contract"] = PresentationViewBuilder.contract(
+		ContractCatalog.get_by_id(state["selected_contract_id"])
+	)
+	return _success(view)
 
 
 static func get_available_roles() -> Dictionary:
@@ -46,8 +54,12 @@ static func get_market_view(state: Dictionary, player_id: String) -> Dictionary:
 		return _failure()
 	if player.is_empty():
 		return _failure(ValidationErrors.INVALID_PLAYER_ID)
+	var market: Dictionary = state.get("market", {})
 	return _success({
-		"market": state["market"].duplicate(true),
+		"market": market.duplicate(true),
+		"cards": PresentationViewBuilder.cards_for_ids(
+			market.get("all_available_card_ids", [])
+		),
 		"player_id": player_id,
 		"nal": player["nal"],
 		"purchased_this_round": player["purchased_this_round"].duplicate(),
@@ -61,7 +73,16 @@ static func get_contract_state(state: Dictionary, player_id: String) -> Dictiona
 		return _failure()
 	if player.is_empty():
 		return _failure(ValidationErrors.INVALID_PLAYER_ID)
-	return _success({"contracts": player["contracts"].duplicate(true)})
+	var runtimes: Array = player["contracts"]
+	var contract_view: Dictionary = (
+		PresentationViewBuilder.contract_runtime(runtimes[0])
+		if not runtimes.is_empty()
+		else {}
+	)
+	return _success({
+		"contracts": runtimes.duplicate(true),
+		"contract": contract_view,
+	})
 
 
 static func get_street_deal_view(state: Dictionary, player_id: String) -> Dictionary:
@@ -72,6 +93,11 @@ static func get_street_deal_view(state: Dictionary, player_id: String) -> Dictio
 	return _success({
 		"player_id": player_id,
 		"street_deal": state["street_deals"].duplicate(true),
+		"definition": PresentationViewBuilder.street_deal(
+			StreetDealCatalog.get_by_id(
+				state["street_deals"]["current_deal_id"]
+			)
+		),
 	})
 
 
@@ -92,7 +118,12 @@ static func get_contact_offer(state: Dictionary, player_id: String) -> Dictionar
 	var offer: Dictionary = state["contacts"]["pending_offer"]
 	if not offer.is_empty() and offer["player_id"] != player_id:
 		return _failure(ValidationErrors.CONTACT_OFFER_UNAVAILABLE)
-	return _success({"pending_offer": offer.duplicate(true)})
+	return _success({
+		"pending_offer": offer.duplicate(true),
+		"contacts": PresentationViewBuilder.contacts_for_ids(
+			offer.get("contact_offer_ids", [])
+		),
+	})
 
 
 static func get_contact_state(state: Dictionary, player_id: String) -> Dictionary:
@@ -101,7 +132,11 @@ static func get_contact_state(state: Dictionary, player_id: String) -> Dictionar
 		return _failure()
 	if player.is_empty():
 		return _failure(ValidationErrors.INVALID_PLAYER_ID)
-	return _success(player["contacts"].duplicate(true))
+	var view: Dictionary = player["contacts"].duplicate(true)
+	view["owned_contacts"] = PresentationViewBuilder.contacts_for_ids(
+		player["contacts"]["unlocked"]
+	)
+	return _success(view)
 
 
 static func get_ai_state(state: Dictionary, player_id: String) -> Dictionary:

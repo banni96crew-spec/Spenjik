@@ -159,6 +159,11 @@ PRE-IMPLEMENTATION AUDIT:
 1. Проверь M15 gate и full test suite status.
 2. Найди фактический Godot project root и `project.godot`.
 3. Проинспектируй existing scenes, Theme, fonts, icons и assets.
+3A. Проинспектируй `C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE`:
+    - перечисли найденные 4 reference-файла;
+    - определи какой файл соответствует Engine/Status/War/Defense;
+    - зафиксируй visual rules для CardView;
+    - не начинай UI implementation, если reference folder недоступна или неполная.
 4. Проинспектируй actual GameStateManager API и `get_view()` shape.
 5. Сопоставь каждый UI action с public facade method/selector.
 6. Сопоставь каждый displayed field с safe view/selector.
@@ -523,9 +528,19 @@ WIDGETS:
 
 `CardView`:
 
-- render-ит card identity/display data, type, price/preview и state;
+- template-based widget, а не simple full-card PNG viewer;
+- render-ит card identity/display data, type, price/preview, title, effect text и card state;
+- визуально следует approved CARD_STYLE_REFERENCE templates;
+- выбирает visual variant по card type:
+  Engine / Status / War / Defense;
+- использует layout, palette, border, title panel, icon placement и worn texture из reference-карт;
+- допускает placeholder illustration, если production illustration asset отсутствует;
+- не парсит `effect_summary` как rules, только отображает его как текст;
 - emits UI selection/request signal;
-- не validates gameplay.
+- не validates gameplay;
+- не содержит gameplay formulas;
+- не вызывает owner modules;
+- не хардкодит конкретные gameplay card IDs вроде `laundry` как special-case.
 
 `DefenseBadges`:
 
@@ -548,6 +563,58 @@ WIDGETS:
 - pure presentation formatting;
 - no gameplay decisions;
 - no state mutation.
+
+CARD VISUAL STYLE LOCK:
+
+Все card widgets должны следовать утверждённым reference-картам из:
+
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+
+Общий стиль:
+
+- vertical dark tabletop card;
+- black worn matte card stock;
+- rounded corners;
+- thin distressed warm off-white border;
+- criminal underground board-game mood;
+- high-resolution pixel-art engraving / pixelated ink linework;
+- dirty off-white ink on black;
+- dense stippling, hatching, scratches, dust, worn print texture;
+- limited palette: black, dirty ivory/off-white, muted grime, tiny dark red accents only when appropriate;
+- no glossy modern UI;
+- no bright fantasy colors;
+- no anime;
+- no cyberpunk neon overload;
+- no clean vector/mobile game look;
+- no smooth 3D render.
+
+Composition baseline:
+
+- price in top-left;
+- custom currency glyph near price;
+- card type icon under/near price;
+- centered main art/illustration area;
+- lower title panel;
+- large distressed condensed title;
+- readable rules/effect text below title;
+- small type icon in lower-right or equivalent reference-consistent marker;
+- thin divider between illustration and title/effect area.
+
+Card type visual distinction:
+
+- Engine: gear marker, dirty machinery/economy feeling.
+- Status: status/crown-style marker only if approved by reference; do not reuse gear.
+- War: aggressive attack marker, sharp/threatening visual language.
+- Defense: shield/protection marker; do not reuse gear or attack marker.
+
+Important:
+
+- Gear icon is reserved for Engine cards.
+- Crown/status marker is reserved for Status cards if used by approved reference.
+- Attack marker is reserved for War cards.
+- Shield marker is reserved for Defense cards.
+- Do not invent new gameplay meaning through icons.
+- Visual symbols are presentation only.
 
 SIGNALS И REFRESH:
 
@@ -603,9 +670,18 @@ Required baseline:
 Используй anchors, size flags, Containers и ScrollContainer.
 На меньшем окне core controls должны оставаться reachable.
 
-Переиспользуй existing Theme/assets.
-Если их нет, создай нейтральный функциональный Godot Theme/layout,
-но не изобретай lore, new icons с gameplay meaning или art requirements.
+Переиспользуй existing Theme/assets и approved CARD_STYLE_REFERENCE.
+
+Если полноценные final card art assets отсутствуют, CardView всё равно должен использовать reference-based template style:
+- dark card background;
+- worn border;
+- title/effect zones;
+- type markers;
+- readable layout.
+
+Можно использовать neutral placeholder illustration внутри art-zone, но нельзя превращать CardView в clean default Godot panel.
+
+Не изобретай lore, new gameplay icons или new gameplay meaning.
 
 PROJECT SETTINGS:
 
@@ -637,6 +713,15 @@ Static tests:
 - каждый UI `.gd` меньше 250 строк;
 - logic не зависит от UI scenes;
 - web stack отсутствует.
+
+CardView/static visual boundary tests:
+
+- CardView не является простым full-card PNG viewer;
+- CardView не содержит hardcoded `laundry` / specific card ID visual special-cases;
+- CardView не вызывает gameplay owner modules;
+- CardView не читает raw GameStateManager.state;
+- CardView не парсит effect text as rules;
+- CardView supports Engine/Status/War/Defense visual variants.
 
 Payload tests:
 
@@ -784,6 +869,11 @@ M16 GATE CHECKLIST:
 - [ ] UI вызывает только GameStateManager для gameplay.
 - [ ] UI не мутирует active state напрямую.
 - [ ] UI не содержит gameplay validation/random/effect logic.
+- [ ] CARD_STYLE_REFERENCE folder inspected.
+- [ ] 4 approved card references mapped to Engine/Status/War/Defense.
+- [ ] CardView uses template-based rendering, not full-card PNG-only rendering.
+- [ ] CardView visual style follows approved references.
+- [ ] Gear/crown/attack/shield markers are not mixed across card types.
 - [ ] UI payload/scene tests проходят.
 - [ ] `tests/static/test_ui_static_boundaries.gd` проходит.
 - [ ] Все UI `.gd` files меньше 250 строк.

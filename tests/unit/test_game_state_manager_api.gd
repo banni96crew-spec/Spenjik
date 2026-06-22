@@ -81,6 +81,16 @@ func test_contract_preview_is_deterministic_and_does_not_touch_active_state() ->
 	assert_true(first["ok"])
 	assert_eq(first["contract_offer_ids"], second["contract_offer_ids"])
 	assert_eq(first["contract_offer_ids"].size(), 3)
+	assert_true(first.has("contract_offers"))
+	if not first.has("contract_offers"):
+		return
+	assert_eq(first["contract_offers"].size(), 3)
+	assert_eq(
+		first["contract_offers"][0]["id"],
+		first["contract_offer_ids"][0]
+	)
+	assert_true(first["contract_offers"][0].has("title"))
+	assert_true(first["contract_offers"][0].has("description"))
 	assert_eq(GameStateManager.get_state_snapshot(), before)
 
 
