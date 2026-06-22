@@ -24,6 +24,10 @@ func test_canonical_mvp_smoke_reaches_valid_market() -> void:
 	assert_true(GameStateValidator.validate_game_state(setup_state)["ok"])
 	assert_eq(setup_state["current_phase"], PhaseIds.INCOME)
 	assert_eq(setup_state["players"].size(), 4)
+	assert_eq(
+		_player_ids(setup_state),
+		["player_1", "ai_1", "ai_2", "ai_3"]
+	)
 	var advanced: Dictionary = GameStateManager.advance_phase()
 	assert_true(advanced["ok"], str(advanced))
 	var market_state: Dictionary = GameStateManager.get_state_snapshot()
@@ -49,4 +53,11 @@ func _event_types(state: Dictionary) -> Array[String]:
 	var result: Array[String] = []
 	for entry: Dictionary in state["combat_log"]:
 		result.append(entry["event_type"])
+	return result
+
+
+func _player_ids(state: Dictionary) -> Array[String]:
+	var result: Array[String] = []
+	for player: Dictionary in state["players"]:
+		result.append(player["id"])
 	return result

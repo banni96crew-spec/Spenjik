@@ -4,17 +4,17 @@
 
 ## Статус
 
-**Current status:** M0–M14 completed. **Next milestone:** M15 — Integration and Replay.
+**Current status:** M0–M15 completed. **Next milestone:** M16 — UI/UX.
 
-Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают, playable UI через Godot Run пока нет.
+Проект сейчас **logic-first / test-driven / headless**: gameplay rules и GUT-тесты работают. Playable UI и main scene начинаются в M16.
 
-**Последняя проверка:** full GUT suite 329/329 tests, 5131 assertions, exit code 0 (Godot 4.6.2, GUT 9.6.0).
+**Последняя проверка:** full GUT suite 347/347 pass; canonical MVP smoke pass (Godot 4.6.2, GUT 9.6.0).
 
 **Текущие milestone-границы:**
 
-- main scene и playable build — до M16 (UI/UX);
+- main scene и playable build начинаются в M16 (UI/UX);
 - `GameStateManager.gd` существует и зарегистрирован как Autoload;
-- `test_smoke_mvp.gd` как обязательный gate — не позднее M15.
+- canonical `test_smoke_mvp.gd` — pass.
 
 Source of truth: [`docs/prd/`](docs/prd/) и фактический код/tests. README — статусный обзор, не PRD.
 
@@ -45,7 +45,7 @@ Web/backend-стек, C#, multiplayer и gameplay persistence не входят 
 ```text
 project.godot                  Godot 4.6.2 project (GUT enabled)
 addons/gut/                    GUT 9.6.0
-logic/                         gameplay owner modules (M0–M14)
+logic/                         gameplay owner modules (M0–M15)
 data/ids/                      stable IDs and validation errors
 data/resources/                .tres Resources and schemas
 tests/                         unit, integration, replay, static, smoke
@@ -85,14 +85,13 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 ```
 
 - `tests/smoke/test_gut_bootstrap.gd` — import, GUT и минимальная core-state проверка;
-- `tests/integration/test_smoke_mvp.gd` — обязателен не позднее M15;
+- `tests/integration/test_smoke_mvp.gd` — canonical MVP smoke, pass;
 - подробности: [`docs/prd/18_TEST_PLAN.md`](docs/prd/18_TEST_PLAN.md).
 
 ## Порядок разработки
 
 ```text
-M0–M14 (done) -> M15 Integration and Replay
--> M16 UI -> M17 polish
+M0–M15 (done) -> M16 UI/UX -> M17 polish
 ```
 
 Не переходить к следующему milestone, если обязательный gate предыдущего не пройден.

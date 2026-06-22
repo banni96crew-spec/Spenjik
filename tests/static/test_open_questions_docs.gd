@@ -23,7 +23,12 @@ func test_project_gdscript_has_no_untracked_ambiguity_markers() -> void:
 				continue
 			scanned_files += 1
 			var source: String = FileAccess.get_file_as_string(path)
-			for marker: String in ["TODO", "TBD", "FIXME", "???"]:
+			for marker: String in [
+				"TO" + "DO",
+				"TB" + "D",
+				"FIX" + "ME",
+				"??" + "?",
+			]:
 				if source.contains(marker):
 					assert_true(
 						source.contains("OQ-"),
