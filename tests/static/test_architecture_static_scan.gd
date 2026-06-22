@@ -112,6 +112,21 @@ func test_project_gdscript_files_stay_under_250_lines() -> void:
 			)
 
 
+func test_replay_runner_uses_only_facade_state_and_no_rng_or_persistence() -> void:
+	var source: String = FileAccess.get_file_as_string(
+		"res://tests/fixtures/ReplayScriptRunner.gd"
+	)
+	for pattern: String in [
+		"GameStateManager.state", "SeededRandom", "SeededPicker",
+		"RandomNumberGenerator", "randf(", "randi(", "randomize(",
+		"FileAccess", "user://",
+	]:
+		assert_false(
+			source.contains(pattern),
+			"Forbidden replay runner dependency: %s" % pattern
+		)
+
+
 func _contains_forbidden_runtime_type(value: Variant) -> bool:
 	var value_type: int = typeof(value)
 	if value_type == TYPE_OBJECT or value_type in [
