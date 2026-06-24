@@ -32,11 +32,18 @@ func test_game_layout_exposes_tabletop_zones_at_supported_viewports() -> void:
 		screen.refresh()
 		assert_eq(screen.size, viewport_size)
 		assert_not_null(screen.get_node("%PhaseHeader"))
-		assert_not_null(screen.get_node("%AIZones"))
+		assert_not_null(screen.get_node("%TableWorkspace"))
+		assert_not_null(screen.get_node("%LeftOpponentZone"))
+		assert_not_null(screen.get_node("%TopOpponentZone"))
+		assert_not_null(screen.get_node("%RightOpponentZone"))
+		assert_not_null(screen.get_node("%CenterColumn"))
+		assert_not_null(screen.get_node("%CenterTable"))
 		assert_not_null(screen.get_node("%CentralPhaseArea"))
 		assert_not_null(screen.get_node("%HumanZone"))
 		assert_not_null(screen.get_node("%SideInfoColumn"))
-		assert_eq(screen.get_node("%AIZones").get_child_count(), 3)
+		assert_null(screen.get_node_or_null("%AIZones"))
+		assert_ne(screen.get_node("%RightOpponentZone"), screen.get_node("%SideInfoColumn"))
+		assert_ne(screen.get_node("%RightOpponentZone").get_parent(), screen.get_node("%SideInfoColumn"))
 		assert_true(screen.income_button.is_visible_in_tree())
 		assert_true(screen.round_label.is_visible_in_tree())
 		assert_true(screen.phase_label.is_visible_in_tree())
@@ -44,29 +51,42 @@ func test_game_layout_exposes_tabletop_zones_at_supported_viewports() -> void:
 		var human_board: PlayerBoard = screen.get_node("%HumanBoard")
 		assert_true(human_board.is_visible_in_tree())
 		assert_true(human_board.resources.is_visible_in_tree())
+		assert_ai_boards_are_seated(screen)
 		screen.get_parent().queue_free()
 
 
 func test_core_phase_buttons_have_stable_reachable_paths() -> void:
-	var screen: Node = _host_scene(
-		"res://scenes/ui/screens/GameScreen.tscn", Vector2(1280, 720)
-	)
-	if screen == null:
-		return
-	for button_name: String in [
-		"IncomeButton", "BuyButton", "RebuildButton", "ExecuteButton",
-		"DiscardButton", "OptionA", "OptionB", "ClaimButton", "SelectButton",
-	]:
-		assert_not_null(
-			screen.find_child(button_name, true, false),
-			"Missing core button: %s" % button_name
+	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
+		var screen: Node = _host_scene(
+			"res://scenes/ui/screens/GameScreen.tscn", viewport_size
 		)
-	assert_gte(
-		screen.find_children("EndButton", "Button", true, false).size(),
-		2,
-		"Market and Action end buttons must remain reachable"
-	)
-	screen.get_parent().queue_free()
+		if screen == null:
+			continue
+		for button_name: String in [
+			"IncomeButton", "BuyButton", "RebuildButton", "ExecuteButton",
+			"DiscardButton", "OptionA", "OptionB", "ClaimButton", "SelectButton",
+		]:
+			assert_not_null(
+				screen.find_child(button_name, true, false),
+				"Missing core button at %s: %s" % [str(viewport_size), button_name]
+			)
+		assert_gte(
+			screen.find_children("EndButton", "Button", true, false).size(),
+			2,
+			"Market and Action end buttons must remain reachable"
+		)
+		screen.get_parent().queue_free()
+
+
+func assert_ai_boards_are_seated(screen: GameScreen) -> void:
+	var ai_1: Node = screen.get_node("%AiBoard1")
+	var ai_2: Node = screen.get_node("%AiBoard2")
+	var ai_3: Node = screen.get_node("%AiBoard3")
+	assert_eq(ai_1.get_parent(), screen.get_node("%LeftOpponentZone"))
+	assert_eq(ai_2.get_parent(), screen.get_node("%TopOpponentZone"))
+	assert_eq(ai_3.get_parent(), screen.get_node("%RightOpponentZone"))
+	assert_ne(ai_1.get_parent(), ai_2.get_parent())
+	assert_ne(ai_2.get_parent(), ai_3.get_parent())
 
 
 func _host_scene(path: String, viewport_size: Vector2) -> Variant:

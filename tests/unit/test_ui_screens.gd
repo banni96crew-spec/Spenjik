@@ -47,24 +47,30 @@ func test_game_screen_has_required_panels() -> void:
 		return
 	for path: String in [
 		"TabletopMargin/TabletopLayout/PhaseHeader",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone",
-		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
-			+ "CentralPhaseArea/PhasePanels/MarketPanel",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
-			+ "CentralPhaseArea/PhasePanels/ActionPanel",
-		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
-			+ "CentralPhaseArea/PhasePanels/StreetDealPanel",
-		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+		"TabletopMargin/TabletopLayout/TableWorkspace/LeftOpponentZone/AiBoard1",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "TopOpponentZone/AiBoard2",
+		"TabletopMargin/TabletopLayout/TableWorkspace/RightOpponentZone/AiBoard3",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "CenterTable/CentralPhaseArea",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone",
+		"TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "CenterTable/CentralPhaseArea/PhasePanels/MarketPanel",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "CenterTable/CentralPhaseArea/PhasePanels/ActionPanel",
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "CenterTable/CentralPhaseArea/PhasePanels/StreetDealPanel",
+		"TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/"
 			+ "SideInfo/ContractPanel",
-		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+		"TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/"
 			+ "SideInfo/ContactPanel",
-		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+		"TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/"
 			+ "SideInfo/GameLogPanel",
 	]:
 		assert_not_null(screen.get_node_or_null(path), path)
+	assert_null(screen.get_node_or_null("TabletopMargin/TabletopLayout/TableWorkspace/AIZones"))
 	screen.free()
 
 

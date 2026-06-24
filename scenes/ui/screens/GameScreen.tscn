@@ -77,78 +77,88 @@ custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 horizontal_alignment = 2
 
-[node name="Workspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]
+[node name="TableWorkspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="PlayArea" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace"]
+[node name="LeftOpponentZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AiBoard1" parent="TabletopMargin/TabletopLayout/TableWorkspace/LeftOpponentZone" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CenterColumn" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="AIZones" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+[node name="TopOpponentZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 154)
 layout_mode = 2
-theme_override_constants/separation = 8
 
-[node name="AiBoard1" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
+[node name="AiBoard2" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/TopOpponentZone" instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AiBoard2" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="AiBoard3" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CentralPhaseArea" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+[node name="CenterTable" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="PhasePanels" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea"]
+[node name="CentralPhaseArea" type="MarginContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="PhasePanels" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable/CentralPhaseArea"]
 layout_mode = 2
 
-[node name="IncomeButton" type="Button" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels"]
+[node name="IncomeButton" type="Button" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable/CentralPhaseArea/PhasePanels"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 size_flags_vertical = 3
 text = "RESOLVE INCOME / CONTINUE"
 
-[node name="MarketPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("3")]
+[node name="MarketPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable/CentralPhaseArea/PhasePanels" instance=ExtResource("3")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ActionPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("4")]
+[node name="ActionPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable/CentralPhaseArea/PhasePanels" instance=ExtResource("4")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="StreetDealPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("5")]
+[node name="StreetDealPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/CenterTable/CentralPhaseArea/PhasePanels" instance=ExtResource("5")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HumanZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+[node name="HumanZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 154)
 layout_mode = 2
 
-[node name="HumanZoneLayout" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone"]
+[node name="HumanZoneLayout" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="ZoneLabel" type="Label" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone/HumanZoneLayout"]
+[node name="ZoneLabel" type="Label" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone/HumanZoneLayout"]
 custom_minimum_size = Vector2(92, 0)
 layout_mode = 2
 text = "YOUR\nTURF"
@@ -157,37 +167,48 @@ vertical_alignment = 1
 theme_override_colors/font_color = Color(0.78, 0.62, 0.34, 1)
 theme_override_font_sizes/font_size = 19
 
-[node name="HumanBoard" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone/HumanZoneLayout" instance=ExtResource("2")]
+[node name="HumanBoard" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone/HumanZoneLayout" instance=ExtResource("2")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SideInfoColumn" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace"]
+[node name="RightOpponentZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(210, 0)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AiBoard3" parent="TabletopMargin/TabletopLayout/TableWorkspace/RightOpponentZone" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SideInfoColumn" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SideInfo" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn"]
+[node name="SideInfo" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn"]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="SideTitle" type="Label" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo"]
+[node name="SideTitle" type="Label" parent="TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/SideInfo"]
 layout_mode = 2
 text = "CASE FILE"
 horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.72, 0.55, 0.32, 1)
 theme_override_font_sizes/font_size = 18
 
-[node name="ContractPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("6")]
+[node name="ContractPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/SideInfo" instance=ExtResource("6")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ContactPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("7")]
+[node name="ContactPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/SideInfo" instance=ExtResource("7")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="GameLogPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("8")]
+[node name="GameLogPanel" parent="TabletopMargin/TabletopLayout/TableWorkspace/SideInfoColumn/SideInfo" instance=ExtResource("8")]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
