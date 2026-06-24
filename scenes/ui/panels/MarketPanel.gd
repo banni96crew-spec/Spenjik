@@ -32,7 +32,8 @@ func refresh(_view: Dictionary) -> void:
 	for card: Dictionary in result["view"]["cards"]:
 		var widget: CardView = CARD_SCENE.instantiate()
 		cards_row.add_child(widget)
-		widget.set_card(card)
+		var enriched: Dictionary = _enrich_market_card(card)
+		widget.set_card(enriched)
 		widget.card_selected.connect(_on_card_selected)
 		widget.set_selected(card["id"] == selected_card_id)
 	if not _selection_exists(result["view"]["cards"]):
@@ -58,7 +59,26 @@ func _on_card_selected(card_id: String) -> void:
 	reason_label.set_reason(reason)
 	buy_button.disabled = reason != ValidationErrors.OK
 	for child: Node in cards_row.get_children():
-		(child as CardView).set_selected((child as CardView).card_id == card_id)
+		var widget := child as CardView
+		if widget != null:
+			widget.set_selected(widget.card_id == card_id)
+
+
+func _enrich_market_card(card: Dictionary) -> Dictionary:
+	var card_id: String = str(card.get("id", ""))
+	var enriched: Dictionary = card.duplicate()
+	var price: Dictionary = GameStateManager.get_card_price_preview(
+		GameIds.PLAYER_HUMAN, card_id
+	)
+	var reason: String = GameStateManager.get_purchase_disabled_reason(
+		GameIds.PLAYER_HUMAN, card_id
+	)
+	if price["ok"]:
+		enriched["price"] = int(price["final_price"])
+	enriched["disabled_reason"] = reason
+	enriched["affordable"] = reason == ValidationErrors.OK
+	enriched["disabled"] = reason != ValidationErrors.OK
+	return enriched
 
 
 func _on_buy() -> void:

@@ -663,6 +663,12 @@ func get_card_price_preview(player_id: String, card_id: String) -> Dictionary:
 func get_purchase_disabled_reason(player_id: String, card_id: String) -> String:
 	return ""
 
+func get_rebuild_district_preview(player_id: String) -> Dictionary:
+	return {}
+
+func get_rebuild_district_disabled_reason(player_id: String) -> String:
+	return ""
+
 func get_income_preview(player_id: String) -> Dictionary:
 	return {}
 
@@ -674,6 +680,15 @@ func get_protected_nal_preview(player_id: String) -> Dictionary:
 ```
 
 `rebuild_district_control` is a dedicated API. It must not be hidden as a fake card ID.
+
+Rebuild facade selectors:
+
+* `get_rebuild_district_preview(player_id)` returns read-only rebuild price and availability through owner validation;
+* `get_rebuild_district_disabled_reason(player_id)` returns the stable `ValidationErrors` code UI should use for rebuild button disabled state and tooltip text;
+* both selectors delegate to `MarketLogic.can_rebuild_district_control` and `PriceLogic.get_rebuild_price`;
+* UI must not calculate rebuild availability, workshop requirement, or rebuild price locally.
+
+When no active game exists, both rebuild selectors return `GAME_NOT_STARTED` and do not call owner logic.
 
 District rebuild rules are owned by:
 
@@ -995,6 +1010,96 @@ Failed transition uses the generic failure shape plus `from_phase`, `round_befor
 }
 ```
 
+### 9.4.1. Rebuild Result
+
+Successful dedicated rebuild:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"player_id": "player_1",
+	"card_id": "district_control",
+	"price": 8,
+	"destination": "table",
+	"contract_results": [],
+	"state": {},
+	"log_entries": []
+}
+```
+
+Rules:
+
+* `card_id` is always `GameIds.CARD_DISTRICT_CONTROL`;
+* `price` is the committed rebuild price from owner rebuild pricing;
+* gameplay rebuild rules, VP gain, flag reset, and workshop requirement remain owned by `06_ECONOMY_AND_MARKET.md`;
+* failed rebuild uses the generic failure shape plus owner-module fields such as `player_id` and optional `price` when documented by `MarketLogic`.
+
+Failed rebuild examples:
+
+| Condition | Error |
+| --------- | ----- |
+| No active game | `GAME_NOT_STARTED` |
+| Wrong phase | `INVALID_PHASE` |
+| Rebuild flag absent | `REQUIREMENT_NOT_MET` |
+| `district_control >= workshop` | `REQUIREMENT_NOT_MET` |
+| Insufficient Nal | `NOT_ENOUGH_NAL` |
+
+### 9.4.2. Rebuild Preview Selector Result
+
+When an active game exists:
+
+```gdscript
+{
+	"ok": true,
+	"error": ValidationErrors.OK,
+	"player_id": "player_1",
+	"card_id": "district_control",
+	"base_rebuild_price": 8,
+	"final_rebuild_price": 8,
+	"modifiers": []
+}
+```
+
+Rules:
+
+* read-only selector;
+* does not mutate `state`;
+* does not consume active random;
+* `ok` and `error` come from `MarketLogic.can_rebuild_district_control`;
+* price fields come from `PriceLogic.get_rebuild_price` and remain present even when `ok == false`, so UI can show rebuild cost while disabled;
+* `card_id` is always `GameIds.CARD_DISTRICT_CONTROL`.
+
+When no active game exists:
+
+```gdscript
+{
+	"ok": false,
+	"error": ValidationErrors.GAME_NOT_STARTED
+}
+```
+
+### 9.4.3. Rebuild Disabled Reason Result
+
+`get_rebuild_district_disabled_reason(player_id)` returns a stable `ValidationErrors` string.
+
+Valid rebuild:
+
+```gdscript
+ValidationErrors.OK
+```
+
+Common disabled examples:
+
+```gdscript
+ValidationErrors.GAME_NOT_STARTED
+ValidationErrors.REQUIREMENT_NOT_MET
+ValidationErrors.NOT_ENOUGH_NAL
+ValidationErrors.INVALID_PHASE
+```
+
+UI must use this method or equivalent facade view data for rebuild button enabled/disabled state. UI must not re-derive rebuild validation locally.
+
 ### 9.5. Combat Result
 
 ```gdscript
@@ -1060,6 +1165,8 @@ ValidationErrors.OK
 | Preview consumes active random | Selector changes active `state["random"]["step"]`. | Test failure; temporary contract-preview random is allowed. | N/A | Must be fixed. |
 | AI called for human        | `run_action_for_ai("player_1")`.            | Fail safely.                                             | `INVALID_TARGET`                          | No mutation.            |
 | Rebuild unavailable        | Human has no rebuild flag.                  | Fail safely.                                             | `REQUIREMENT_NOT_MET`                     | No mutation.            |
+| Rebuild preview before game | `get_rebuild_district_preview` with empty state. | Return failed selector result.                      | `GAME_NOT_STARTED`                        | No mutation.            |
+| Rebuild disabled reason before game | `get_rebuild_district_disabled_reason` with empty state. | Return `GAME_NOT_STARTED`.              | `GAME_NOT_STARTED`                        | No mutation.            |
 | Debug snapshot write fails | File write unavailable.                     | Return failure but gameplay remains intact.              | `REQUIREMENT_NOT_MET`                     | No gameplay mutation.   |
 | Signal on failed action    | Mutator fails.                              | May emit `action_failed`; must not emit `state_changed`. | Error from result                         | No state mutation.      |
 
@@ -1145,6 +1252,8 @@ Minimum tests:
 * mutating returned snapshot does not mutate active state;
 * `get_market_view` does not mutate state;
 * `get_card_price_preview` does not mutate state;
+* `get_rebuild_district_preview` does not mutate state;
+* `get_rebuild_district_disabled_reason` does not mutate state;
 * `get_combat_preview` does not mutate state;
 * `get_valid_targets` does not mutate state;
 * selectors do not consume active random; contract preview uses only temporary setup random.
@@ -1157,6 +1266,9 @@ Minimum tests:
 * successful purchase commits state;
 * failed purchase does not commit state;
 * `rebuild_district_control` works only when valid;
+* successful rebuild result includes `card_id == GameIds.CARD_DISTRICT_CONTROL`;
+* `get_rebuild_district_preview` returns price plus validation availability;
+* `get_rebuild_district_disabled_reason` returns stable rebuild error codes;
 * purchase disabled reason returns stable error code.
 
 ### 12.5. Combat API Tests
@@ -1297,13 +1409,14 @@ This module is complete when:
 * `GameStateManager.gd` is registered as Autoload;
 * active runtime state is stored in `GameStateManager.state`;
 * UI-facing mutators exist for setup, purchase, combat, Street Deals, contacts, contracts, phase flow, and AI;
-* UI-facing selectors exist for market, prices, combat previews, contracts, contacts, Street Deals, debts, and state snapshots;
+* UI-facing selectors exist for market, prices, rebuild preview/disabled reason, combat previews, contracts, contacts, Street Deals, debts, and state snapshots;
 * all mutators duplicate state before mutation;
 * active state is committed only on success;
 * failed validation does not mutate active state;
 * selectors do not mutate state;
 * selectors do not consume active random;
 * `rebuild_district_control` is a dedicated API;
+* `get_rebuild_district_preview` and `get_rebuild_district_disabled_reason` are dedicated rebuild selectors;
 * `claim_contract` is a dedicated API;
 * `select_contact` is a dedicated API;
 * `discard_war_card` is a dedicated API;

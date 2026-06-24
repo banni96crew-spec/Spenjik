@@ -88,21 +88,31 @@ func test_runtime_ui_files_do_not_reference_external_design_assets() -> void:
 
 
 func test_card_view_is_template_based_and_type_driven() -> void:
-	var path := "res://scenes/ui/widgets/CardView.gd"
-	assert_true(FileAccess.file_exists(path))
-	var source: String = FileAccess.get_file_as_string(path)
-	for card_type: String in CardTypes.ALL:
-		assert_string_contains(source, card_type)
-	var pattern: String = StaticScanHelper.find_pattern(
-		path, FORBIDDEN_CARD_VIEW_PATTERNS
-	)
-	assert_eq(pattern, "", "CardView forbidden special case: %s" % pattern)
-	for word: String in FORBIDDEN_CARD_VIEW_WORDS:
-		assert_false(
-			_contains_whole_word(source, word),
-			"CardView must not hardcode card ID word: %s" % word
+	var paths: Array[String] = ["res://scenes/ui/widgets/CardView.gd"]
+	paths.append_array(StaticScanHelper.get_gd_files_under("res://scenes/ui/card_visual"))
+	for path: String in paths:
+		assert_true(FileAccess.file_exists(path), path)
+		var source: String = FileAccess.get_file_as_string(path)
+		if path.ends_with("CardView.gd"):
+			assert_string_contains(source, "CardTypeStyleMap")
+		elif path.ends_with("CardTypeStyleMap.gd"):
+			for constant_name: String in ["ENGINE", "STATUS", "WAR", "DEFENSE"]:
+				assert_string_contains(source, "CardTypes.%s" % constant_name)
+		var pattern: String = StaticScanHelper.find_pattern(
+			path, FORBIDDEN_CARD_VIEW_PATTERNS
 		)
-	assert_false(source.contains("TextureRect"))
+		assert_eq(pattern, "", "CardView forbidden special case: %s in %s" % [pattern, path])
+		for word: String in FORBIDDEN_CARD_VIEW_WORDS:
+			assert_false(
+				_contains_whole_word(source, word),
+				"Card visual must not hardcode card ID word: %s in %s" % [word, path]
+			)
+		if path.ends_with("CardView.gd"):
+			assert_false(source.contains("TextureRect"))
+		assert_lt(
+			StaticScanHelper.count_lines(path), 250,
+			"Card visual script must stay below 250 lines: %s" % path
+		)
 
 
 func test_audio_apis_stay_out_of_gameplay_layers() -> void:

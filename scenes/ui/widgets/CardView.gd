@@ -3,25 +3,57 @@ extends PanelContainer
 
 signal card_selected(card_id: String)
 
-const INK := Color("d8c6a2")
-const MUTED := Color("8f8068")
-const BLACK := Color("11100e")
-const WAR_RED := Color("69261e")
-
 var card_id: String = ""
 var selected: bool = false
 
-@onready var price_label: Label = %PriceLabel
-@onready var type_label: Label = %TypeLabel
-@onready var art_label: Label = %ArtLabel
-@onready var title_label: Label = %TitleLabel
-@onready var effect_label: Label = %EffectLabel
-@onready var state_label: Label = %StateLabel
-@onready var select_button: Button = %SelectButton
+var price_label: Label
+var currency_glyph: Label
+var type_marker_top: Label
+var type_marker_bottom: Label
+var art_placeholder: Label
+var title_label: Label
+var effect_label: Label
+var base_price_label: Label
+var state_label: Label
+var select_button: Button
+
+var _card_surface: PanelContainer
+var _art_frame: PanelContainer
+var _hovered: bool = false
+var _disabled_visual: bool = false
+var _affordable: bool = true
+var _type_style: Dictionary = {}
+var _display_price: int = 0
+var _base_price: int = 0
 
 
 func _ready() -> void:
+	_bind_nodes()
+	currency_glyph.text = CardVisualTokens.CURRENCY_GLYPH
 	select_button.pressed.connect(_on_pressed)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+	add_theme_stylebox_override("panel", CardVisualStyle.card_surface(
+		Color.TRANSPARENT, 0, Color.TRANSPARENT
+	))
+	_apply_visuals()
+
+
+func _bind_nodes() -> void:
+	if price_label != null:
+		return
+	price_label = %PriceLabel
+	currency_glyph = %CurrencyGlyph
+	type_marker_top = %TypeMarkerTop
+	type_marker_bottom = %TypeMarkerBottom
+	art_placeholder = %ArtPlaceholder
+	title_label = %TitleLabel
+	effect_label = %EffectLabel
+	base_price_label = %BasePriceLabel
+	state_label = %StateLabel
+	select_button = %SelectButton
+	_card_surface = %CardSurface
+	_art_frame = %ArtFrame
 
 
 func set_card(
@@ -29,59 +61,105 @@ func set_card(
 	display_price: int = -1,
 	card_state: String = ""
 ) -> void:
+	_bind_nodes()
 	card_id = str(data.get("id", ""))
 	var card_type: String = str(data.get("type", ""))
-	price_label.text = str(
-		display_price if display_price >= 0 else data.get("base_price", 0)
-	) + " ₦"
+	_type_style = CardTypeStyleMap.style_for_type(card_type)
+	_base_price = int(data.get("base_price", 0))
+	_display_price = _resolve_display_price(data, display_price)
+	_affordable = bool(data.get("affordable", true))
+	_disabled_visual = bool(data.get("disabled", false))
+	if data.has("disabled_reason"):
+		var reason: String = str(data.get("disabled_reason", ""))
+		_disabled_visual = reason != ValidationErrors.OK
 	title_label.text = str(data.get("title", card_id)).to_upper()
 	effect_label.text = str(data.get("effect_summary", ""))
-	state_label.text = card_state
-	var visual: Dictionary = _type_visual(card_type)
-	type_label.text = visual["marker"]
-	art_label.text = visual["art"]
-	_apply_style(visual["accent"])
+	var marker: String = str(_type_style.get("marker", "?"))
+	type_marker_top.text = marker
+	type_marker_bottom.text = marker
+	art_placeholder.text = str(_type_style.get("art", ""))
+	price_label.text = str(_display_price)
+	_update_base_price_label()
+	_update_state_label(data, card_state)
+	if data.has("selected"):
+		set_selected(bool(data.get("selected", false)))
 	tooltip_text = "%s\n%s" % [title_label.text, effect_label.text]
+	_apply_visuals()
 
 
 func set_selected(value: bool) -> void:
 	selected = value
 	select_button.text = "SELECTED" if value else "SELECT"
-	queue_redraw()
+	_apply_visuals()
 
 
 func set_interactive(value: bool) -> void:
 	select_button.disabled = not value
 
 
-func _type_visual(card_type: String) -> Dictionary:
-	match card_type:
-		"engine":
-			return {"marker": "⚙︎", "art": "MACHINERY", "accent": INK}
-		"status":
-			return {"marker": "♛", "art": "INFLUENCE", "accent": INK}
-		"war":
-			return {"marker": "╳", "art": "HOSTILE ACTION", "accent": WAR_RED}
-		"defense":
-			return {"marker": "⛨", "art": "PROTECTION", "accent": INK}
-	return {"marker": "?", "art": "UNKNOWN", "accent": MUTED}
+func _resolve_display_price(data: Dictionary, display_price: int) -> int:
+	if display_price >= 0:
+		return display_price
+	if data.has("price"):
+		return int(data.get("price", 0))
+	if data.has("final_price"):
+		return int(data.get("final_price", 0))
+	return _base_price
 
 
-func _apply_style(accent: Color) -> void:
-	var style := StyleBoxFlat.new()
-	style.bg_color = BLACK
-	style.border_color = accent
-	style.set_border_width_all(2 if not selected else 4)
-	style.set_corner_radius_all(14)
-	style.content_margin_left = 14
-	style.content_margin_right = 14
-	style.content_margin_top = 14
-	style.content_margin_bottom = 14
-	add_theme_stylebox_override("panel", style)
-	title_label.add_theme_color_override("font_color", INK)
-	effect_label.add_theme_color_override("font_color", INK)
-	type_label.add_theme_color_override("font_color", accent)
-	price_label.add_theme_color_override("font_color", INK)
+func _update_base_price_label() -> void:
+	var show_base: bool = _base_price > 0 and _display_price != _base_price
+	base_price_label.visible = show_base
+	if show_base:
+		base_price_label.text = "BASE %d" % _base_price
+
+
+func _update_state_label(data: Dictionary, card_state: String) -> void:
+	var text: String = card_state
+	if text.is_empty() and data.has("disabled_reason"):
+		text = ErrorTextMap.to_text(str(data.get("disabled_reason", "")))
+	state_label.text = text
+	state_label.visible = not text.is_empty()
+
+
+func _apply_visuals() -> void:
+	var accent: Color = _type_style.get("accent", CardVisualTokens.INK)
+	var border: Color = _type_style.get("border", CardVisualTokens.INK)
+	if _hovered and not _disabled_visual:
+		border = border.lerp(CardVisualTokens.HOVER_BORDER_BOOST, 0.35)
+	var border_width: int = (
+		CardVisualTokens.BORDER_SELECTED if selected else CardVisualTokens.BORDER_NORMAL
+	)
+	_card_surface.add_theme_stylebox_override(
+		"panel", CardVisualStyle.card_surface(border, border_width)
+	)
+	_art_frame.add_theme_stylebox_override(
+		"panel", CardVisualStyle.art_frame(border)
+	)
+	title_label.add_theme_color_override("font_color", CardVisualTokens.INK)
+	effect_label.add_theme_color_override("font_color", CardVisualTokens.INK)
+	type_marker_top.add_theme_color_override("font_color", accent)
+	type_marker_bottom.add_theme_color_override("font_color", accent)
+	art_placeholder.add_theme_color_override("font_color", CardVisualTokens.GRIME)
+	var price_color: Color = (
+		CardVisualTokens.UNAVAILABLE_PRICE
+		if not _affordable else CardVisualTokens.INK
+	)
+	price_label.add_theme_color_override("font_color", price_color)
+	currency_glyph.add_theme_color_override("font_color", price_color)
+	_card_surface.modulate = (
+		CardVisualTokens.DIMMED_MODULATE if _disabled_visual else Color.WHITE
+	)
+
+
+func _on_mouse_entered() -> void:
+	_hovered = true
+	_apply_visuals()
+
+
+func _on_mouse_exited() -> void:
+	_hovered = false
+	_apply_visuals()
 
 
 func _on_pressed() -> void:
