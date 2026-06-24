@@ -28,3 +28,14 @@ static func find_pattern(path: String, patterns: Array[String]) -> String:
 		if source.contains(pattern):
 			return pattern
 	return ""
+
+
+static func find_regex_pattern(path: String, patterns: Array[String]) -> String:
+	var source: String = FileAccess.get_file_as_string(path)
+	for pattern: String in patterns:
+		var expression := RegEx.new()
+		if expression.compile(pattern) != OK:
+			continue
+		if expression.search(source) != null:
+			return pattern
+	return ""

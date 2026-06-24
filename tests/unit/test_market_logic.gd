@@ -180,6 +180,7 @@ func test_rebuild_is_dedicated_atomic_action() -> void:
 	assert_eq(rebuilt["vp"], 3)
 	assert_eq(rebuilt["status_buildings"]["district_control"], 1)
 	assert_false(rebuilt["status_buildings"]["can_rebuild_district_for_8"])
+	assert_eq(result["card_id"], GameIds.CARD_DISTRICT_CONTROL)
 	human["status_buildings"]["can_rebuild_district_for_8"] = false
 	var before: Dictionary = state.duplicate(true)
 	var failed: Dictionary = MarketLogic.rebuild_district_control(

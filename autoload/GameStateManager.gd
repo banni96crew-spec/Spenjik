@@ -13,6 +13,8 @@ func has_active_game() -> bool:
 func get_state_snapshot() -> Dictionary:
 	return state.duplicate(true)
 func get_view() -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.build_view(state)
 func reset_game() -> Dictionary:
 	state = {}
@@ -42,6 +44,8 @@ func generate_contract_offers(config: Dictionary) -> Dictionary:
 	)
 	return result
 func get_contract_offers() -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_contract_offers(state)
 func advance_phase() -> Dictionary:
 	return _commit(GamePhaseController.advance_phase(_working()), get_current_phase())
@@ -73,7 +77,31 @@ func buy_card(player_id: String, card_id: String) -> Dictionary:
 	return _commit(MarketLogic.buy_card(_working(), player_id, card_id))
 func rebuild_district_control(player_id: String) -> Dictionary:
 	return _commit(MarketLogic.rebuild_district_control(_working(), player_id))
+func get_rebuild_district_preview(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _selector_failure()
+	var price: Dictionary = PriceLogic.get_rebuild_price(state, player_id)
+	var validation: Dictionary = MarketLogic.can_rebuild_district_control(
+		state, player_id
+	)
+	return {
+		"ok": validation["ok"],
+		"error": validation["error"],
+		"player_id": player_id,
+		"card_id": GameIds.CARD_DISTRICT_CONTROL,
+		"base_rebuild_price": price["base_rebuild_price"],
+		"final_rebuild_price": price["final_rebuild_price"],
+		"modifiers": price["modifiers"].duplicate(true),
+	}
+func get_rebuild_district_disabled_reason(player_id: String) -> String:
+	if state.is_empty():
+		return ValidationErrors.GAME_NOT_STARTED
+	return str(
+		MarketLogic.can_rebuild_district_control(state, player_id)["error"]
+	)
 func get_market_view(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_market_view(state, player_id)
 func get_card_price_preview(player_id: String, card_id: String) -> Dictionary:
 	return _select(PriceLogic.get_card_price(state, player_id, card_id))
@@ -104,6 +132,8 @@ func get_action_disabled_reason(action_payload: Dictionary) -> String:
 func claim_contract(player_id: String, contract_id: String) -> Dictionary:
 	return _commit(ContractLogic.claim_contract(_working(), player_id, contract_id))
 func get_contract_state(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_contract_state(state, player_id)
 func get_contract_claim_disabled_reason(player_id: String, contract_id: String) -> String:
 	if state.is_empty():
@@ -112,20 +142,28 @@ func get_contract_claim_disabled_reason(player_id: String, contract_id: String) 
 func select_street_deal(payload: Dictionary) -> Dictionary:
 	return _commit(StreetDealLogic.select_street_deal(_working(), payload))
 func get_street_deal_view(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_street_deal_view(state, player_id)
 func get_street_deal_disabled_reason(payload: Dictionary) -> String:
 	if state.is_empty():
 		return ValidationErrors.GAME_NOT_STARTED
 	return str(StreetDealLogic.validate_street_deal_choice(state, payload)["error"])
 func get_debt_status(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_debt_status(state, player_id)
 func select_contact(payload: Dictionary) -> Dictionary:
 	return _commit(ContactLogic.select_contact(_working(), payload))
 func activate_contact(payload: Dictionary) -> Dictionary:
 	return _commit(ContactLogic.activate_contact(_working(), payload))
 func get_contact_offer(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_contact_offer(state, player_id)
 func get_contact_state(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_contact_state(state, player_id)
 func get_contact_disabled_reason(payload: Dictionary) -> String:
 	if state.is_empty():
@@ -140,12 +178,18 @@ func run_all_ai_market() -> Dictionary:
 func run_all_ai_actions() -> Dictionary:
 	return _commit(AIPhaseCoordinator.run_all_actions(_working()))
 func get_ai_state(player_id: String) -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_ai_state(state, player_id)
 func get_ai_profiles_view() -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_ai_profiles_view(state)
 func get_turf_level() -> int:
 	return TurfLevelIds.BASE if state.is_empty() else int(state["turf_level"])
 func get_turf_level_view() -> Dictionary:
+	if state.is_empty():
+		return _view_failure()
 	return GameViewBuilder.get_turf_level_view(state)
 func _working() -> Dictionary:
 	return state.duplicate(true)
@@ -194,3 +238,7 @@ func _failure(error: String) -> Dictionary:
 	return {"ok": false, "error": error, "state": {}, "log_entries": []}
 func _selector_failure() -> Dictionary:
 	return {"ok": false, "error": ValidationErrors.GAME_NOT_STARTED}
+func _view_failure() -> Dictionary:
+	return {
+		"ok": false, "error": ValidationErrors.GAME_NOT_STARTED, "view": {},
+	}

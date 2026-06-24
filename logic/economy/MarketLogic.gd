@@ -86,6 +86,13 @@ static func can_buy_card(
 	return PurchaseValidator.validate_purchase(state, player_id, card_id)
 
 
+static func can_rebuild_district_control(
+	state: Dictionary,
+	player_id: String
+) -> Dictionary:
+	return PurchaseValidator.validate_rebuild(state, player_id)
+
+
 static func buy_card(
 	state: Dictionary,
 	player_id: String,

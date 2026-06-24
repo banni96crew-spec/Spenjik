@@ -8,6 +8,7 @@ const UI_ROOTS: Array[String] = [
 const RUNTIME_UI_EXTENSIONS: Array[String] = [".gd", ".tscn", ".tres"]
 const FORBIDDEN_UI_PATTERNS: Array[String] = [
 	"GameStateManager.state[",
+	"GameStateManager.state =",
 	"[\"nal\"] +=", "[\"nal\"] -=",
 	"[\"vp\"] +=", "[\"vp\"] -=",
 	"[\"hand\"].append", "[\"hand\"].erase",
@@ -15,11 +16,16 @@ const FORBIDDEN_UI_PATTERNS: Array[String] = [
 	"[\"purchased_this_round\"].append",
 	"SeededRandom", "SeededPicker",
 	"randf(", "randi(", "randomize(", "RandomNumberGenerator",
-	"MarketLogic.buy_card", "CombatEngine.resolve_attack",
-	"StreetDealLogic.select_street_deal", "ContactLogic.select_contact",
-	"ContractLogic.claim_contract", "AIBotController.run_action_for_ai",
-	"PriceLogic.calculate",
+	"MarketLogic.", "PurchaseValidator.", "PriceLogic.",
+	"CombatEngine.", "ContractLogic.", "StreetDealLogic.",
+	"ContactLogic.", "IncomePreviewBuilder.", "IncomeLogic.",
+	"AIBotController.run_action_for_ai",
 	"FileAccess", "user://", "SaveManager", "SaveLoad",
+]
+const FORBIDDEN_UI_REGEX_PATTERNS: Array[String] = [
+	"GameStateManager\\.state(?![\\[_])",
+	"var\\s+\\w+\\s*:=\\s*GameStateManager\\.get_state_snapshot\\(\\)",
+	"var\\s+\\w+\\s*=\\s*GameStateManager\\.get_state_snapshot\\(\\)",
 ]
 const FORBIDDEN_RUNTIME_REFERENCE_PATTERNS: Array[String] = [
 	"CARD_STYLE_REFERENCE", "C:\\Users\\", "http://", "https://",
@@ -58,6 +64,13 @@ func test_ui_scripts_obey_gameplay_boundaries() -> void:
 			path, FORBIDDEN_UI_PATTERNS
 		)
 		assert_eq(pattern, "", "Forbidden UI pattern %s in %s" % [pattern, path])
+		var regex_pattern: String = StaticScanHelper.find_regex_pattern(
+			path, FORBIDDEN_UI_REGEX_PATTERNS
+		)
+		assert_eq(
+			regex_pattern, "",
+			"Forbidden UI regex %s in %s" % [regex_pattern, path]
+		)
 		assert_lt(
 			StaticScanHelper.count_lines(path), 250,
 			"UI script must stay below 250 lines: %s" % path

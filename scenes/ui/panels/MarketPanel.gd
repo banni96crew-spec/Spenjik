@@ -39,6 +39,7 @@ func refresh(_view: Dictionary) -> void:
 		selected_card_id = ""
 		_clear_preview()
 	end_button.disabled = bool(result["view"]["ready_for_action"])
+	_refresh_rebuild()
 
 
 func _on_card_selected(card_id: String) -> void:
@@ -70,6 +71,22 @@ func _on_buy() -> void:
 	if result["ok"]:
 		selected_card_id = ""
 	command_finished.emit(result)
+
+
+func _refresh_rebuild() -> void:
+	var reason: String = GameStateManager.get_rebuild_district_disabled_reason(
+		GameIds.PLAYER_HUMAN
+	)
+	var preview: Dictionary = GameStateManager.get_rebuild_district_preview(
+		GameIds.PLAYER_HUMAN
+	)
+	rebuild_button.disabled = reason != ValidationErrors.OK
+	if preview["ok"]:
+		rebuild_button.tooltip_text = "REBUILD: %d NAL" % int(
+			preview["final_rebuild_price"]
+		)
+	else:
+		rebuild_button.tooltip_text = ErrorTextMap.to_text(reason)
 
 
 func _on_rebuild() -> void:

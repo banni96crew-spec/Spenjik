@@ -17,6 +17,7 @@ func test_required_public_api_exists() -> void:
 		"end_market_for_player", "end_action_for_player",
 		"skip_action_for_player", "get_current_phase", "get_round",
 		"buy_card", "rebuild_district_control", "get_market_view",
+		"get_rebuild_district_preview", "get_rebuild_district_disabled_reason",
 		"get_card_price_preview", "get_purchase_disabled_reason",
 		"get_income_preview", "get_cops_upkeep_preview",
 		"get_protected_nal_preview", "execute_attack", "discard_war_card",

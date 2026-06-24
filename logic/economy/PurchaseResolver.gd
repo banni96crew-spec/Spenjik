@@ -103,6 +103,7 @@ static func resolve_rebuild(
 	}, nal_before)
 	return _validated_result(state, candidate, log_start, {
 		"player_id": player_id,
+		"card_id": GameIds.CARD_DISTRICT_CONTROL,
 		"price": price,
 		"destination": card.destination,
 		"contract_results": [contract_result],
