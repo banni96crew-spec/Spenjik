@@ -553,3 +553,13 @@ CardView and card visual helpers must not contain:
 
 ```
 ```
+CardView must support both base_price and current/final price.
+
+In Market context:
+- the large price shown on the card must be the current final purchase price from GameStateManager/PriceLogic preview;
+- base_price may be shown only as secondary text or tooltip;
+- CardView must not calculate scaling itself;
+- MarketPanel/GameViewBuilder must pass final price into CardView display dictionary.
+
+Example:
+If Laundry base price is 8 but second Laundry costs 10 because of scaling, the card in Market must display 10 as the main price.
