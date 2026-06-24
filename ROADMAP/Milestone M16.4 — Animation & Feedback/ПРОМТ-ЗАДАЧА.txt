@@ -16,7 +16,7 @@
 
 Реализуй **Milestone M16.4 — Animation & Feedback**.
 
-Сначала изучи repository и дай план без кода.
+Сначала изучи * `docs/prd/M16.4_ANIMATION_AND_FEEDBACK.md`, repository и дай план без кода.
 До подтверждения пользователя не изменяй файлы.
 
 ---

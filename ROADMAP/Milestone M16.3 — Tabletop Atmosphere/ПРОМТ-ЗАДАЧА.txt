@@ -15,7 +15,7 @@
 
 Реализуй **Milestone M16.3 — Tabletop Atmosphere**.
 
-Сначала изучи repository и дай план без кода.
+Сначала изучи * `docs/prd/M16.3_TABLETOP_ATMOSPHERE.md`, repository и дай план без кода.
 До подтверждения пользователя не изменяй файлы.
 
 ---

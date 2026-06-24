@@ -76,6 +76,11 @@ docs/
     20_LLM_AGENT_RULES.md
     21_OPEN_QUESTIONS_AND_FIXES.md
     M16.1_UI_LAYOUT_REWORK.md
+    M16.2_CARD_VISUAL_SYSTEM.md
+    M16.3_TABLETOP_ATMOSPHERE.md
+    M16.4_ANIMATION_AND_FEEDBACK.md
+    M16.5_AUDIO_AND_TACTILITY.md
+    M16.6_UX_CLARITY_PASS.md
 
 ## 5. File Responsibilities
 
@@ -102,7 +107,12 @@ File	Responsibility
 19_IMPLEMENTATION_ORDER.md	Step-by-step development order for Cursor / Claude
 20_LLM_AGENT_RULES.md	General LLM-agent rules, restrictions, guardrails
 21_OPEN_QUESTIONS_AND_FIXES.md	Resolved fixes, accepted decisions, and deferred non-MVP questions
-M16.1_UI_LAYOUT_REWORK.md	Tabletop layout zones, responsive desktop composition, and M16.1 layout tests
+M16.1_UI_LAYOUT_REWORK.md	tabletop layout zones, responsive desktop composition, and M16.1 layout tests
+M16.2_CARD_VISUAL_SYSTEM.md	CardView visual grammar, type-driven card template, and card visual tests/static boundaries
+M16.3_TABLETOP_ATMOSPHERE.md	tabletop atmosphere, background/theme treatment, and non-copyright visual direction boundaries
+M16.4_ANIMATION_AND_FEEDBACK.md	UI-only animation, feedback, presentation locks, and replay-safe feedback rules
+M16.5_AUDIO_AND_TACTILITY.md	UI-only audio/tactility, session-local audio behavior, and audio boundary tests
+M16.6_UX_CLARITY_PASS.md	phase clarity, disabled reasons, readable copy, hints, tooltips, and UX clarity tests
 
 ## 6. Recommended Reading Order for Human Review
 
@@ -129,6 +139,11 @@ For manual PRD refinement, read in this order:
 19. 20_LLM_AGENT_RULES.md
 20. 21_OPEN_QUESTIONS_AND_FIXES.md
 21. M16.1_UI_LAYOUT_REWORK.md
+22. M16.2_CARD_VISUAL_SYSTEM.md
+23. M16.3_TABLETOP_ATMOSPHERE.md
+24. M16.4_ANIMATION_AND_FEEDBACK.md
+25. M16.5_AUDIO_AND_TACTILITY.md
+26. M16.6_UX_CLARITY_PASS.md
 
 ## 7. Recommended Reading Order for LLM Agents
 
@@ -175,6 +190,17 @@ Task: implement M16.1 UI Layout Rework
 Provide the agent with:
 - 20_LLM_AGENT_RULES.md
 - M16.1_UI_LAYOUT_REWORK.md
+- 17_UI_UX_SPEC.md
+- 16_GAME_STATE_MANAGER_API.md
+- 15_GODOT_ARCHITECTURE.md
+- 18_TEST_PLAN.md
+
+Task: implement an M16.2-M16.6 UI polish pass
+
+Provide the agent with:
+- 20_LLM_AGENT_RULES.md
+- The owner M16.x PRD for the current pass
+- Earlier completed M16.x PRDs only when directly relevant
 - 17_UI_UX_SPEC.md
 - 16_GAME_STATE_MANAGER_API.md
 - 15_GODOT_ARCHITECTURE.md
@@ -250,6 +276,15 @@ Used for Godot Control UI.
 - 17_UI_UX_SPEC.md
 - 20_LLM_AGENT_RULES.md
 
+For M16.1-M16.6 UI polish tasks, also load the owner M16.x PRD for the current pass:
+
+- M16.1_UI_LAYOUT_REWORK.md
+- M16.2_CARD_VISUAL_SYSTEM.md
+- M16.3_TABLETOP_ATMOSPHERE.md
+- M16.4_ANIMATION_AND_FEEDBACK.md
+- M16.5_AUDIO_AND_TACTILITY.md
+- M16.6_UX_CLARITY_PASS.md
+
 ### 8.7. Testing Pack
 
 Used for GUT tests and replay tests.
@@ -314,8 +349,9 @@ Short order:
 18. Implement GameStateManager.gd as a thin facade.
 19. Write and pass GUT unit tests.
 20. Implement UI only after logic tests are green.
-21. Run replay tests.
-22. Run manual UX tests.
+21. Complete required M16.1-M16.6 UI polish passes in order before M17.
+22. Run replay tests.
+23. Run manual UX tests.
 
 ## 12. Resolved Pre-Development Decisions
 
@@ -427,11 +463,11 @@ MVP does not include:
 
 ## 16. Current Documentation Status
 
-Status: modular PRD complete; targeted internal consistency pass applied
+Status: modular PRD complete; targeted internal consistency pass applied; M16.1-M16.6 UI polish PRDs are part of the required sequence before M17
 Base PRD: v2.4 Godot Edition
 Target: focused owner documents ready for staged implementation
 Main risk: implementation drift from owner documents and canonical state/API contracts
-Next required action: begin implementation from 19_IMPLEMENTATION_ORDER.md
+Next required action: follow 19_IMPLEMENTATION_ORDER.md without skipping M16.1-M16.6 before M17
 
 ## 17. Definition of Ready for Development
 

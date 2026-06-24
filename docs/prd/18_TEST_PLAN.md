@@ -998,7 +998,63 @@ Minimum tests:
 * UI scripts do not contain price or combat logic;
 * UI scripts stay under 250 lines.
 
-### 11.16. Replay Tests
+### 11.16. M16.1-M16.6 UI Polish Tests
+
+These tests verify the UI polish PRDs without redefining their behavior. See the
+owner M16.x PRD for executable requirements.
+
+M16.1:
+
+* `tests/unit/test_ui_layout.gd`;
+* `tests/unit/test_ui_screens.gd`;
+* `tests/static/test_ui_static_boundaries.gd`.
+
+M16.2:
+
+* `tests/unit/test_card_view_visual_system.gd`;
+* CardView is type-driven;
+* no hardcoded specific card IDs in CardView;
+* no full-card PNG-only renderer;
+* no runtime use of `CARD_STYLE_REFERENCE`.
+
+M16.3:
+
+* `tests/unit/test_tabletop_atmosphere.gd`;
+* theme/background loads;
+* atmosphere remains UI/theme-only;
+* no copyrighted Inscryption asset/text/layout dependency;
+* no gameplay mutation.
+
+M16.4:
+
+* `tests/unit/test_ui_feedback.gd`;
+* feedback/animation is UI-only;
+* feedback does not mutate state;
+* feedback does not consume gameplay random;
+* presentation lock cannot block gameplay/replay.
+
+M16.5:
+
+* `tests/unit/test_ui_audio.gd`;
+* audio/tactility is UI-only;
+* no persistence/save-load/user profile;
+* no gameplay random;
+* missing optional audio assets do not crash if audio is optional;
+* audio does not affect replay snapshot/random step.
+
+M16.6:
+
+* `tests/unit/test_ux_clarity.gd`;
+* phase hints exist;
+* known error codes map to readable text;
+* unknown error fallback exists;
+* hints do not invent gameplay availability;
+* log formatting does not mutate dictionaries.
+
+Do not create brittle beauty tests that compare exact pixels or colors unless a
+stable theme assertion already exists. Prefer structural/static tests.
+
+### 11.17. Replay Tests
 
 Minimum tests:
 
@@ -1061,6 +1117,32 @@ Static scan must fail if banned non-Godot implementation stack files or terms ap
 * Tailwind;
 * Docker;
 * WebSocket backend.
+
+M16.1-M16.6 UI polish static scans must also cover:
+
+```text
+CARD_STYLE_REFERENCE
+C:\Users\
+http://
+https://
+FileAccess
+user://
+SaveManager
+SaveLoad
+RandomNumberGenerator
+randf(
+randi(
+randomize(
+```
+
+`CARD_STYLE_REFERENCE`, `C:\Users\`, `http://`, and `https://` must not appear
+in runtime `.gd`, `.tscn`, or `.tres` paths. `FileAccess` and `user://` are
+forbidden in UI polish files except approved debug-only scope. Audio APIs
+(`AudioStreamPlayer`, `AudioStreamPlayer2D`, `AudioStreamPlayer3D`,
+`AudioServer`) are allowed only in approved audio UI scope, not gameplay logic.
+
+`CardView.gd` must not hardcode specific card IDs and must not depend on
+full-card PNG-only rendering. All `.gd` files remain under 250 lines.
 
 Static scan must fail if PRD/generated Markdown contains untracked:
 

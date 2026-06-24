@@ -170,6 +170,7 @@ Tests:
 
 ## Источники истины
 
+* `docs/prd/M16.4_ANIMATION_AND_FEEDBACK.md`
 * `docs/prd/17_UI_UX_SPEC.md`
 * `docs/prd/16_GAME_STATE_MANAGER_API.md`
 * `docs/prd/15_GODOT_ARCHITECTURE.md`

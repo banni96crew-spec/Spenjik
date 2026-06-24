@@ -128,6 +128,167 @@ if ($forbiddenRandomUsages.Count -gt 0) {
 	exit 1
 }
 
+$uiRoots = @(
+	"scenes/main",
+	"scenes/game",
+	"scenes/ui"
+)
+$missingUiRoots = @()
+foreach ($uiRoot in $uiRoots) {
+	if (-not (Test-Path -LiteralPath (Join-Path $projectRoot $uiRoot))) {
+		$missingUiRoots += $uiRoot
+	}
+}
+
+if ($missingUiRoots.Count -gt 0) {
+	Write-Error "UI static scan roots are missing: $($missingUiRoots -join ', ')"
+	exit 1
+}
+
+$uiRuntimeFiles = @()
+foreach ($uiRoot in $uiRoots) {
+	$uiRuntimeFiles += Get-ChildItem -Path (Join-Path $projectRoot $uiRoot) -Recurse -File |
+		Where-Object { $_.Extension -in @(".gd", ".tscn", ".tres") }
+}
+
+$forbiddenRuntimeReferences = @(
+	"CARD_STYLE_REFERENCE",
+	"C:\Users\",
+	"http://",
+	"https://"
+)
+$forbiddenUiPolishPatterns = @(
+	"GameStateManager.state[",
+	"[""nal""] +=",
+	"[""nal""] -=",
+	"[""vp""] +=",
+	"[""vp""] -=",
+	"[""hand""].append",
+	"[""hand""].erase",
+	"[""combat_log""].append",
+	"[""purchased_this_round""].append",
+	"MarketLogic.buy_card",
+	"CombatEngine.resolve_attack",
+	"StreetDealLogic.select_street_deal",
+	"ContactLogic.select_contact",
+	"ContractLogic.claim_contract",
+	"AIBotController.run_action_for_ai",
+	"SeededRandom",
+	"SeededPicker",
+	"RandomNumberGenerator",
+	"randf(",
+	"randi(",
+	"randomize(",
+	"SaveManager",
+	"save_game",
+	"load_game",
+	"user://",
+	"FileAccess",
+	"ConfigFile",
+	"React",
+	"TypeScript",
+	"Zustand",
+	"Tailwind",
+	"Docker",
+	"WebSocket"
+)
+$uiPolishViolations = @()
+foreach ($runtimeFile in $uiRuntimeFiles) {
+	$relativePath = Get-ProjectRelativePath -FullName $runtimeFile.FullName
+	$lineNumber = 0
+	foreach ($line in Get-Content -LiteralPath $runtimeFile.FullName) {
+		$lineNumber += 1
+		foreach ($pattern in ($forbiddenRuntimeReferences + $forbiddenUiPolishPatterns)) {
+			if ($line.Contains($pattern)) {
+				$uiPolishViolations += "${relativePath}:${lineNumber} [$pattern]"
+			}
+		}
+	}
+}
+
+if ($uiPolishViolations.Count -gt 0) {
+	Write-Error "Forbidden UI polish boundary patterns found: $($uiPolishViolations -join ', ')"
+	exit 1
+}
+
+$cardViewPath = Join-Path $projectRoot "scenes/ui/widgets/CardView.gd"
+if (Test-Path -LiteralPath $cardViewPath) {
+	$cardViewSource = Get-Content -LiteralPath $cardViewPath -Raw
+	$cardViewPatterns = @(
+		"CARD_STYLE_REFERENCE",
+		"CARD_LAUNDRY",
+		"CARD_STASH",
+		"CARD_THUG",
+		"CARD_COPS",
+		"full_card_png",
+		"card_png",
+		"TextureRect"
+	)
+	$cardViewWordPatterns = @(
+		"\blaundry\b",
+		"\bstash\b",
+		"\bthug\b",
+		"\bcops\b"
+	)
+	$cardViewViolations = @()
+	foreach ($pattern in $cardViewPatterns) {
+		if ($cardViewSource.Contains($pattern)) {
+			$cardViewViolations += $pattern
+		}
+	}
+	foreach ($pattern in $cardViewWordPatterns) {
+		if ($cardViewSource -match $pattern) {
+			$cardViewViolations += $pattern
+		}
+	}
+	if ($cardViewViolations.Count -gt 0) {
+		Write-Error "CardView contains forbidden visual-system patterns: $($cardViewViolations -join ', ')"
+		exit 1
+	}
+} else {
+	Write-Error "CardView.gd is missing from scenes/ui/widgets"
+	exit 1
+}
+
+$audioApiPatterns = @(
+	"AudioStreamPlayer",
+	"AudioStreamPlayer2D",
+	"AudioStreamPlayer3D",
+	"AudioServer"
+)
+$audioForbiddenRoots = @(
+	"logic",
+	"data",
+	"autoload"
+)
+$audioViolations = @()
+foreach ($audioRoot in $audioForbiddenRoots) {
+	$absoluteRoot = Join-Path $projectRoot $audioRoot
+	if (-not (Test-Path -LiteralPath $absoluteRoot)) {
+		continue
+	}
+	foreach ($runtimeFile in Get-ChildItem -Path $absoluteRoot -Recurse -File -Filter "*.gd") {
+		$relativePath = Get-ProjectRelativePath -FullName $runtimeFile.FullName
+		if ($relativePath -eq "autoload/AudioManager.gd") {
+			continue
+		}
+		$lineNumber = 0
+		foreach ($line in Get-Content -LiteralPath $runtimeFile.FullName) {
+			$lineNumber += 1
+			foreach ($pattern in $audioApiPatterns) {
+				if ($line.Contains($pattern)) {
+					$audioViolations += "${relativePath}:${lineNumber} [$pattern]"
+				}
+			}
+		}
+	}
+}
+
+if ($audioViolations.Count -gt 0) {
+	Write-Error "Audio APIs found outside approved UI/audio scope: $($audioViolations -join ', ')"
+	exit 1
+}
+
 $forbiddenExtensions = @(".js", ".jsx", ".ts", ".tsx")
 $forbiddenNames = @("package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "Dockerfile")
 $forbiddenArtifacts = Get-ChildItem -Path $projectRoot -Recurse -File |
@@ -149,5 +310,8 @@ if ($forbiddenArtifacts.Count -gt 0) {
 Write-Host "M1 file-length scan passed: $($sourceFiles.Count) project GDScript files checked."
 Write-Host "M1 open-question marker scan passed: $($markerFiles.Count) project files checked."
 Write-Host "M1 forbidden-random scan passed."
+Write-Host "M16 UI polish boundary scan passed: $($uiRuntimeFiles.Count) runtime UI files checked."
+Write-Host "M16 CardView visual boundary scan passed."
+Write-Host "M16 audio gameplay-boundary scan passed."
 Write-Host "M1 banned-stack scan passed."
 exit 0

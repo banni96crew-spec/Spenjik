@@ -309,6 +309,11 @@ Recommended milestone order:
 |       M15 | Integration and Replay        | full game flows                   |
 |       M16 | UI / UX                       | screens, panels, widgets          |
 |     M16.1 | UI Layout Rework              | tabletop desktop composition      |
+|     M16.2 | Card Visual System            | type-driven CardView visuals      |
+|     M16.3 | Tabletop Atmosphere           | theme and tabletop mood           |
+|     M16.4 | Animation and Feedback        | UI-only feedback and locks        |
+|     M16.5 | Audio and Tactility           | UI-only audio feedback            |
+|     M16.6 | UX Clarity Pass               | hints, copy, and disabled reasons |
 |       M17 | Polish and Hardening          | logs, debug, final scans          |
 
 ### 7.2. Milestone M0 — Project Bootstrap
@@ -766,7 +771,142 @@ Gate tests:
 M16.1 must not add M17 hardening, final card art, animation, audio, or
 gameplay changes.
 
-### 7.20. Milestone M17 — Polish and Hardening
+### 7.20. Milestone M16.2 — Card Visual System
+
+Owner specification:
+
+```text
+M16.2_CARD_VISUAL_SYSTEM.md
+```
+
+Implement:
+
+* CardView visual template;
+* card type markers;
+* type-driven visual grammar;
+* card visual tests/static checks.
+
+Gate tests:
+
+* card visual tests pass;
+* CardView is type-driven;
+* CardView has no hardcoded specific card IDs;
+* CardView is not a full-card PNG-only renderer;
+* UI static boundary tests pass.
+
+M16.2 must not create final unique illustration for every card, hardcode
+card-specific visual branches, use full-card PNG-only rendering, or change card
+IDs/types/prices/effects.
+
+### 7.21. Milestone M16.3 — Tabletop Atmosphere
+
+Owner specification:
+
+```text
+M16.3_TABLETOP_ATMOSPHERE.md
+```
+
+Implement:
+
+* tabletop background;
+* theme atmosphere;
+* grime/noir tabletop treatment;
+* theme/static checks.
+
+Gate tests:
+
+* atmosphere/theme tests pass;
+* theme/background loads;
+* atmosphere remains UI/theme-only;
+* no runtime dependency on external or copyrighted references;
+* UI static boundary tests pass.
+
+M16.3 must not copy Inscryption assets, text, layout, UI, or trade dress; add
+gameplay; or add animation/audio scope.
+
+### 7.22. Milestone M16.4 — Animation and Feedback
+
+Owner specification:
+
+```text
+M16.4_ANIMATION_AND_FEEDBACK.md
+```
+
+Implement:
+
+* UI-only feedback;
+* animation timing;
+* presentation locks;
+* button/card/phase feedback.
+
+Gate tests:
+
+* feedback tests pass;
+* feedback/animation does not mutate gameplay state;
+* feedback does not consume gameplay random;
+* presentation locks cannot block gameplay/replay;
+* UI static boundary tests pass.
+
+M16.4 must not add audio, consume gameplay RNG, block gameplay resolution on
+animation, or affect replay snapshot/random step.
+
+### 7.23. Milestone M16.5 — Audio and Tactility
+
+Owner specification:
+
+```text
+M16.5_AUDIO_AND_TACTILITY.md
+```
+
+Implement:
+
+* UI-only audio and tactility;
+* optional audio layer;
+* session-local mute/volume if implemented;
+* audio boundary tests.
+
+Gate tests:
+
+* audio tests pass if audio files/layer are implemented;
+* audio/tactility remains UI-only;
+* missing optional audio assets do not crash when audio is optional;
+* audio does not affect replay snapshot/random step;
+* audio boundary/static tests pass.
+
+M16.5 must not add save/load, add persistent settings, consume gameplay RNG, or
+affect gameplay state, logs, replay, AI, or random step.
+
+### 7.24. Milestone M16.6 — UX Clarity Pass
+
+Owner specification:
+
+```text
+M16.6_UX_CLARITY_PASS.md
+```
+
+Implement:
+
+* UX hints;
+* disabled reason readability;
+* phase clarity;
+* readable log summaries;
+* tooltip/help copy;
+* UX clarity tests.
+
+Gate tests:
+
+* UX clarity tests pass;
+* phase hints exist;
+* known error codes map to readable text;
+* unknown error fallback exists;
+* hints/log formatting do not mutate gameplay dictionaries;
+* UI static boundary tests pass.
+
+M16.6 must not add campaign/tutorial flow without approval, change gameplay
+validation, invent availability logic, change the phase graph, or change public
+API unless separately approved.
+
+### 7.25. Milestone M17 — Polish and Hardening
 
 Implement:
 

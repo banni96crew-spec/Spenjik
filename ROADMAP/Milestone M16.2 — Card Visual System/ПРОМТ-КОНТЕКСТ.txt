@@ -151,6 +151,7 @@ Add focused tests only if needed:
 
 ## Источники истины
 
+* `docs/prd/M16.2_CARD_VISUAL_SYSTEM.md`
 * `docs/prd/17_UI_UX_SPEC.md`
 * `docs/prd/16_GAME_STATE_MANAGER_API.md`
 * `docs/prd/15_GODOT_ARCHITECTURE.md`

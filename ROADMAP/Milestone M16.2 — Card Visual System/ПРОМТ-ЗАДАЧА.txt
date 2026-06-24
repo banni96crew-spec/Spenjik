@@ -45,7 +45,7 @@ M16.2 не является M17 hardening.
 
 ## Visual source of truth
 
-Перед реализацией изучи папку:
+Перед реализацией изучи * `docs/prd/M16.2_CARD_VISUAL_SYSTEM.md` и папку:
 
 `C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE`
 

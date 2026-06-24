@@ -14,7 +14,7 @@ Before starting work:
 
 **The Turf** — локальная пошаговая карточная мини-игра о борьбе за влияние, управлении ресурсами и тактических атаках. Матч рассчитан ровно на 15 раундов и включает человека и трёх локальных AI-соперников.
 
-M0–M16 завершены. Следующий milestone: M17 — Polish and Hardening. Gameplay core, replay flow и functional desktop UI реализованы. `GameStateManager.gd` зарегистрирован как Autoload и остаётся единственным UI-facing facade. Последний full GUT suite: 365/365 pass. Canonical MVP smoke: pass.
+M0–M16 завершены. Перед M17 добавлены обязательные UI polish PRD M16.1–M16.6. Следующий gate: M16.1, затем M16.2–M16.6, затем M17. Gameplay core, replay flow и functional desktop UI реализованы. `GameStateManager.gd` зарегистрирован как Autoload и остаётся единственным UI-facing facade. Последний full GUT suite: 365/365 pass. Canonical MVP smoke: pass.
 
 Зафиксированный стек:
 
@@ -69,6 +69,8 @@ Godot-проект и gameplay code:
 
 - Перед изменением системы определить её owner-документ в `docs/prd/`.
 - Минимальный контекст задачи: `20_LLM_AGENT_RULES.md`, `03_IDS_AND_CONSTANTS.md`, owner PRD системы, прямые зависимости и релевантный раздел `18_TEST_PLAN.md`.
+- Для UI polish задач M16.1–M16.6 загрузить owner `M16.x` PRD текущего gate; не пропускать M16.1–M16.6 и не начинать M17, пока все их gates не завершены.
+- README и AGENTS являются статусными/операционными справками, но не источниками gameplay-правил; gameplay source of truth остаётся в owner PRD.
 - Не загружать без необходимости весь PRD. Если задаче требуется более 5–7 PRD-файлов одновременно, разбить задачу.
 - При конфликте правил проверить `21_OPEN_QUESTIONS_AND_FIXES.md`. Не разрешать противоречия догадками.
 - Не менять баланс, цены, эффекты карт, ID, роли, контракты, контакты, Street Deals, Turf Levels, AI-профили и core loop без отдельного утверждённого изменения PRD.
@@ -228,6 +230,6 @@ godot --headless -d -s --path "$PWD" addons/gut/gut_cmdln.gd -gdir=res://tests -
 - `.cursor/docs/coding-standards.md` синхронизирован с Godot 4.6.2, GDScript и GUT 9.6.0. Универсальные Unity/Unreal и GdUnit4-команды к проекту не применяются.
 - MVP не включает multiplayer, backend, аккаунты, campaign persistence, обязательный web export, мобильную адаптацию, C#-версию и card editor.
 - `SaveManager.gd` не нужен. Допустим только необязательный `DebugSnapshotManager.gd`, который не участвует в gameplay loop.
-- Реализация идёт в порядке milestone из `docs/prd/19_IMPLEMENTATION_ORDER.md`: constants → Resources/catalogs → deterministic random → state factory/validator → owner logic + tests → facade → integration/replay → UI.
+- Реализация идёт в порядке milestone из `docs/prd/19_IMPLEMENTATION_ORDER.md`: constants → Resources/catalogs → deterministic random → state factory/validator → owner logic + tests → facade → integration/replay → UI → M16.1–M16.6 UI polish gates → M17.
 - UI до зелёных logic-тестов допускается только как placeholder без gameplay-правил.
 - Пользователь принимает творческие и стратегические решения. Агент должен показывать варианты и компромиссы, когда требования действительно не определены, но не запрашивать повторное разрешение на уже явно поручённое изменение.

@@ -4,7 +4,7 @@
 
 ## Статус
 
-**Current status:** M0–M16 completed. **Next milestone:** M17 — Polish and Hardening.
+**Current status:** M0–M16 completed. Additional UI polish PRDs M16.1–M16.6 are now part of the required sequence before M17. Current next gate: M16.1, then M16.2–M16.6, then M17.
 
 Проект содержит проверенный gameplay core и функциональный desktop UI на Godot `Control`/`Container`/`Theme`.
 
@@ -93,7 +93,7 @@ UI -> GameStateManager -> logic modules -> catalogs/resources/constants
 ## Порядок разработки
 
 ```text
-M0–M16 (done) -> M17 polish
+M0–M16 (done) -> M16.1–M16.6 UI polish passes -> M17 polish/hardening
 ```
 
 Не переходить к следующему milestone, если обязательный gate предыдущего не пройден.
