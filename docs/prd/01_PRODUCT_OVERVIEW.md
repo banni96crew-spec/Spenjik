@@ -214,7 +214,7 @@ The MVP must include:
 - Full Turf Level list from PRD v2.4.
 - AI profiles from PRD v2.4.
 - Deterministic random through SeededRandom.gd and SeededPicker.gd.
-- Basic Godot Control UI.
+- Godot Control UI with a readable desktop tabletop composition.
 - Combat log.
 - Disabled action reasons.
 - Game over summary.
@@ -237,6 +237,7 @@ The MVP is successful when:
 - Contacts can unlock and apply their effects according to the rules.
 - Turf Levels apply their defined effects.
 - UI never implements gameplay logic directly.
+- The main game layout remains usable at 1280x720 and targets 1920x1080.
 - Unit tests cover the core logic modules.
 - Replay tests can confirm deterministic behavior for the same seed and scripted decisions.
 

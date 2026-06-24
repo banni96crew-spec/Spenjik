@@ -1,0 +1,232 @@
+ПРОМТ-КОНТЕКСТ — M16.1 UI Layout Rework
+Проект: The Turf / Передел
+О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+В матче участвуют:
+
+1 human player;
+3 local AI;
+партия длится 15 раундов;
+финал — Game Over.
+
+Текущий этап: Milestone M16.1 — UI Layout Rework.
+
+Это дополнительный UI-polish milestone после M16 и до M17.
+
+Цель M16.1 — переделать уже рабочий M16 UI из “панельного/debug-like интерфейса” в более цельную настольную tabletop-композицию:
+
+игровой стол;
+зоны игроков;
+рука human player;
+рынок карт;
+action/control area;
+лог;
+контракт/контакты;
+readable desktop layout.
+
+M16.1 не меняет gameplay rules, balance, deterministic replay, public facade contracts или state schema.
+
+Стек
+Godot 4.6.2 stable.
+GDScript.
+Godot Control nodes, Containers и Theme.
+GUT.
+.tres Resources.
+Dictionary snapshots.
+GameStateManager Autoload.
+SeededRandom / SeededPicker.
+Windows/Linux desktop first.
+Без web stack.
+Архитектура
+
+Проект logic-first, data-driven, deterministic.
+
+Dependency direction:
+
+UI -> GameStateManager -> logic -> catalogs/resources/constants
+
+Правила:
+
+UI является view/input layer.
+Runtime state принадлежит GameStateManager.
+UI вызывает gameplay только через GameStateManager.
+UI не читает и не мутирует GameStateManager.state.
+Failed validation не мутирует active state.
+Selectors/previews не мутируют state и не consume random.
+UI-local state хранит только selection/hover/focus/layout state.
+Gameplay modules не зависят от UI scenes.
+CardView остаётся template-based widget.
+M15 replay determinism и M16 UI boundaries должны остаться зелёными.
+Релевантные пути
+
+Main/game:
+
+res://scenes/main/Main.tscn
+res://scenes/main/Main.gd
+res://scenes/game/GameRoot.tscn
+res://scenes/game/GameRoot.gd
+
+Screens:
+
+res://scenes/ui/screens/SetupScreen.tscn
+res://scenes/ui/screens/SetupScreen.gd
+res://scenes/ui/screens/GameScreen.tscn
+res://scenes/ui/screens/GameScreen.gd
+res://scenes/ui/screens/GameOverScreen.tscn
+res://scenes/ui/screens/GameOverScreen.gd
+
+Panels:
+
+res://scenes/ui/panels/PlayerBoard.tscn
+res://scenes/ui/panels/PlayerBoard.gd
+res://scenes/ui/panels/MarketPanel.tscn
+res://scenes/ui/panels/MarketPanel.gd
+res://scenes/ui/panels/ActionPanel.tscn
+res://scenes/ui/panels/ActionPanel.gd
+res://scenes/ui/panels/StreetDealPanel.tscn
+res://scenes/ui/panels/StreetDealPanel.gd
+res://scenes/ui/panels/ContactPanel.tscn
+res://scenes/ui/panels/ContactPanel.gd
+res://scenes/ui/panels/ContractPanel.tscn
+res://scenes/ui/panels/ContractPanel.gd
+res://scenes/ui/panels/GameLogPanel.tscn
+res://scenes/ui/panels/GameLogPanel.gd
+
+Widgets:
+
+res://scenes/ui/widgets/CardView.tscn
+res://scenes/ui/widgets/CardView.gd
+res://scenes/ui/widgets/DefenseBadges.tscn
+res://scenes/ui/widgets/DefenseBadges.gd
+res://scenes/ui/widgets/NalVpDisplay.tscn
+res://scenes/ui/widgets/NalVpDisplay.gd
+res://scenes/ui/widgets/DisabledReasonLabel.tscn
+res://scenes/ui/widgets/DisabledReasonLabel.gd
+
+Helpers/tests:
+
+res://scenes/ui/helpers/ErrorTextMap.gd
+res://scenes/ui/helpers/UIViewFormatters.gd
+res://tests/unit/
+res://tests/integration/
+res://tests/replay/
+res://tests/static/
+
+Visual references:
+
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+
+В этой папке лежат 4 утверждённых визуальных эталона:
+
+Engine card reference;
+Status card reference;
+War card reference;
+Defense card reference.
+
+Эти reference-карты задают визуальное направление карточного UI, но M16.1 отвечает в первую очередь за layout/tabletop composition, а не за финальную Card Visual System.
+
+Источники истины
+docs/prd/17_UI_UX_SPEC.md
+docs/prd/16_GAME_STATE_MANAGER_API.md
+docs/prd/15_GODOT_ARCHITECTURE.md
+docs/prd/18_TEST_PLAN.md
+docs/prd/19_IMPLEMENTATION_ORDER.md
+docs/prd/04_GAME_STATE_SCHEMA.md
+docs/prd/20_LLM_AGENT_RULES.md
+docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md
+owner PRD-файлы M5–M13
+actual M16 implementation files and tests
+Что уже сделано
+
+M0–M4:
+
+project structure;
+GUT;
+IDs;
+Resources/catalogs;
+deterministic random;
+GameState schema.
+
+M5–M13:
+
+phases;
+economy;
+market;
+combat;
+roles;
+contracts;
+Street Deals/Debts;
+contacts;
+Turf Levels;
+AI.
+
+M14:
+
+GameStateManager implemented as thin facade;
+active state belongs to GameStateManager;
+UI/gameplay access goes through public facade methods.
+
+M15:
+
+integration tests;
+full-run tests;
+replay tests;
+deterministic setup-to-Game Over replay.
+
+M16:
+
+functional desktop UI;
+Main/GameRoot;
+Setup/Game/GameOver screens;
+required panels/widgets/helpers;
+UI calls gameplay through GameStateManager;
+CardView template-based;
+project launches through Main.tscn;
+render checks for 1280×720 and 1920×1080 were reported as passing.
+Что сейчас делаю
+
+Реализую M16.1 — UI Layout Rework:
+
+переделываю GameScreen/GameRoot layout;
+убираю ощущение debug/panel stack;
+создаю tabletop board composition;
+выделяю AI zones, human zone, market zone, action zone, side info/log area;
+сохраняю facade-only interaction;
+сохраняю existing UI payload/static tests зелёными;
+добавляю focused layout/scene tests;
+проверяю 1280×720 и 1920×1080.
+Договорённости по коду
+M16.1 не меняет gameplay rules.
+Не менять IDs, formulas, balance, phase order, AI policy и winner rules.
+Не менять deterministic random algorithm/call order.
+Не менять state schema.
+Не менять public GameStateManager contracts без подтверждённого UI blocker.
+Не добавлять save/load, persistence, profiles или campaign progression.
+Не добавлять new gameplay selectors молча.
+Не дублировать gameplay validation в UI.
+Не читать raw GameStateManager.state.
+Не вызывать low-level owner modules из UI.
+Не переносить owner logic в UI helpers.
+CardView остаётся template-based.
+UI layout может хранить только UI-local presentation state.
+Каждый .gd файл строго меньше 250 строк.
+Static scans нельзя ослаблять.
+UI boundary tests должны оставаться зелёными.
+Если найден real defect — сначала failing regression test, потом минимальный fix.
+Неясность оформляется как OQ-*.
+Что НЕ входит в M16.1
+Новые gameplay rules/content.
+Rebalance.
+Новая card visual system в полном объёме.
+Финальная анимация карт.
+Audio/tactility pass.
+Full Inscryption-level visual polish.
+Save/load.
+Campaign progression.
+Web/backend/network.
+M17 final hardening.
+Большой unrelated refactor.
+
+Не пиши код. Твоя задача - изучить контекст проекта

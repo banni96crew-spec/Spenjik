@@ -21,7 +21,7 @@ func test_setup_layout_fits_supported_viewports() -> void:
 		setup.get_parent().queue_free()
 
 
-func test_game_layout_uses_scrollable_regions_at_supported_viewports() -> void:
+func test_game_layout_exposes_tabletop_zones_at_supported_viewports() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
 	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
 		var screen: GameScreen = _host_scene(
@@ -31,11 +31,42 @@ func test_game_layout_uses_scrollable_regions_at_supported_viewports() -> void:
 			continue
 		screen.refresh()
 		assert_eq(screen.size, viewport_size)
-		assert_not_null(screen.get_node("Layout/PlayerBoardsScroll"))
-		assert_not_null(screen.get_node("Layout/Content/PhaseScroll"))
-		assert_not_null(screen.get_node("Layout/Content/SidebarScroll"))
+		assert_not_null(screen.get_node("%PhaseHeader"))
+		assert_not_null(screen.get_node("%AIZones"))
+		assert_not_null(screen.get_node("%CentralPhaseArea"))
+		assert_not_null(screen.get_node("%HumanZone"))
+		assert_not_null(screen.get_node("%SideInfoColumn"))
+		assert_eq(screen.get_node("%AIZones").get_child_count(), 3)
 		assert_true(screen.income_button.is_visible_in_tree())
+		assert_true(screen.round_label.is_visible_in_tree())
+		assert_true(screen.phase_label.is_visible_in_tree())
+		assert_true(screen.active_label.is_visible_in_tree())
+		var human_board: PlayerBoard = screen.get_node("%HumanBoard")
+		assert_true(human_board.is_visible_in_tree())
+		assert_true(human_board.resources.is_visible_in_tree())
 		screen.get_parent().queue_free()
+
+
+func test_core_phase_buttons_have_stable_reachable_paths() -> void:
+	var screen: Node = _host_scene(
+		"res://scenes/ui/screens/GameScreen.tscn", Vector2(1280, 720)
+	)
+	if screen == null:
+		return
+	for button_name: String in [
+		"IncomeButton", "BuyButton", "RebuildButton", "ExecuteButton",
+		"DiscardButton", "OptionA", "OptionB", "ClaimButton", "SelectButton",
+	]:
+		assert_not_null(
+			screen.find_child(button_name, true, false),
+			"Missing core button: %s" % button_name
+		)
+	assert_gte(
+		screen.find_children("EndButton", "Button", true, false).size(),
+		2,
+		"Market and Action end buttons must remain reachable"
+	)
+	screen.get_parent().queue_free()
 
 
 func _host_scene(path: String, viewport_size: Vector2) -> Variant:

@@ -46,13 +46,23 @@ func test_game_screen_has_required_panels() -> void:
 	if screen == null:
 		return
 	for path: String in [
-		"Layout/PlayerBoardsScroll/PlayerBoards",
-		"Layout/Content/PhaseScroll/PhasePanels/MarketPanel",
-		"Layout/Content/PhaseScroll/PhasePanels/ActionPanel",
-		"Layout/Content/PhaseScroll/PhasePanels/StreetDealPanel",
-		"Layout/Content/SidebarScroll/Sidebar/ContractPanel",
-		"Layout/Content/SidebarScroll/Sidebar/ContactPanel",
-		"Layout/Content/SidebarScroll/Sidebar/GameLogPanel",
+		"TabletopMargin/TabletopLayout/PhaseHeader",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone",
+		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
+			+ "CentralPhaseArea/PhasePanels/MarketPanel",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
+			+ "CentralPhaseArea/PhasePanels/ActionPanel",
+		"TabletopMargin/TabletopLayout/Workspace/PlayArea/"
+			+ "CentralPhaseArea/PhasePanels/StreetDealPanel",
+		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+			+ "SideInfo/ContractPanel",
+		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+			+ "SideInfo/ContactPanel",
+		"TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/"
+			+ "SideInfo/GameLogPanel",
 	]:
 		assert_not_null(screen.get_node_or_null(path), path)
 	screen.free()

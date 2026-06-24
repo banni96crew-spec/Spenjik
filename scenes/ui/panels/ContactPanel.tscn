@@ -7,10 +7,11 @@
 script = ExtResource("1")
 
 [node name="Layout" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 3
 
 [node name="Title" type="Label" parent="Layout"]
 text = "CONTACT"
-theme_override_font_sizes/font_size = 21
+theme_override_font_sizes/font_size = 18
 
 [node name="OwnedLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true

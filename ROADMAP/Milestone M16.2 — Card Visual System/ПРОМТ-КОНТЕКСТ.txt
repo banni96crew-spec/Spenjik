@@ -1,0 +1,245 @@
+---
+
+# ПРОМТ-КОНТЕКСТ — M16.2 Card Visual System
+
+## Проект: The Turf / Передел
+
+### О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+В матче участвуют:
+
+* 1 human player;
+* 3 local AI;
+* партия длится 15 раундов;
+* финал — Game Over.
+
+Текущий этап: **Milestone M16.2 — Card Visual System**.
+
+Это дополнительный UI-polish milestone после M16.1 и до M16.3/M17.
+
+Цель M16.2 — довести карточный UI до единой визуальной системы на основе 4 утверждённых reference-карт:
+
+* Engine;
+* Status;
+* War;
+* Defense.
+
+M16.2 не меняет gameplay rules, card effects, balance, deterministic replay, public facade contracts или state schema.
+
+---
+
+## Стек
+
+* Godot 4.6.2 stable.
+* GDScript.
+* Godot Control nodes, Containers и Theme.
+* GUT.
+* `.tres` Resources.
+* Dictionary snapshots.
+* GameStateManager Autoload.
+* Windows/Linux desktop first.
+* Без web stack.
+
+---
+
+## Архитектура
+
+Dependency direction:
+
+`UI -> GameStateManager -> logic -> catalogs/resources/constants`
+
+Правила:
+
+* UI является view/input layer.
+* Runtime state принадлежит GameStateManager.
+* UI вызывает gameplay только через GameStateManager.
+* UI не читает и не мутирует `GameStateManager.state`.
+* CardView является presentation widget.
+* CardView не владеет gameplay rules.
+* CardView не парсит `effect_summary` как правила.
+* CardView отображает уже готовые presentation dictionaries.
+* CardView остаётся template-based.
+* Full-card PNG не является основным способом отображения карты.
+* Gameplay modules не зависят от UI scenes.
+* M15 replay determinism и M16/M16.1 UI boundaries должны остаться зелёными.
+
+---
+
+## Visual source of truth
+
+Пользователь утвердил 4 reference-карты:
+
+`C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE`
+
+Они являются обязательным visual source of truth для карточного UI.
+
+Ожидаемые reference-файлы:
+
+* Engine reference — Laundry / Отмывочная;
+* Status reference — Stash;
+* War reference — Thug;
+* Defense reference — Cops.
+
+Эти reference-карты задают:
+
+* общую палитру;
+* рамки;
+* type markers;
+* расположение цены;
+* нижнюю title/effect панель;
+* грязную печатную фактуру;
+* criminal tabletop mood;
+* различие типов карт.
+
+Reference-файлы нельзя хардкодить как production card renderer.
+Их нужно использовать как visual style lock.
+
+---
+
+## Релевантные пути
+
+Card widgets:
+
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/CardView.gd`
+
+UI helpers:
+
+* `res://scenes/ui/helpers/UIViewFormatters.gd`
+* `res://scenes/ui/helpers/ErrorTextMap.gd`
+
+Potential new UI-only helpers/resources:
+
+* `res://scenes/ui/card_visual/CardStyleIds.gd`
+* `res://scenes/ui/card_visual/CardVisualTheme.gd`
+* `res://scenes/ui/card_visual/CardVisualDataBuilder.gd`
+* `res://scenes/ui/card_visual/CardTypeStyleMap.gd`
+
+Use these only if needed. Do not create duplicate systems.
+
+Screens/panels using cards:
+
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+
+Presentation/view layer:
+
+* `res://logic/game_state/GameViewBuilder.gd`
+* `res://logic/game_state/PresentationViewBuilder.gd`
+* `res://autoload/GameStateManager.gd`
+
+Tests:
+
+* `res://tests/unit/test_ui_payloads.gd`
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+Add focused tests only if needed:
+
+* `res://tests/unit/test_card_view_visual_system.gd`
+* `res://tests/static/test_card_visual_static_scan.gd`
+
+---
+
+## Источники истины
+
+* `docs/prd/17_UI_UX_SPEC.md`
+* `docs/prd/16_GAME_STATE_MANAGER_API.md`
+* `docs/prd/15_GODOT_ARCHITECTURE.md`
+* `docs/prd/18_TEST_PLAN.md`
+* `docs/prd/19_IMPLEMENTATION_ORDER.md`
+* `docs/prd/04_GAME_STATE_SCHEMA.md`
+* `docs/prd/05_CARDS_DATABASE.md`
+* `docs/prd/20_LLM_AGENT_RULES.md`
+* `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+* actual M16/M16.1 scene files and tests
+* `CARD_STYLE_REFERENCE` approved images
+
+---
+
+## Что уже сделано
+
+M0–M15:
+
+* реализована core gameplay logic;
+* реализован deterministic replay;
+* реализован GameStateManager facade;
+* setup-to-Game Over full replay стабилен.
+
+M16:
+
+* создан functional desktop UI;
+* Main/GameRoot/Setup/Game/GameOver screens существуют;
+* panels/widgets/helpers существуют;
+* CardView template-based;
+* UI работает через GameStateManager.
+
+M16.1:
+
+* UI layout должен быть или уже будет переведён в tabletop board composition;
+* GameScreen должен иметь более понятные зоны: AI, human, market/action, side panels.
+
+---
+
+## Что сейчас делаю
+
+Реализую **M16.2 — Card Visual System**:
+
+* делаю CardView визуально цельным и type-driven;
+* создаю единый style system для Engine/Status/War/Defense;
+* переношу visual distinctions в reusable helpers/theme/style maps;
+* улучшаю состояние карты: normal, hover, selected, disabled, affordable/unaffordable;
+* делаю карты похожими на одну физическую колоду;
+* сохраняю template-based rendering;
+* не меняю gameplay;
+* не меняю data/resources card effects;
+* не ломаю UI layout/replay/tests.
+
+---
+
+## Договорённости по коду
+
+* M16.2 не меняет gameplay rules.
+* Не менять card effects, prices, IDs, formulas, phase order или AI policy.
+* Не менять deterministic random.
+* Не менять state schema.
+* Не менять public GameStateManager contracts без подтверждённого blocker.
+* Не добавлять save/load, persistence, campaign или profiles.
+* Не читать raw `GameStateManager.state`.
+* Не вызывать low-level owner modules из UI.
+* Не использовать full-card PNG как основной renderer.
+* Не делать special-case по card IDs вроде `laundry`, `stash`, `thug`, `cops`.
+* Различие внешнего вида должно идти от `card_type`, а не от конкретной карты.
+* Не парсить `effect_summary` как правила.
+* Не изобретать новые gameplay icons со смыслом, которого нет в PRD.
+* Все icons/markers являются presentation-only.
+* Каждый `.gd` файл строго меньше 250 строк.
+* Static scans нельзя ослаблять.
+* UI boundary tests должны оставаться зелёными.
+
+---
+
+## Что НЕ входит в M16.2
+
+* Новый gameplay.
+* Rebalance.
+* Новые карты/effects.
+* Full UI layout rework, если он не связан с CardView.
+* Animation pass.
+* Audio/tactility pass.
+* M17 hardening.
+* Save/load.
+* Web/backend/network.
+* Большой unrelated refactor.
+
+---
+
+Не пиши код. Твоя задача - изучить контекст проекта

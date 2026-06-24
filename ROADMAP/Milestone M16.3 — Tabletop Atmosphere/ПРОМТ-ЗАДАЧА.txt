@@ -1,0 +1,514 @@
+# ПРОМТ-ЗАДАЧА — M16.3 Tabletop Atmosphere
+
+## Роль
+
+Ты senior Godot 4.6.2 UI artist-engineer, visual polish specialist, Theme/Control designer и coding-agent.
+
+Ты умеешь:
+
+* делать dark tabletop UI atmosphere;
+* работать с Godot Theme, StyleBox, Control nodes и Containers;
+* улучшать visual consistency без изменения gameplay;
+* превращать functional UI в atmospheric game screen;
+* писать GUT scene/static/theme tests;
+* удерживать UI полностью вне gameplay logic.
+
+Реализуй **Milestone M16.3 — Tabletop Atmosphere**.
+
+Сначала изучи repository и дай план без кода.
+До подтверждения пользователя не изменяй файлы.
+
+---
+
+## Контекст проекта
+
+The Turf / «Передел» — desktop single-player card/board mini-game с одним human player и тремя local AI.
+
+M0–M16.2 считаются prerequisites, но readiness нужно проверить по repository/tests.
+
+M16 дал functional UI.
+M16.1 отвечает за tabletop layout.
+M16.2 отвечает за Card Visual System.
+M16.3 отвечает за атмосферу стола, цвет, фон, тему, текстуры и устранение default Godot look.
+
+Dependency direction:
+
+```text
+UI -> GameStateManager -> logic modules -> catalogs/resources/constants
+```
+
+M16.3 не меняет gameplay rules.
+M16.3 не меняет deterministic replay.
+M16.3 не добавляет persistence/save/load.
+M16.3 не является M17 hardening.
+
+---
+
+## Visual source of truth
+
+Перед реализацией изучи папку:
+
+```text
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+```
+
+В ней утверждены 4 эталона:
+
+* Engine card reference;
+* Status card reference;
+* War card reference;
+* Defense card reference.
+
+Эти reference-карты являются style lock.
+
+M16.3 должен перенести общее настроение этих references на UI-стол:
+
+* тёмная поверхность;
+* грязная печатная фактура;
+* криминальный underground mood;
+* black/off-white palette;
+* muted grime;
+* controlled red accents.
+
+---
+
+## Задача
+
+Реализовать M16.3 — Tabletop Atmosphere:
+
+* создать цельный visual atmosphere layer для UI;
+* улучшить theme/colors/styleboxes;
+* добавить tabletop background или procedural dark surface;
+* визуально объединить screens/panels/widgets;
+* убрать ощущение default Godot UI;
+* сделать readable dark criminal tabletop presentation;
+* сохранить layout M16.1;
+* сохранить CardView M16.2;
+* добавить focused theme/atmosphere tests;
+* сохранить зелёными M0–M16.2 suites.
+
+---
+
+## Atmosphere goals
+
+UI должен ощущаться как:
+
+* тёмный игровой стол;
+* криминальная настольная игра;
+* грязная бумага/сукно/матовый картон;
+* подпольное казино/клуб;
+* старые карты на столе;
+* физический tabletop, а не spreadsheet/debug panel.
+
+UI не должен ощущаться как:
+
+* default Godot;
+* clean prototype;
+* mobile UI;
+* fantasy card game;
+* neon cyberpunk;
+* web dashboard;
+* debug tool.
+
+---
+
+## Visual style requirements
+
+Palette:
+
+* black / near-black;
+* dirty ivory / warm off-white text;
+* muted gray;
+* brown grime;
+* dark desaturated red accents;
+* no bright saturated palette.
+
+Theme:
+
+* dark panels;
+* worn borders;
+* subtle separators;
+* readable labels;
+* muted buttons;
+* consistent disabled state;
+* consistent hover/selected feedback;
+* no default blue/gray Godot style.
+
+Background:
+
+* tabletop surface;
+* subtle noise/grime;
+* not too bright;
+* not distracting;
+* no realistic photo dependency unless asset is project-local and safe;
+* no external absolute paths in production files.
+
+Panels:
+
+* should feel like placed objects/cards/papers on table;
+* should not look like plain debug rectangles;
+* borders and backgrounds consistent;
+* side panels secondary, not dominant.
+
+Text:
+
+* readable at 1280×720;
+* hierarchy clear;
+* off-white on dark;
+* warnings/errors can use controlled red;
+* no tiny unreadable decorative font.
+
+---
+
+## Required files to audit/update
+
+Theme/assets:
+
+* `res://scenes/ui/themes/main_theme.tres`
+* `res://scenes/ui/themes/tabletop_theme.tres`
+* `res://assets/ui/`
+* `res://assets/ui/backgrounds/`
+* `res://assets/ui/textures/`
+* `res://assets/ui/icons/`
+
+Use existing files if present. Do not create duplicate theme systems.
+
+Main/game:
+
+* `res://scenes/main/Main.tscn`
+* `res://scenes/main/Main.gd`
+* `res://scenes/game/GameRoot.tscn`
+* `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+* `res://scenes/ui/screens/SetupScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/screens/GameOverScreen.tscn`
+
+Panels/widgets:
+
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/GameLogPanel.tscn`
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+* `res://scenes/ui/widgets/NalVpDisplay.tscn`
+* `res://scenes/ui/widgets/DefenseBadges.tscn`
+
+Optional new UI-only files:
+
+* `res://scenes/ui/widgets/TabletopBackground.tscn`
+* `res://scenes/ui/widgets/TabletopBackground.gd`
+* `res://scenes/ui/helpers/UIAtmosphereTokens.gd`
+* `res://scenes/ui/helpers/UIStyleTokens.gd`
+
+Create optional files only if needed to keep existing scripts under 250 lines and avoid duplication.
+
+Tests:
+
+* `res://tests/unit/test_ui_atmosphere.gd`
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+Add static test only if current static scan cannot cover atmosphere boundaries.
+
+---
+
+## Pre-implementation audit
+
+До кода:
+
+1. Найди actual project root и проверь `project.godot`.
+2. Проверь worktree, не затирай unrelated changes.
+3. Проверь M0–M16.2 readiness:
+
+   * canonical smoke;
+   * UI tests;
+   * layout tests;
+   * card visual tests;
+   * integration;
+   * replay;
+   * static scans;
+   * full suite status.
+4. Проинспектируй `CARD_STYLE_REFERENCE`:
+
+   * перечисли 4 reference-файла;
+   * извлеки atmosphere rules.
+5. Проинспектируй current Theme files.
+6. Проинспектируй Main/GameRoot/GameScreen background/theme usage.
+7. Проинспектируй panels/widgets for default Godot look.
+8. Проинспектируй current font/text readability.
+9. Проинспектируй UI static boundary tests.
+10. Построй atmosphere audit matrix:
+
+    * scene/widget;
+    * current look;
+    * issue;
+    * proposed atmosphere change;
+    * gameplay risk;
+    * test coverage.
+
+Если prerequisite не завершён, не создавай workaround: укажи owning milestone и останови зависимую часть.
+
+---
+
+## Tabletop atmosphere responsibilities
+
+M16.3 may:
+
+* add/update Theme resources;
+* add tabletop background widget;
+* add UI-only style token helper;
+* update panel StyleBoxes;
+* update text colors;
+* update button style;
+* update hover/disabled visual feedback;
+* update background/separator visuals;
+* add project-local texture/noise assets if safe.
+
+M16.3 may not:
+
+* change gameplay logic;
+* change GameStateManager contracts;
+* change card effects/prices;
+* change replay command script;
+* add animation logic beyond static hover/selected visual style;
+* add audio;
+* add save/load;
+* add new gameplay icons with unapproved meaning;
+* hardcode specific gameplay state hacks in UI.
+
+---
+
+## Theme requirements
+
+Theme should define or consistently apply:
+
+* default font color;
+* disabled font color;
+* warning/error accent;
+* panel background;
+* panel border;
+* button normal/hover/pressed/disabled;
+* label readability;
+* scrollbar visibility if used;
+* card/table-compatible colors.
+
+If a global Theme already exists:
+
+* update it safely;
+* do not create parallel conflicting themes.
+
+If no clean Theme exists:
+
+* create one project-local Theme resource;
+* apply through Main/GameRoot;
+* keep theme presentation-only.
+
+---
+
+## Background requirements
+
+Tabletop background should:
+
+* be dark;
+* not distract from cards/buttons;
+* support 1280×720 and 1920×1080;
+* scale safely;
+* not require external absolute image paths;
+* not import malformed reference files;
+* not be used as gameplay state.
+
+Allowed approaches:
+
+* ColorRect + subtle layered panels;
+* TextureRect with project-local safe texture;
+* procedural StyleBox-based background;
+* simple grime/noise asset if added safely.
+
+Avoid:
+
+* giant uncompressed image assets without reason;
+* external absolute paths;
+* runtime loading from `C:\...`;
+* full-screen image that makes text unreadable.
+
+---
+
+## Tests
+
+Add/update focused tests.
+
+Atmosphere/theme tests should verify:
+
+* main scene still instantiates.
+* GameRoot applies expected Theme or atmosphere root.
+* GameScreen has tabletop/background surface node or equivalent.
+* key panels have non-default styled backgrounds or theme participation.
+* error/warning text remains readable.
+* required UI roots stay under 250 lines.
+* no external absolute paths in `.gd` / `.tscn`.
+* no CARD_STYLE_REFERENCE production dependency.
+* no owner module calls from atmosphere helpers.
+* no gameplay random in UI atmosphere files.
+
+Affected existing tests must remain green:
+
+* UI payload tests;
+* UI layout tests;
+* CardView visual tests;
+* UI static boundaries;
+* canonical smoke;
+* integration/replay;
+* full suite.
+
+Do not use replay tests to assert visual style.
+Do not weaken existing tests.
+
+---
+
+## Static forbidden patterns
+
+Atmosphere/UI files must not contain:
+
+* `GameStateManager.state`;
+* `MarketLogic`;
+* `PriceLogic`;
+* `PurchaseValidator`;
+* `PurchaseResolver`;
+* `CombatEngine`;
+* `ContractLogic`;
+* `StreetDealLogic`;
+* `ContactLogic`;
+* `AIBotController`;
+* `SeededRandom`;
+* `SeededPicker`;
+* `randf(`;
+* `randi(`;
+* `randomize(`;
+* `RandomNumberGenerator`;
+* `C:\Users\`;
+* `CARD_STYLE_REFERENCE` as runtime load path;
+* direct mutation patterns like `["nal"] +=`, `["vp"] +=`, `["hand"].append`.
+
+---
+
+## Defect fix policy
+
+Можно исправлять только:
+
+* atmosphere/theme defect;
+* scene parse/runtime error;
+* unreadable UI due to style;
+* unsafe external path;
+* UI static boundary gap;
+* test-confirmed regression.
+
+Для каждого fix:
+
+1. Покажи reproduction/failing test.
+2. Укажи owner file/module.
+3. Добавь regression test.
+4. Внеси минимальное изменение.
+5. Запусти targeted, affected и full suites.
+
+Не исправляй gameplay через atmosphere/theme.
+Не подгоняй expected result теста под bug.
+
+---
+
+## Ограничения
+
+* Не добавляй gameplay rules/content и rebalance.
+* Не меняй IDs, formulas, public contracts или phase graph.
+* Не меняй RNG algorithm/call order/random step.
+* Не добавляй wall-clock nondeterminism.
+* Не добавляй persistence/save-load.
+* Не создавай ReplayManager или DebugSnapshotManager.
+* Не добавляй M16.4 animation, M16.5 audio, M16.6 UX clarity или M17 hardening scope.
+* Не добавляй React, TypeScript, Tailwind, Zustand, Docker, network, telemetry, backend, web routing или Web export.
+* Не делай большой unrelated refactor.
+* Не ослабляй tests, scans и assertions.
+* Не заявляй pass для незапущенной проверки.
+* Не удаляй unrelated user changes.
+* Каждый `.gd` файл строго меньше 250 строк.
+
+---
+
+## Порядок работы
+
+1. Изучи docs и repository.
+2. Проверь M0–M16.2 readiness и baseline.
+3. Проаудируй `CARD_STYLE_REFERENCE`.
+4. Проаудируй current Theme/background/panel styles.
+5. Проаудируй UI readability/default Godot look.
+6. Построй atmosphere audit matrix.
+7. Предложи Tabletop Atmosphere plan.
+8. Дай план без кода и дождись моего «ок».
+9. После «ок» сначала добавь/обнови failing atmosphere/static tests.
+10. Реализуй Theme/background/style improvements.
+11. Обнови screens/panels/widgets только если нужно для atmosphere.
+12. Запусти targeted atmosphere/UI tests.
+13. Запусти canonical smoke, integration/replay/static scans.
+14. Запусти full GUT suite.
+15. Проверь viewport/render 1280×720 и 1920×1080.
+16. Выдай evidence-based M16.3 gate report.
+
+---
+
+## Формат ответа
+
+1. Сначала дай план без кода.
+2. Покажи atmosphere audit matrix.
+3. Покажи reference-derived atmosphere rules.
+4. Покажи proposed theme/background hierarchy.
+5. Укажи blockers и OQ.
+6. Дождись моего «ок».
+7. До «ок» не изменяй файлы.
+8. После «ок» показывай изменения с полными `res://...` путями.
+9. Для каждого файла кратко указывай UI responsibility.
+10. Для fix указывай reproduction, owner и regression test.
+11. Перечисли реально запущенные commands/tests/scans.
+12. Для viewport/render checks укажи pass/fail/skipped и причину.
+13. Не заявляй pass по inspection вместо execution.
+14. В конце дай M16.3 gate checklist.
+
+---
+
+## M16.3 Gate Checklist
+
+* [ ] M0–M16.2 readiness и baseline проверены.
+* [ ] `CARD_STYLE_REFERENCE` доступна.
+* [ ] Reference-derived atmosphere rules documented.
+* [ ] Current atmosphere audit matrix подготовлена.
+* [ ] Main/GameRoot/GameScreen no longer look default/debug-like.
+* [ ] Tabletop background or equivalent atmosphere layer exists.
+* [ ] Theme/colors consistent across screens.
+* [ ] Panels visually belong to same tabletop UI.
+* [ ] Text readable at 1280×720.
+* [ ] Text readable at 1920×1080.
+* [ ] Disabled/error/hover states readable.
+* [ ] No external absolute asset paths in production files.
+* [ ] No runtime dependency on CARD_STYLE_REFERENCE.
+* [ ] No gameplay logic in theme/atmosphere helpers.
+* [ ] UI calls gameplay only through GameStateManager.
+* [ ] UI does not mutate active state.
+* [ ] UI static boundary tests pass.
+* [ ] Atmosphere/theme tests pass.
+* [ ] Existing layout/CardView/payload tests pass.
+* [ ] Canonical smoke passes.
+* [ ] Integration/replay tests pass.
+* [ ] Full GUT suite passes.
+* [ ] `tools/run_static_scans.ps1` passes.
+* [ ] All `.gd` files stay below 250 lines.
+* [ ] M16.4/M16.5/M16.6/M17 scope not added.
+* [ ] No new gameplay rules added.
+
+```
+```

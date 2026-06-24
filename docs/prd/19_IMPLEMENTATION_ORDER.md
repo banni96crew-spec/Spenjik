@@ -308,6 +308,7 @@ Recommended milestone order:
 |       M14 | GameStateManager API          | facade and mutation safety        |
 |       M15 | Integration and Replay        | full game flows                   |
 |       M16 | UI / UX                       | screens, panels, widgets          |
+|     M16.1 | UI Layout Rework              | tabletop desktop composition      |
 |       M17 | Polish and Hardening          | logs, debug, final scans          |
 
 ### 7.2. Milestone M0 — Project Bootstrap
@@ -736,7 +737,36 @@ Gate tests:
 * UI scripts stay under 250 lines;
 * UI static boundary tests pass.
 
-### 7.19. Milestone M17 — Polish and Hardening
+### 7.19. Milestone M16.1 — UI Layout Rework
+
+Owner specification:
+
+```text
+M16.1_UI_LAYOUT_REWORK.md
+```
+
+Implement:
+
+* tabletop zone hierarchy for GameScreen;
+* distinct AI, central phase, human, and side info areas;
+* responsive desktop composition for 1280x720 and 1920x1080;
+* compact panel placement without gameplay behavior changes;
+* focused layout, scene, and UI-root static tests.
+
+Gate tests:
+
+* phase header and current core actions remain reachable;
+* human Nal/VP summary remains visible;
+* AI zones are visible and distinct;
+* Market, Action, and Street Deal use the central phase area;
+* Contract, Contact, and Game Log remain secondary;
+* UI boundary, payload, integration, replay, smoke, and full suites pass;
+* viewport checks pass at 1280x720 and 1920x1080.
+
+M16.1 must not add M17 hardening, final card art, animation, audio, or
+gameplay changes.
+
+### 7.20. Milestone M17 — Polish and Hardening
 
 Implement:
 

@@ -9,7 +9,10 @@ signal command_failed(error: String)
 @onready var income_button: Button = %IncomeButton
 @onready var busy_label: Label = %BusyLabel
 @onready var error_label: DisabledReasonLabel = %ErrorLabel
-@onready var player_boards: GridContainer = %PlayerBoards
+@onready var human_board: PlayerBoard = %HumanBoard
+@onready var ai_board_1: PlayerBoard = %AiBoard1
+@onready var ai_board_2: PlayerBoard = %AiBoard2
+@onready var ai_board_3: PlayerBoard = %AiBoard3
 @onready var market_panel: MarketPanel = %MarketPanel
 @onready var action_panel: ActionPanel = %ActionPanel
 @onready var street_deal_panel: StreetDealPanel = %StreetDealPanel
@@ -62,10 +65,17 @@ func _render_players(view: Dictionary) -> void:
 	var profiles: Dictionary = {}
 	for profile: Dictionary in view.get("ai_bosses", []):
 		profiles[profile["assigned_player_id"]] = profile
-	var players: Array = view["players"]
-	for index: int in mini(players.size(), player_boards.get_child_count()):
-		var board: PlayerBoard = player_boards.get_child(index)
-		board.render(players[index], profiles.get(players[index]["id"], {}))
+	var boards: Dictionary = {
+		GameIds.PLAYER_HUMAN: human_board,
+		GameIds.PLAYER_AI_1: ai_board_1,
+		GameIds.PLAYER_AI_2: ai_board_2,
+		GameIds.PLAYER_AI_3: ai_board_3,
+	}
+	for player: Dictionary in view["players"]:
+		var player_id: String = str(player["id"])
+		var board: PlayerBoard = boards.get(player_id)
+		if board != null:
+			board.render(player, profiles.get(player_id, {}))
 
 
 func _set_phase_visibility(phase: String) -> void:

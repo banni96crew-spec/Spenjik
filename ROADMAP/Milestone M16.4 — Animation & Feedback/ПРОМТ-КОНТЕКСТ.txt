@@ -1,0 +1,275 @@
+Сделал 2 отдельных промта для **Milestone M16.4 — Animation & Feedback** по структуре твоих шаблонов.  
+
+---
+
+# ПРОМТ-КОНТЕКСТ — M16.4 Animation & Feedback
+
+## Проект: The Turf / Передел
+
+### О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+В матче участвуют:
+
+* 1 human player;
+* 3 local AI;
+* партия длится 15 раундов;
+* финал — Game Over.
+
+Текущий этап: **Milestone M16.4 — Animation & Feedback**.
+
+Это дополнительный UI-polish milestone после M16.1/M16.2/M16.3 и до M16.5/M17.
+
+Цель M16.4 — добавить визуальный feedback и лёгкие UI-анимации, чтобы игра ощущалась живее:
+
+* hover/selected feedback;
+* feedback покупки;
+* feedback атаки;
+* feedback block/defense;
+* feedback denied action;
+* phase transition;
+* card movement/reveal ощущение;
+* Game Over reveal.
+
+M16.4 **не меняет gameplay rules, balance, deterministic replay, public facade contracts или state schema**.
+
+---
+
+## Стек
+
+* Godot 4.6.2 stable.
+* GDScript.
+* Godot Control nodes, Containers, Theme, Tween.
+* GUT.
+* `.tres` Resources.
+* Dictionary snapshots.
+* GameStateManager Autoload.
+* Windows/Linux desktop first.
+* Без web stack.
+
+---
+
+## Архитектура
+
+Dependency direction:
+
+```text
+UI -> GameStateManager -> logic -> catalogs/resources/constants
+```
+
+Правила:
+
+* UI является view/input layer.
+* Runtime state принадлежит GameStateManager.
+* UI вызывает gameplay только через GameStateManager.
+* UI не читает и не мутирует `GameStateManager.state`.
+* Animation/feedback layer является presentation-only.
+* Animation не меняет gameplay state.
+* Animation не consume gameplay random.
+* Animation не меняет replay outcome.
+* Animation не должна быть dependency для logic modules.
+* Gameplay modules не зависят от UI scenes/assets/animation.
+* UI может иметь локальный busy/presentation lock, но не gameplay lock.
+* M15 replay determinism и M16/M16.1/M16.2/M16.3 UI boundaries должны остаться зелёными.
+
+---
+
+## Visual direction
+
+Пользователь хочет UI в сторону тёмного tabletop card-game presentation.
+
+Опорное направление:
+
+* Inscryption-like physical card table mood, но без копирования чужого IP;
+* dirty criminal board-game table;
+* dark matte cards;
+* worn print feel;
+* controlled feedback, не arcade overload;
+* тяжёлые, короткие, тактильные движения;
+* no flashy mobile juice;
+* no neon VFX spam;
+* no fantasy magic particles.
+
+Approved references:
+
+```text
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+```
+
+Reference cards остаются visual source of truth для карточного ощущения.
+
+---
+
+## Релевантные пути
+
+Main/game:
+
+* `res://scenes/main/Main.tscn`
+* `res://scenes/main/Main.gd`
+* `res://scenes/game/GameRoot.tscn`
+* `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+* `res://scenes/ui/screens/SetupScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.gd`
+* `res://scenes/ui/screens/GameOverScreen.tscn`
+* `res://scenes/ui/screens/GameOverScreen.gd`
+
+Panels:
+
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/PlayerBoard.gd`
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/MarketPanel.gd`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.gd`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.gd`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.gd`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.gd`
+* `res://scenes/ui/panels/GameLogPanel.tscn`
+* `res://scenes/ui/panels/GameLogPanel.gd`
+
+Widgets:
+
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/CardView.gd`
+* `res://scenes/ui/widgets/DefenseBadges.tscn`
+* `res://scenes/ui/widgets/DefenseBadges.gd`
+* `res://scenes/ui/widgets/NalVpDisplay.tscn`
+* `res://scenes/ui/widgets/NalVpDisplay.gd`
+* `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+* `res://scenes/ui/widgets/DisabledReasonLabel.gd`
+
+Potential new UI-only files:
+
+* `res://scenes/ui/feedback/UIFeedbackController.gd`
+* `res://scenes/ui/feedback/UIFeedbackLayer.tscn`
+* `res://scenes/ui/feedback/UIFeedbackLayer.gd`
+* `res://scenes/ui/feedback/UIFeedbackIds.gd`
+* `res://scenes/ui/helpers/UIAnimationTweens.gd`
+* `res://scenes/ui/helpers/UIFeedbackFormatters.gd`
+
+Use optional files only if needed.
+Do not create duplicate animation systems.
+
+Tests:
+
+* `res://tests/unit/test_ui_animation_feedback.gd`
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/unit/test_ui_payloads.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+---
+
+## Источники истины
+
+* `docs/prd/17_UI_UX_SPEC.md`
+* `docs/prd/16_GAME_STATE_MANAGER_API.md`
+* `docs/prd/15_GODOT_ARCHITECTURE.md`
+* `docs/prd/18_TEST_PLAN.md`
+* `docs/prd/19_IMPLEMENTATION_ORDER.md`
+* `docs/prd/04_GAME_STATE_SCHEMA.md`
+* `docs/prd/20_LLM_AGENT_RULES.md`
+* `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+* actual M16/M16.1/M16.2/M16.3 scene files and tests
+* approved `CARD_STYLE_REFERENCE`
+
+---
+
+## Что уже сделано
+
+M0–M15:
+
+* реализована core gameplay logic;
+* реализован deterministic replay;
+* реализован GameStateManager facade;
+* setup-to-Game Over full replay стабилен.
+
+M16:
+
+* создан functional desktop UI;
+* Main/GameRoot/Setup/Game/GameOver screens существуют;
+* panels/widgets/helpers существуют;
+* UI работает через GameStateManager.
+
+M16.1:
+
+* UI layout должен быть переведён в tabletop board composition;
+* GameScreen должен иметь зоны AI/human/market/action/side panels.
+
+M16.2:
+
+* CardView должен быть type-driven;
+* Engine/Status/War/Defense визуально различимы;
+* CardView остаётся template-based.
+
+M16.3:
+
+* UI должен иметь tabletop atmosphere;
+* theme/background/panels должны быть визуально цельными.
+
+---
+
+## Что сейчас делаю
+
+Реализую **M16.4 — Animation & Feedback**:
+
+* добавляю UI-only feedback layer;
+* добавляю hover/selected visual feedback;
+* добавляю короткий feedback на покупку/атаку/block/denied action;
+* добавляю phase transition feedback;
+* добавляю Game Over reveal;
+* сохраняю gameplay deterministic behavior;
+* не меняю owner logic;
+* не добавляю audio;
+* не добавляю save/load;
+* не добавляю new gameplay.
+
+---
+
+## Договорённости по коду
+
+* M16.4 не меняет gameplay rules.
+* Не менять card effects, prices, IDs, formulas, phase order или AI policy.
+* Не менять deterministic random.
+* Не менять replay scripts.
+* Не менять state schema.
+* Не менять public GameStateManager contracts без подтверждённого blocker.
+* Не добавлять save/load, persistence, campaign или profiles.
+* Не читать raw `GameStateManager.state`.
+* Не вызывать low-level owner modules из UI.
+* Animation может слушать facade/UI signals, но не owner modules.
+* Animation не должна быть обязательной для gameplay execution.
+* Animation failure не должна ломать матч.
+* UI feedback не должен коммитить gameplay state.
+* UI feedback может блокировать повторный клик на время короткого presentation lock, но не должен менять phase flow.
+* Каждый `.gd` файл строго меньше 250 строк.
+* Static scans нельзя ослаблять.
+* UI boundary tests должны оставаться зелёными.
+
+---
+
+## Что НЕ входит в M16.4
+
+* Новый gameplay.
+* Rebalance.
+* Новые карты/effects.
+* Layout rework, если он не связан с feedback.
+* Full Card Visual System.
+* Tabletop Atmosphere pass.
+* Audio/tactility pass.
+* UX clarity pass.
+* M17 hardening.
+* Save/load.
+* Web/backend/network.
+* Большой unrelated refactor.
+
+---
+Не пиши код. Твоя задача - изучить контекст проекта

@@ -1,0 +1,247 @@
+## Проект: The Turf / Передел
+
+### О чём продукт
+
+The Turf / «Передел» — desktop single-player card/board mini-game внутри визуальной новеллы.
+
+В матче участвуют:
+
+* 1 human player;
+* 3 local AI;
+* партия длится 15 раундов;
+* финал — Game Over.
+
+Текущий этап: **Milestone M16.3 — Tabletop Atmosphere**.
+
+Это дополнительный UI-polish milestone после M16.1/M16.2 и до M16.4/M17.
+
+Цель M16.3 — сделать игру визуально атмосферной: тёмный криминальный tabletop, грязный стол, единая тема, свет, текстуры, цвета, фон, readable UI без ощущения default Godot/debug interface.
+
+M16.3 **не меняет gameplay rules, card effects, balance, deterministic replay, public facade contracts или state schema**.
+
+---
+
+## Стек
+
+* Godot 4.6.2 stable.
+* GDScript.
+* Godot Control nodes, Containers и Theme.
+* GUT.
+* `.tres` Resources.
+* Dictionary snapshots.
+* GameStateManager Autoload.
+* Windows/Linux desktop first.
+* Без web stack.
+
+---
+
+## Архитектура
+
+Dependency direction:
+
+```text
+UI -> GameStateManager -> logic -> catalogs/resources/constants
+```
+
+Правила:
+
+* UI является view/input layer.
+* Runtime state принадлежит GameStateManager.
+* UI вызывает gameplay только через GameStateManager.
+* UI не читает и не мутирует `GameStateManager.state`.
+* Atmosphere layer не владеет gameplay rules.
+* Theme/style/background не должны влиять на state.
+* Theme/style/background не должны consume random.
+* Gameplay modules не зависят от UI scenes/assets/theme.
+* CardView остаётся template-based.
+* M15 replay determinism и M16/M16.1/M16.2 UI boundaries должны остаться зелёными.
+
+---
+
+## Visual source of truth
+
+Пользователь утвердил 4 reference-карты:
+
+```text
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+```
+
+Они являются visual source of truth для карточного и tabletop-направления.
+
+Ожидаемый стиль:
+
+* dark criminal tabletop;
+* dirty worn paper/card stock;
+* black/off-white palette;
+* muted grime;
+* controlled red accents;
+* underground casino / illegal club mood;
+* Inscryption-like physical table mood, но без копирования чужого IP;
+* no clean default Godot UI;
+* no bright fantasy;
+* no anime;
+* no neon cyberpunk overload;
+* no glossy mobile UI.
+
+---
+
+## Релевантные пути
+
+Main/game:
+
+* `res://scenes/main/Main.tscn`
+* `res://scenes/main/Main.gd`
+* `res://scenes/game/GameRoot.tscn`
+* `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+* `res://scenes/ui/screens/SetupScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/screens/GameOverScreen.tscn`
+
+Panels/widgets:
+
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/GameLogPanel.tscn`
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+* `res://scenes/ui/widgets/NalVpDisplay.tscn`
+* `res://scenes/ui/widgets/DefenseBadges.tscn`
+
+Theme/assets:
+
+* `res://scenes/ui/themes/`
+* `res://assets/ui/`
+* `res://assets/ui/backgrounds/`
+* `res://assets/ui/textures/`
+* `res://assets/ui/icons/`
+
+Potential new UI-only files:
+
+* `res://scenes/ui/themes/main_theme.tres`
+* `res://scenes/ui/themes/tabletop_theme.tres`
+* `res://scenes/ui/helpers/UIAtmosphereTokens.gd`
+* `res://scenes/ui/helpers/UIStyleTokens.gd`
+* `res://scenes/ui/widgets/TabletopBackground.tscn`
+* `res://scenes/ui/widgets/TabletopBackground.gd`
+
+Use optional files only if needed. Do not create duplicate theme systems.
+
+Tests:
+
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/unit/test_ui_screens.gd`
+* `res://tests/unit/test_ui_payloads.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+Add focused tests only if needed:
+
+* `res://tests/unit/test_ui_atmosphere.gd`
+* `res://tests/static/test_ui_atmosphere_static_scan.gd`
+
+---
+
+## Источники истины
+
+* `docs/prd/17_UI_UX_SPEC.md`
+* `docs/prd/16_GAME_STATE_MANAGER_API.md`
+* `docs/prd/15_GODOT_ARCHITECTURE.md`
+* `docs/prd/18_TEST_PLAN.md`
+* `docs/prd/19_IMPLEMENTATION_ORDER.md`
+* `docs/prd/04_GAME_STATE_SCHEMA.md`
+* `docs/prd/20_LLM_AGENT_RULES.md`
+* `docs/prd/21_OPEN_QUESTIONS_AND_FIXES.md`
+* actual M16/M16.1/M16.2 scene files and tests
+* approved `CARD_STYLE_REFERENCE`
+
+---
+
+## Что уже сделано
+
+M0–M15:
+
+* реализована core gameplay logic;
+* реализован deterministic replay;
+* реализован GameStateManager facade;
+* setup-to-Game Over full replay стабилен.
+
+M16:
+
+* создан functional desktop UI;
+* Main/GameRoot/Setup/Game/GameOver screens существуют;
+* panels/widgets/helpers существуют;
+* CardView template-based;
+* UI работает через GameStateManager.
+
+M16.1:
+
+* UI layout должен быть или уже будет переведён в tabletop board composition;
+* GameScreen должен иметь понятные зоны: AI, human, market/action, side panels.
+
+M16.2:
+
+* CardView должен быть или уже будет доведён до type-driven Card Visual System;
+* Engine/Status/War/Defense variants должны быть визуально различимы.
+
+---
+
+## Что сейчас делаю
+
+Реализую **M16.3 — Tabletop Atmosphere**:
+
+* создаю единый тёмный tabletop mood;
+* улучшаю Theme;
+* добавляю грязные tabletop/background textures или procedural UI style;
+* убираю default Godot look;
+* делаю panels/widgets визуально частью одного стола;
+* усиливаю readable dark criminal board-game vibe;
+* сохраняю UI функциональность;
+* не добавляю animation/audio/gameplay.
+
+---
+
+## Договорённости по коду
+
+* M16.3 не меняет gameplay rules.
+* Не менять card effects, prices, IDs, formulas, phase order или AI policy.
+* Не менять deterministic random.
+* Не менять state schema.
+* Не менять public GameStateManager contracts.
+* Не добавлять save/load, persistence, campaign или profiles.
+* Не читать raw `GameStateManager.state`.
+* Не вызывать low-level owner modules из UI.
+* Не использовать full-card PNG как основной renderer.
+* Не добавлять hardcoded gameplay special-cases.
+* Atmosphere assets/theme are presentation-only.
+* Theme/style must not encode gameplay rules.
+* Каждый `.gd` файл строго меньше 250 строк.
+* Static scans нельзя ослаблять.
+* UI boundary tests должны оставаться зелёными.
+
+---
+
+## Что НЕ входит в M16.3
+
+* Новый gameplay.
+* Rebalance.
+* Новые карты/effects.
+* Большой layout rework, если он не связан с atmosphere.
+* Full Card Visual System, если это уже M16.2.
+* Animation pass.
+* Audio/tactility pass.
+* UX clarity pass.
+* M17 hardening.
+* Save/load.
+* Web/backend/network.
+* Большой unrelated refactor.
+
+---
+
+Не пиши код. Твоя задача - изучить контекст проекта

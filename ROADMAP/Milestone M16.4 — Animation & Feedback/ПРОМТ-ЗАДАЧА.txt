@@ -1,0 +1,533 @@
+# ПРОМТ-ЗАДАЧА — M16.4 Animation & Feedback
+
+## Роль
+
+Ты senior Godot 4.6.2 UI animation engineer, UX feedback designer, Control/Tween specialist и coding-agent.
+
+Ты умеешь:
+
+* делать UI-only animations на Godot Control nodes;
+* использовать Tween безопасно;
+* делать hover/selected/denied feedback;
+* добавлять phase/action feedback без изменения gameplay;
+* проектировать presentation lock без state mutation;
+* писать GUT scene/static/feedback tests;
+* удерживать UI полностью вне gameplay logic.
+
+Реализуй **Milestone M16.4 — Animation & Feedback**.
+
+Сначала изучи repository и дай план без кода.
+До подтверждения пользователя не изменяй файлы.
+
+---
+
+## Контекст проекта
+
+The Turf / «Передел» — desktop single-player card/board mini-game с одним human player и тремя local AI.
+
+M0–M16.3 считаются prerequisites, но readiness нужно проверить по repository/tests.
+
+M16 дал functional UI.
+M16.1 отвечает за layout.
+M16.2 отвечает за Card Visual System.
+M16.3 отвечает за Tabletop Atmosphere.
+M16.4 отвечает за UI animation and feedback.
+
+Dependency direction:
+
+```text
+UI -> GameStateManager -> logic modules -> catalogs/resources/constants
+```
+
+M16.4 не меняет gameplay rules.
+M16.4 не меняет deterministic replay.
+M16.4 не добавляет persistence/save/load.
+M16.4 не является M17 hardening.
+
+---
+
+## Задача
+
+Реализовать M16.4 — Animation & Feedback:
+
+* добавить card hover feedback;
+* добавить selected card feedback;
+* добавить disabled/denied action feedback;
+* добавить purchase feedback;
+* добавить attack feedback;
+* добавить block/defense feedback;
+* добавить phase transition feedback;
+* добавить Street Deal/contact/contract claim feedback where safe;
+* добавить Game Over reveal;
+* сохранить gameplay interaction through GameStateManager;
+* сохранить all deterministic replay tests green;
+* добавить focused animation/static tests;
+* сохранить UI usable at 1280×720 and 1920×1080.
+
+---
+
+## Feedback style direction
+
+Feedback должен ощущаться как:
+
+* тяжёлый tabletop;
+* физические карты;
+* короткие движения;
+* грязный криминальный стол;
+* understated but satisfying;
+* readable action confirmation.
+
+Feedback не должен ощущаться как:
+
+* mobile game juice spam;
+* bright arcade effects;
+* magic particles;
+* cyberpunk neon flash;
+* fantasy spell VFX;
+* animation that delays or hides gameplay result too long.
+
+Preferred feel:
+
+* card lift on hover;
+* selected card slight raise/outline;
+* failed click shake/red pulse;
+* purchase small card pulse/place feedback;
+* attack quick impact flash;
+* block shield/cops/cartel/judge flash;
+* phase transition short fade/slide;
+* Game Over slow reveal.
+
+---
+
+## Required files to audit/update
+
+Main/game:
+
+* `res://scenes/main/Main.tscn`
+* `res://scenes/main/Main.gd`
+* `res://scenes/game/GameRoot.tscn`
+* `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.gd`
+* `res://scenes/ui/screens/GameOverScreen.tscn`
+* `res://scenes/ui/screens/GameOverScreen.gd`
+
+Panels:
+
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/MarketPanel.gd`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.gd`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.gd`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.gd`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.gd`
+* `res://scenes/ui/panels/GameLogPanel.tscn`
+* `res://scenes/ui/panels/GameLogPanel.gd`
+
+Widgets:
+
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/CardView.gd`
+* `res://scenes/ui/widgets/DefenseBadges.tscn`
+* `res://scenes/ui/widgets/DefenseBadges.gd`
+* `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+* `res://scenes/ui/widgets/DisabledReasonLabel.gd`
+
+Optional UI-only files:
+
+* `res://scenes/ui/feedback/UIFeedbackLayer.tscn`
+* `res://scenes/ui/feedback/UIFeedbackLayer.gd`
+* `res://scenes/ui/feedback/UIFeedbackController.gd`
+* `res://scenes/ui/feedback/UIFeedbackIds.gd`
+* `res://scenes/ui/helpers/UIAnimationTweens.gd`
+
+Create optional files only if they reduce duplication and keep scripts under 250 lines.
+
+Tests:
+
+* `res://tests/unit/test_ui_animation_feedback.gd`
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/unit/test_ui_payloads.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+---
+
+## Pre-implementation audit
+
+До кода:
+
+1. Найди actual project root и проверь `project.godot`.
+2. Проверь worktree, не затирай unrelated changes.
+3. Проверь M0–M16.3 readiness:
+
+   * canonical smoke;
+   * UI tests;
+   * layout tests;
+   * card visual tests;
+   * atmosphere tests;
+   * integration;
+   * replay;
+   * static scans;
+   * full suite status.
+4. Проинспектируй current CardView hover/selected behavior.
+5. Проинспектируй current MarketPanel/ActionPanel button feedback.
+6. Проинспектируй GameRoot/GameScreen signal flow.
+7. Проинспектируй GameStateManager signals:
+
+   * `state_changed`;
+   * `action_failed`;
+   * `phase_changed`;
+   * `game_started`;
+   * `game_ended`.
+8. Проинспектируй current DisabledReasonLabel behavior.
+9. Проинспектируй current GameOverScreen reveal/entry.
+10. Проверь UI static boundary tests.
+11. Построй feedback audit matrix:
+
+    * interaction;
+    * current feedback;
+    * missing feedback;
+    * proposed animation;
+    * owner UI node;
+    * gameplay risk;
+    * test coverage.
+
+Если prerequisite не завершён, не создавай workaround: укажи owning milestone и останови зависимую часть.
+
+---
+
+## Animation ownership rules
+
+M16.4 may:
+
+* add Tween animations to UI nodes;
+* animate `modulate`, `scale`, `position`, `rotation`, `self_modulate`, `theme_override` where safe;
+* add UI-only feedback layer;
+* add presentation-only signals between UI widgets and parent panels;
+* add short presentation lock to prevent double-click spam;
+* animate GameOver reveal;
+* animate hover/selected/disabled states;
+* animate action_failed feedback.
+
+M16.4 may not:
+
+* change gameplay state;
+* call owner modules directly;
+* read `GameStateManager.state`;
+* consume random;
+* use physics for UI feedback;
+* add gameplay delays to state transition;
+* make gameplay success depend on animation completion;
+* use wall-clock timestamps in gameplay state/log;
+* add audio;
+* add save/load;
+* change replay scripts.
+
+---
+
+## Recommended feedback map
+
+Card hover:
+
+* CardView slightly raises/scales.
+* No gameplay call.
+* No selection mutation unless click.
+
+Card selected:
+
+* selected outline/glow/raise.
+* selected state remains UI-local.
+
+Disabled card/action:
+
+* dim/pulse/shake on attempted action.
+* show DisabledReasonLabel.
+
+Purchase success:
+
+* card pulse/place flash in MarketPanel.
+* update happens from refreshed GameStateManager view.
+* no fake purchase animation if facade result failed.
+
+Attack success:
+
+* quick impact flash on ActionPanel/target area.
+* optional log highlight.
+* no combat result recomputation.
+
+Attack blocked:
+
+* brief shield/defense badge flash.
+* use result/log/view data only.
+* no block calculation in UI.
+
+Discard:
+
+* card fade/slide feedback.
+* state update still comes from facade.
+
+Phase transition:
+
+* short fade/slide between phase content.
+* header phase highlight.
+* must not hide essential errors.
+
+Street Deal choice:
+
+* selected option pulse.
+* panel refresh after facade result.
+
+Contact unlock:
+
+* contact card/option pulse.
+* no fake unlock if facade result failed.
+
+Contract claim:
+
+* claim success pulse.
+* no reward calculation in UI.
+
+Denied action:
+
+* short shake/pulse + readable reason.
+* no state mutation.
+
+Game Over:
+
+* slow reveal of winner/result.
+* New Game remains accessible.
+
+---
+
+## Timing constraints
+
+Animations should be short:
+
+* hover: instant to 0.12s;
+* selected: 0.08–0.15s;
+* denied shake/pulse: 0.15–0.25s;
+* purchase/attack feedback: 0.15–0.35s;
+* phase transition: 0.2–0.45s;
+* Game Over reveal: 0.5–1.0s.
+
+Avoid long blocking animations.
+
+No gameplay command should require waiting for a long animation to complete.
+
+---
+
+## Presentation lock
+
+If needed, implement UI-local presentation lock:
+
+* prevents repeated clicks while a command is being processed/feedback starts;
+* clears after short animation or immediately after state refresh;
+* does not write gameplay state;
+* does not block GameStateManager internally;
+* does not affect replay tests;
+* can be skipped in tests if difficult, but must not cause double-submit bugs.
+
+Do not add global gameplay lock.
+
+---
+
+## Tests
+
+Add/update focused tests.
+
+Animation/feedback tests should verify:
+
+* CardView hover/selected methods exist or signals can trigger feedback.
+* CardView selected/disabled state is UI-local.
+* Feedback methods do not call GameStateManager directly unless they are panel command handlers.
+* Denied feedback can be triggered without state mutation.
+* Action failed signal produces visible/error feedback.
+* Phase transition feedback can run without changing state.
+* GameOver reveal scene instantiates.
+* UI feedback scripts contain no owner module calls.
+* UI feedback scripts contain no gameplay random.
+* All animation scripts stay under 250 lines.
+
+Static tests should verify:
+
+* no `GameStateManager.state`;
+* no owner module calls;
+* no SeededRandom/SeededPicker;
+* no randf/randi/randomize/RandomNumberGenerator;
+* no FileAccess/user persistence;
+* no audio nodes/files in M16.4 scope;
+* no hardcoded gameplay effect calculations.
+
+Affected existing tests must remain green:
+
+* UI payload tests;
+* UI layout tests;
+* CardView visual tests;
+* atmosphere tests;
+* canonical smoke;
+* integration/replay;
+* full suite.
+
+Do not use replay tests to assert animation timing.
+Do not weaken existing tests.
+
+---
+
+## Static forbidden patterns
+
+UI feedback files must not contain:
+
+* `GameStateManager.state`;
+* `MarketLogic`;
+* `PriceLogic`;
+* `PurchaseValidator`;
+* `PurchaseResolver`;
+* `CombatEngine`;
+* `AttackValidator`;
+* `DefenseResolver`;
+* `ContractLogic`;
+* `StreetDealLogic`;
+* `ContactLogic`;
+* `AIBotController`;
+* `SeededRandom`;
+* `SeededPicker`;
+* `randf(`;
+* `randi(`;
+* `randomize(`;
+* `RandomNumberGenerator`;
+* `AudioStream`;
+* `AudioStreamPlayer`;
+* `FileAccess`;
+* `user://`;
+* direct mutation patterns like `["nal"] +=`, `["vp"] +=`, `["hand"].append`.
+
+---
+
+## Defect fix policy
+
+Можно исправлять только:
+
+* animation/feedback defect;
+* scene parse/runtime error;
+* duplicate click UI issue;
+* missing UI-local state reset;
+* signal connection bug;
+* UI static boundary gap;
+* test-confirmed regression.
+
+Для каждого fix:
+
+1. Покажи reproduction/failing test.
+2. Укажи owner file/module.
+3. Добавь regression test.
+4. Внеси минимальное изменение.
+5. Запусти targeted, affected и full suites.
+
+Не исправляй gameplay через animation.
+Не подгоняй expected result теста под bug.
+
+---
+
+## Ограничения
+
+* Не добавляй gameplay rules/content и rebalance.
+* Не меняй IDs, formulas, public contracts или phase graph.
+* Не меняй RNG algorithm/call order/random step.
+* Не меняй replay seed/script.
+* Не добавляй wall-clock nondeterminism в gameplay state/log.
+* Не добавляй persistence/save-load.
+* Не создавай ReplayManager или DebugSnapshotManager.
+* Не добавляй M16.5 audio, M16.6 UX clarity или M17 hardening scope.
+* Не добавляй React, TypeScript, Tailwind, Zustand, Docker, network, telemetry, backend, web routing или Web export.
+* Не делай большой unrelated refactor.
+* Не ослабляй tests, scans и assertions.
+* Не заявляй pass для незапущенной проверки.
+* Не удаляй unrelated user changes.
+* Каждый `.gd` файл строго меньше 250 строк.
+
+---
+
+## Порядок работы
+
+1. Изучи docs и repository.
+2. Проверь M0–M16.3 readiness и baseline.
+3. Проаудируй current feedback/animation state.
+4. Проаудируй GameStateManager signals and UI command flow.
+5. Построй feedback audit matrix.
+6. Предложи Animation & Feedback plan.
+7. Дай план без кода и дождись моего «ок».
+8. После «ок» сначала добавь/обнови failing animation/static tests.
+9. Реализуй CardView hover/selected/disabled feedback.
+10. Реализуй panel action feedback.
+11. Реализуй phase transition feedback.
+12. Реализуй Game Over reveal.
+13. Запусти targeted animation/UI tests.
+14. Запусти canonical smoke, integration/replay/static scans.
+15. Запусти full GUT suite.
+16. Проверь viewport/render 1280×720 и 1920×1080.
+17. Выдай evidence-based M16.4 gate report.
+
+---
+
+## Формат ответа
+
+1. Сначала дай план без кода.
+2. Покажи feedback audit matrix.
+3. Покажи proposed feedback map.
+4. Покажи proposed animation ownership hierarchy.
+5. Укажи blockers и OQ.
+6. Дождись моего «ок».
+7. До «ок» не изменяй файлы.
+8. После «ок» показывай изменения с полными `res://...` путями.
+9. Для каждого файла кратко указывай UI responsibility.
+10. Для fix указывай reproduction, owner и regression test.
+11. Перечисли реально запущенные commands/tests/scans.
+12. Для viewport/render checks укажи pass/fail/skipped и причину.
+13. Не заявляй pass по inspection вместо execution.
+14. В конце дай M16.4 gate checklist.
+
+---
+
+## M16.4 Gate Checklist
+
+* [ ] M0–M16.3 readiness и baseline проверены.
+* [ ] Current feedback audit matrix подготовлена.
+* [ ] CardView hover feedback implemented.
+* [ ] CardView selected feedback implemented.
+* [ ] Disabled/denied feedback implemented.
+* [ ] Purchase success feedback implemented.
+* [ ] Attack success feedback implemented.
+* [ ] Block/defense feedback implemented.
+* [ ] Discard feedback implemented or safely skipped with reason.
+* [ ] Phase transition feedback implemented.
+* [ ] Street Deal/contact/contract feedback implemented where safe.
+* [ ] Game Over reveal implemented.
+* [ ] Animation layer is UI-only.
+* [ ] Animations do not mutate gameplay state.
+* [ ] Animations do not call owner modules directly.
+* [ ] Animations do not consume gameplay random.
+* [ ] Animation failure does not break gameplay.
+* [ ] No audio scope added.
+* [ ] No persistence/save-load added.
+* [ ] UI feedback tests pass.
+* [ ] UI static boundary tests pass.
+* [ ] Existing payload/layout/CardView/atmosphere tests pass.
+* [ ] Canonical smoke passes.
+* [ ] Integration/replay tests pass.
+* [ ] Full GUT suite passes.
+* [ ] `tools/run_static_scans.ps1` passes.
+* [ ] 1280×720 render/layout check passes or skipped with reason.
+* [ ] 1920×1080 render/layout check passes or skipped with reason.
+* [ ] All `.gd` files stay below 250 lines.
+* [ ] M16.5/M16.6/M17 scope not added.
+* [ ] No new gameplay rules added.
+
+```
+```

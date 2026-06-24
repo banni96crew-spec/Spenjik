@@ -53,6 +53,34 @@ func test_setup_input_change_invalidates_generated_contract_offer() -> void:
 	assert_true(screen.start_button.disabled)
 
 
+func test_setup_role_and_turf_changes_invalidate_contract_offer() -> void:
+	var screen: SetupScreen = _add_scene(
+		"res://scenes/ui/screens/SetupScreen.tscn"
+	)
+	if screen == null:
+		return
+	screen.seed_input.text = "ui_stale_selection"
+	screen.selected_turf_level = TurfLevelIds.BASE
+	screen.selected_role_id = RoleIds.MERCHANT
+	screen.call("_on_generate_offers")
+	screen.contract_options.select(1)
+	screen.call("_on_contract_selected", 1)
+	assert_false(screen.start_button.disabled)
+	screen.call("_on_role_selected", 0)
+	assert_eq(screen.selected_contract_id, "")
+	assert_eq(screen.contract_options.item_count, 1)
+	assert_true(screen.start_button.disabled)
+	screen.selected_role_id = RoleIds.MERCHANT
+	screen.call("_on_generate_offers")
+	screen.contract_options.select(1)
+	screen.call("_on_contract_selected", 1)
+	assert_false(screen.start_button.disabled)
+	screen.call("_on_turf_selected", 0)
+	assert_eq(screen.selected_contract_id, "")
+	assert_eq(screen.contract_options.item_count, 1)
+	assert_true(screen.start_button.disabled)
+
+
 func test_game_root_switches_and_displays_failed_action() -> void:
 	var root: GameRoot = _add_scene("res://scenes/game/GameRoot.tscn")
 	if root == null:

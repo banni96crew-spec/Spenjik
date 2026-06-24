@@ -1,0 +1,555 @@
+# ПРОМТ-ЗАДАЧА — M16.2 Card Visual System
+
+## Роль
+
+Ты senior Godot 4.6.2 UI artist-engineer, card UI designer, Control/Theme specialist и coding-agent.
+
+Ты умеешь:
+
+* строить reusable CardView widgets;
+* переносить visual references в Godot UI template;
+* делать type-driven card styling;
+* работать с Theme, StyleBox, Labels, Containers;
+* писать GUT scene/static tests;
+* держать UI полностью вне gameplay logic.
+
+Реализуй **Milestone M16.2 — Card Visual System**.
+
+Сначала изучи repository и дай план без кода.
+До подтверждения пользователя не изменяй файлы.
+
+---
+
+## Контекст проекта
+
+The Turf / «Передел» — desktop single-player card/board mini-game с одним human player и тремя local AI.
+
+M0–M16/M16.1 считаются prerequisites, но readiness нужно проверить по repository/tests.
+
+M16 дал functional UI.
+M16.1 отвечает за tabletop layout.
+M16.2 отвечает за карточную визуальную систему.
+
+M16.2 должен сделать так, чтобы карты в UI выглядели как часть одной тёмной физической колоды, основанной на утверждённых reference-картах.
+
+Dependency direction:
+
+`UI -> GameStateManager -> logic modules -> catalogs/resources/constants`
+
+M16.2 не меняет gameplay rules.
+M16.2 не меняет deterministic replay.
+M16.2 не добавляет persistence/save/load.
+M16.2 не является M17 hardening.
+
+---
+
+## Visual source of truth
+
+Перед реализацией изучи папку:
+
+`C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE`
+
+В ней утверждены 4 эталона:
+
+* Engine card reference;
+* Status card reference;
+* War card reference;
+* Defense card reference.
+
+Эти reference-карты являются **style lock**, а не вдохновением.
+
+Все CardView variants должны выглядеть как часть одной колоды с этими references.
+
+---
+
+## Задача
+
+Реализовать M16.2 — Card Visual System:
+
+* улучшить `CardView` как reusable template-based widget;
+* добавить type-driven visual variants:
+
+  * Engine;
+  * Status;
+  * War;
+  * Defense;
+* сделать единый визуальный язык карт:
+
+  * dark card stock;
+  * worn border;
+  * price zone;
+  * type marker;
+  * illustration zone;
+  * title panel;
+  * effect text zone;
+  * selected/hover/disabled states;
+* убрать ощущение default Godot card panel;
+* сохранить readable UI;
+* сохранить CardView как data-driven renderer;
+* не использовать full-card PNG как основной способ отображения карты;
+* не хардкодить конкретные card IDs;
+* добавить focused tests/static scans;
+* сохранить зелёными M0–M16/M16.1 suites.
+
+---
+
+## Visual style lock
+
+Общий стиль:
+
+* vertical dark tabletop card;
+* black worn matte card stock;
+* rounded corners;
+* thin distressed warm off-white border;
+* criminal underground board-game mood;
+* high-resolution pixel-art engraving / pixelated ink linework direction;
+* dirty off-white ink on black;
+* dense stippling/hatching feeling where practical in UI;
+* worn print texture;
+* limited palette:
+
+  * black;
+  * dirty ivory/off-white;
+  * muted gray/brown grime;
+  * tiny dark red accent only where appropriate;
+* no glossy mobile UI;
+* no bright fantasy colors;
+* no anime;
+* no cyberpunk neon overload;
+* no clean vector/mobile game look;
+* no smooth 3D render.
+
+Composition baseline:
+
+* price in top-left;
+* small custom currency glyph near price;
+* card type marker under/near price;
+* centered art/illustration zone;
+* lower title panel;
+* large distressed title;
+* readable rules/effect text below title;
+* small type icon in lower-right or equivalent reference-consistent marker;
+* thin divider between illustration and title/effect area.
+
+---
+
+## Card type visual distinction
+
+Engine:
+
+* gear marker;
+* machinery/economy feeling;
+* dirty industrial visual language;
+* gear icon reserved for Engine only.
+
+Status:
+
+* status/crown-style marker if approved by reference;
+* stash/influence/property feeling;
+* do not reuse gear;
+* do not reuse attack/shield marker.
+
+War:
+
+* aggressive attack marker;
+* sharp/threatening visual language;
+* attack marker reserved for War only;
+* no shield/gear confusion.
+
+Defense:
+
+* shield/protection marker;
+* defensive/security feeling;
+* shield marker reserved for Defense only;
+* do not reuse gear or attack marker.
+
+Important:
+
+* visual symbols are presentation only;
+* do not invent new gameplay meaning through icons;
+* if exact marker from reference is unclear, preserve type separation and document chosen marker.
+
+---
+
+## Required files to audit/update
+
+Primary widget:
+
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/CardView.gd`
+
+Likely affected panels:
+
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/MarketPanel.gd`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.gd`
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/PlayerBoard.gd`
+
+Presentation helpers:
+
+* `res://logic/game_state/PresentationViewBuilder.gd`
+* `res://logic/game_state/GameViewBuilder.gd`
+* `res://scenes/ui/helpers/UIViewFormatters.gd`
+
+Theme/assets:
+
+* existing theme files;
+* existing UI assets;
+* approved `CARD_STYLE_REFERENCE`.
+
+Optional new UI-only files:
+
+* `res://scenes/ui/card_visual/CardVisualStyle.gd`
+* `res://scenes/ui/card_visual/CardVisualStyleMap.gd`
+* `res://scenes/ui/card_visual/CardVisualTokens.gd`
+* `res://scenes/ui/card_visual/CardTypeMarkers.gd`
+
+Create optional files only if they keep CardView clean and under 250 lines.
+Do not create duplicate systems if simple local helpers are enough.
+
+Tests:
+
+* `res://tests/unit/test_card_view_visual_system.gd`
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/static/test_architecture_static_scan.gd`
+
+Add static test only if current static scan cannot cover CardView visual boundaries.
+
+---
+
+## Pre-implementation audit
+
+До кода:
+
+1. Найди actual project root и проверь `project.godot`.
+2. Проверь worktree, не затирай unrelated changes.
+3. Проверь M0–M16/M16.1 readiness:
+
+   * canonical smoke;
+   * UI tests;
+   * integration;
+   * replay;
+   * static scans;
+   * full suite status.
+4. Проинспектируй `CARD_STYLE_REFERENCE`:
+
+   * перечисли 4 reference-файла;
+   * определи Engine/Status/War/Defense;
+   * зафиксируй visual rules.
+5. Проинспектируй current `CardView.tscn` / `CardView.gd`.
+6. Проинспектируй panels that instantiate/use CardView.
+7. Проинспектируй presentation dictionaries:
+
+   * card id;
+   * title;
+   * type;
+   * price;
+   * effect text;
+   * disabled state;
+   * selected state if available.
+8. Проверь current Theme/assets/fonts/icons.
+9. Проверь UI static boundary tests.
+10. Построй CardView audit matrix:
+
+    * current element;
+    * current issue;
+    * reference requirement;
+    * proposed change;
+    * risk.
+
+Если prerequisite не завершён, не создавай workaround: укажи owning milestone и останови зависимую часть.
+
+---
+
+## CardView responsibilities
+
+CardView must display:
+
+* title;
+* type;
+* price;
+* effect/rules text as display text only;
+* optional card id/debug label only if already present and not visually dominant;
+* type marker;
+* selected/hover state;
+* disabled/unavailable state;
+* affordable/unaffordable state if supplied by view/panel;
+* card slot/empty state if used by panel.
+
+CardView must not:
+
+* compute price;
+* compute affordability;
+* validate purchase/attack;
+* parse effect text as rules;
+* call MarketLogic, PriceLogic, CombatEngine or any owner module;
+* read GameStateManager.state;
+* mutate gameplay state;
+* consume random;
+* special-case specific card IDs.
+
+---
+
+## Visual states
+
+Implement or preserve clear presentation states:
+
+Normal:
+
+* readable card;
+* type marker visible;
+* price/title/effect visible.
+
+Hover:
+
+* subtle highlight;
+* no gameplay mutation;
+* mouse feedback only.
+
+Selected:
+
+* stronger outline/glow/raised state;
+* must remain readable.
+
+Disabled/unavailable:
+
+* dimmed or desaturated;
+* effect/title still readable enough;
+* no fake “broken card” gameplay meaning.
+
+Affordable/unaffordable:
+
+* if panel supplies it, price zone can visually indicate affordability;
+* do not compute affordability inside CardView.
+
+Owned/placed/hand/market context:
+
+* if context supplied, CardView may adjust scale/layout labels;
+* no gameplay logic.
+
+---
+
+## Layout requirements inside card
+
+CardView should have stable internal zones:
+
+* outer worn border;
+* top price/type zone;
+* central art/illustration placeholder zone;
+* lower title panel;
+* lower effect text zone;
+* optional bottom-right type marker.
+
+Use Control/Container nodes where practical.
+
+Do not create a single flat TextureRect card image.
+
+Allowed:
+
+* StyleBoxFlat/StyleBoxTexture if project assets exist;
+* Label theme overrides;
+* simple procedural panel styling;
+* type marker labels/icons;
+* placeholder illustration blocks;
+* custom font/theme only if already available or safely added.
+
+Avoid:
+
+* hardcoded absolute positioning that breaks scaling;
+* tiny unreadable labels;
+* giant cards that break 1280×720;
+* default blue/gray Godot look;
+* full-card PNG as sole render path.
+
+---
+
+## Tests
+
+Add/update focused tests.
+
+CardView visual/system tests should verify:
+
+* CardView scene instantiates.
+* CardView accepts display dictionaries for Engine/Status/War/Defense.
+* CardView has type-driven visual branch for all card types.
+* CardView does not hardcode specific IDs:
+
+  * `laundry`;
+  * `stash`;
+  * `thug`;
+  * `cops`.
+* CardView does not use full-card PNG-only rendering.
+* CardView exposes/updates title, price, effect text.
+* CardView handles missing optional fields safely.
+* CardView supports selected/disabled/hover state without gameplay mutation.
+* CardView `.gd` stays <250 lines.
+
+Static tests should verify:
+
+* no owner module calls from CardView;
+* no GameStateManager.state access;
+* no gameplay random;
+* no hardcoded specific card visual special-cases;
+* no effect parsing as rules;
+* no full-card PNG-only path.
+
+Affected UI tests should remain green:
+
+* UI payload tests;
+* UI static boundaries;
+* UI layout tests;
+* canonical smoke;
+* integration/replay.
+
+Do not use replay tests to assert visual style.
+Do not weaken existing tests.
+
+---
+
+## Static forbidden patterns
+
+CardView and card visual helpers must not contain:
+
+* `GameStateManager.state`;
+* `MarketLogic`;
+* `PriceLogic`;
+* `PurchaseValidator`;
+* `PurchaseResolver`;
+* `CombatEngine`;
+* `AttackValidator`;
+* `DefenseResolver`;
+* `ContractLogic`;
+* `StreetDealLogic`;
+* `ContactLogic`;
+* `AIBotController`;
+* `SeededRandom`;
+* `SeededPicker`;
+* `randf(`;
+* `randi(`;
+* `randomize(`;
+* `RandomNumberGenerator`;
+* hardcoded `laundry`;
+* hardcoded `stash`;
+* hardcoded `thug`;
+* hardcoded `cops`;
+* parsing `effect_summary` into gameplay logic;
+* direct mutation patterns like `["nal"] +=`, `["vp"] +=`, `["hand"].append`.
+
+---
+
+## Defect fix policy
+
+Можно исправлять только:
+
+* CardView visual system defect;
+* scene parse/runtime error;
+* CardView scaling/layout issue;
+* missing presentation field needed for visual rendering;
+* UI static boundary gap;
+* test-confirmed regression.
+
+Для каждого fix:
+
+1. Покажи reproduction/failing test.
+2. Укажи owner file/module.
+3. Добавь regression test.
+4. Внеси минимальное изменение.
+5. Запусти targeted, affected и full suites.
+
+Не исправляй gameplay через CardView.
+Не подгоняй expected result теста под bug.
+
+---
+
+## Ограничения
+
+* Не добавляй gameplay rules/content и rebalance.
+* Не меняй IDs, formulas, public contracts или phase graph.
+* Не меняй RNG algorithm/call order/random step.
+* Не добавляй wall-clock nondeterminism.
+* Не добавляй persistence/save-load.
+* Не создавай ReplayManager или DebugSnapshotManager.
+* Не добавляй M17 hardening scope.
+* Не делай M16.3 atmosphere, M16.4 animation, M16.5 audio или M16.6 UX clarity scope.
+* Не добавляй React, TypeScript, Tailwind, Zustand, Docker, network, telemetry, backend, web routing или Web export.
+* Не делай большой unrelated refactor.
+* Не ослабляй tests, scans и assertions.
+* Не заявляй pass для незапущенной проверки.
+* Не удаляй unrelated user changes.
+* Каждый `.gd` файл строго меньше 250 строк.
+
+---
+
+## Порядок работы
+
+1. Изучи docs и repository.
+2. Проверь M0–M16/M16.1 readiness и baseline.
+3. Проаудируй `CARD_STYLE_REFERENCE`.
+4. Проаудируй current CardView scene/script.
+5. Проаудируй panels that use CardView.
+6. Проаудируй current presentation dictionaries.
+7. Построй CardView audit matrix.
+8. Предложи Card Visual System plan.
+9. Дай план без кода и дождись моего «ок».
+10. После «ок» сначала добавь/обнови failing CardView/static tests.
+11. Реализуй type-driven CardView visual system.
+12. Обнови panels only if required for CardView integration.
+13. Запусти targeted CardView/UI tests.
+14. Запусти canonical smoke, integration/replay/static scans.
+15. Запусти full GUT suite.
+16. Проверь viewport/render if available.
+17. Выдай evidence-based M16.2 gate report.
+
+---
+
+## Формат ответа
+
+1. Сначала дай план без кода.
+2. Покажи CardView audit matrix.
+3. Покажи reference mapping Engine/Status/War/Defense.
+4. Покажи proposed Card Visual System hierarchy.
+5. Укажи blockers и OQ.
+6. Дождись моего «ок».
+7. До «ок» не изменяй файлы.
+8. После «ок» показывай изменения с полными `res://...` путями.
+9. Для каждого файла кратко указывай UI responsibility.
+10. Для fix указывай reproduction, owner и regression test.
+11. Перечисли реально запущенные commands/tests/scans.
+12. Для viewport/render checks укажи pass/fail/skipped и причину.
+13. Не заявляй pass по inspection вместо execution.
+14. В конце дай M16.2 gate checklist.
+
+---
+
+## M16.2 Gate Checklist
+
+* [ ] M0–M16/M16.1 readiness и baseline проверены.
+* [ ] `CARD_STYLE_REFERENCE` доступна.
+* [ ] 4 references mapped to Engine/Status/War/Defense.
+* [ ] Current CardView audit matrix подготовлена.
+* [ ] CardView остаётся template-based.
+* [ ] CardView не является full-card PNG viewer.
+* [ ] CardView supports Engine/Status/War/Defense variants.
+* [ ] Type markers separated: gear/status/attack/shield.
+* [ ] No hardcoded specific card IDs.
+* [ ] Price/title/effect zones readable.
+* [ ] Hover/selected/disabled states implemented or preserved.
+* [ ] Affordable/unaffordable visual state uses supplied data only.
+* [ ] CardView does not compute gameplay rules.
+* [ ] CardView does not call owner modules.
+* [ ] CardView does not read/mutate GameStateManager.state.
+* [ ] CardView and helpers stay <250 lines.
+* [ ] Card visual tests pass.
+* [ ] UI static boundary tests pass.
+* [ ] Existing payload/layout tests pass.
+* [ ] Canonical smoke passes.
+* [ ] Integration/replay tests pass.
+* [ ] Full GUT suite passes.
+* [ ] `tools/run_static_scans.ps1` passes.
+* [ ] M16.3/M16.4/M16.5/M16.6/M17 scope not added.
+* [ ] No new gameplay rules added.
+
+```
+```

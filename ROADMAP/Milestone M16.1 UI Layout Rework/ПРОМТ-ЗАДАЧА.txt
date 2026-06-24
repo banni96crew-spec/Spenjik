@@ -1,0 +1,554 @@
+# ПРОМТ-ЗАДАЧА — M16.1 UI Layout Rework
+
+## Роль
+
+Ты senior Godot 4.6.2 UI architect, UX engineer, desktop layout designer и coding-agent.
+
+Ты умеешь:
+
+* строить desktop UI на Control/Container nodes;
+* проектировать tabletop board-game screen composition;
+* улучшать scene hierarchy без изменения gameplay;
+* подключать UI только к GameStateManager facade;
+* проектировать readable 1280×720 / 1920×1080 layouts;
+* писать GUT scene/static/payload/layout tests;
+* удерживать UI полностью вне gameplay logic.
+
+Реализуй **Milestone M16.1 — UI Layout Rework**.
+
+Сначала изучи repository и дай план без кода.
+До подтверждения пользователя не изменяй файлы.
+
+---
+
+## Контекст проекта
+
+The Turf / «Передел» — desktop single-player card/board mini-game с одним human player и тремя local AI.
+
+M0–M16 считаются завершёнными, но readiness нужно проверить по repository/tests.
+
+M16 создал functional UI.
+M16.1 должен улучшить layout/composition, чтобы UI перестал выглядеть как debug/panel interface и стал похож на dark tabletop card-board screen.
+
+Dependency direction:
+
+```text
+UI -> GameStateManager -> logic modules -> catalogs/resources/constants
+```
+
+M16.1 не меняет gameplay rules.
+M16.1 не меняет deterministic replay.
+M16.1 не добавляет persistence/save/load.
+M16.1 не является M17 hardening.
+
+---
+
+## Задача
+
+Реализовать M16.1 — UI Layout Rework:
+
+* переделать GameScreen/GameRoot layout в tabletop board composition;
+* заменить ощущение “набор панелей” на “игровой стол”;
+* выделить чёткие зоны:
+
+  * AI player zones;
+  * human player zone;
+  * human hand/action zone;
+  * market zone;
+  * phase/status header;
+  * side info column;
+  * logs/contracts/contacts;
+  * contextual controls;
+* сохранить SetupScreen и GameOverScreen функциональными;
+* улучшить spatial hierarchy и readability;
+* обеспечить 1280×720 minimum и 1920×1080 target layout;
+* сохранить all gameplay interaction through GameStateManager;
+* добавить/обновить scene/layout/static tests;
+* сохранить зелёными M0–M16 suites.
+
+---
+
+## Visual / Layout Direction
+
+Пользователь хочет довести UI в сторону dark tabletop card-game presentation.
+
+Референсное направление:
+
+* Inscryption-like tabletop mood, но не копировать чужой IP буквально;
+* dirty criminal board-game table;
+* worn cards;
+* dark desk/table surface;
+* physical card zones;
+* readable but atmospheric UI;
+* no debug-panel feeling;
+* no clean default Godot UI look.
+
+Approved card references:
+
+```text
+C:\Users\Николай\Desktop\PEREDEL\CARD_STYLE_REFERENCE
+```
+
+В M16.1:
+
+* использовать references для общей композиционной/визуальной направленности;
+* не превращать milestone в full Card Visual System;
+* не делать baked full-card PNG viewer;
+* не менять card gameplay;
+* не ломать existing template-based CardView.
+
+---
+
+## Обязательные файлы для аудита/обновления
+
+Main/game:
+
+* `res://scenes/main/Main.tscn`
+* `res://scenes/main/Main.gd`
+* `res://scenes/game/GameRoot.tscn`
+* `res://scenes/game/GameRoot.gd`
+
+Screens:
+
+* `res://scenes/ui/screens/SetupScreen.tscn`
+* `res://scenes/ui/screens/SetupScreen.gd`
+* `res://scenes/ui/screens/GameScreen.tscn`
+* `res://scenes/ui/screens/GameScreen.gd`
+* `res://scenes/ui/screens/GameOverScreen.tscn`
+* `res://scenes/ui/screens/GameOverScreen.gd`
+
+Panels/widgets:
+
+* `res://scenes/ui/panels/PlayerBoard.tscn`
+* `res://scenes/ui/panels/MarketPanel.tscn`
+* `res://scenes/ui/panels/ActionPanel.tscn`
+* `res://scenes/ui/panels/StreetDealPanel.tscn`
+* `res://scenes/ui/panels/ContactPanel.tscn`
+* `res://scenes/ui/panels/ContractPanel.tscn`
+* `res://scenes/ui/panels/GameLogPanel.tscn`
+* `res://scenes/ui/widgets/CardView.tscn`
+* `res://scenes/ui/widgets/DefenseBadges.tscn`
+* `res://scenes/ui/widgets/NalVpDisplay.tscn`
+* `res://scenes/ui/widgets/DisabledReasonLabel.tscn`
+
+Tests:
+
+* `res://tests/static/test_ui_static_boundaries.gd`
+* `res://tests/unit/test_ui_payloads.gd`
+
+Можно добавить/обновить:
+
+* `res://tests/unit/test_ui_layout.gd`
+* `res://tests/unit/test_ui_screens.gd`
+* `res://tests/unit/test_ui_signals.gd`
+
+Не создавай duplicate static tests в неправильных папках.
+
+---
+
+## Pre-implementation audit
+
+До кода:
+
+1. Найди actual project root и проверь `project.godot`.
+2. Проверь worktree, не затирай unrelated changes.
+3. Проверь M0–M16 readiness:
+
+   * canonical smoke;
+   * UI tests;
+   * integration;
+   * replay;
+   * static scans;
+   * full suite status.
+4. Проинспектируй current Main/GameRoot/GameScreen scene trees.
+5. Проинспектируй current panel/widget hierarchy.
+6. Проинспектируй current Theme/assets/fonts/icons.
+7. Проинспектируй `CARD_STYLE_REFERENCE`.
+8. Проверь actual GameStateManager API and M16 view shapes.
+9. Проверь UI static boundary tests и Cursor hook coverage.
+10. Проверь known M16 minor issues:
+
+    * stale SetupScreen contract offers;
+    * UI static scan roots/hooks for `scenes/main`, `scenes/game`, `scenes/ui`.
+11. Построй current UI layout audit:
+
+    * scene/panel;
+    * current position/purpose;
+    * problem;
+    * proposed layout role;
+    * owner view/call;
+    * risk.
+
+Если prerequisite не завершён, не создавай workaround: укажи owning milestone и останови зависимую часть.
+
+---
+
+## Layout goal
+
+Перевести GameScreen к tabletop composition.
+
+Baseline target:
+
+```text
+GameScreen / Tabletop Board
+
+┌─────────────────────────────────────────────────────────────┐
+│ Phase / Round / Active player / Error feedback              │
+├───────────────┬───────────────────────────────┬─────────────┤
+│ AI Zone       │ Market / Central Table         │ AI Zone     │
+│ ai_1          │ active phase content           │ ai_2        │
+├───────────────┴───────────────────────────────┴─────────────┤
+│ AI Zone ai_3 / shared board summaries                       │
+├───────────────────────────────┬─────────────────────────────┤
+│ Human board + hand/action     │ Contract/Contact/Log column │
+└───────────────────────────────┴─────────────────────────────┘
+```
+
+Exact node tree may differ, but layout must achieve:
+
+* clear center table;
+* clear human interaction zone;
+* clear AI opponent zones;
+* market/action/street deal as central phase content;
+* side info column not blocking core actions;
+* logs readable but not dominant;
+* player boards visible without huge scrolling at 1920×1080;
+* 1280×720 usable with ScrollContainer where needed.
+
+---
+
+## Desktop layout requirements
+
+* target 1920×1080;
+* minimum 1280×720;
+* landscape;
+* mouse input;
+* all core actions reachable by buttons;
+* no required drag-and-drop;
+* readable labels;
+* no off-screen essential controls;
+* ScrollContainer allowed for logs/side areas;
+* central market/action controls must remain reachable;
+* phase header always visible;
+* error/disabled reason visible near relevant action area.
+
+Use:
+
+* Control nodes;
+* Containers;
+* anchors;
+* size flags;
+* minimum sizes;
+* ScrollContainer;
+* Theme overrides only if needed.
+
+Avoid:
+
+* absolute magic positions where Containers work better;
+* hardcoded window-size assumptions;
+* default debug-like vertical stack as final layout;
+* nested containers that make controls unreachable;
+* UI layout that only works at 1920×1080.
+
+---
+
+## Screen / panel responsibilities
+
+### Main
+
+* project entry scene;
+* owns no gameplay state;
+* instantiates GameRoot;
+* keeps main theme/window settings compatible.
+
+### GameRoot
+
+* screen host/coordinator;
+* listens to GameStateManager signals once;
+* switches Setup/Game/GameOver;
+* does not duplicate panel behavior;
+* does not do gameplay orchestration beyond facade calls.
+
+### GameScreen
+
+* main tabletop composition owner;
+* owns layout zones;
+* receives refreshed view from GameRoot;
+* routes view slices to panels;
+* clears stale UI selection on phase changes;
+* shows phase/round/active player/errors.
+
+### PlayerBoard
+
+* compact player state card/board summary;
+* must fit 4 players in tabletop layout;
+* shows Nal/VP, engines/status/defense summary, role/profile/strong AI if available;
+* no direct gameplay mutation.
+
+### MarketPanel
+
+* central phase content in Market phase;
+* card row/grid should read as table market;
+* selection preview near market;
+* Buy/Rebuild/End Market reachable.
+
+### ActionPanel
+
+* human hand/action area;
+* selected War card, target, mode, engine target;
+* Execute/Discard/End Action reachable;
+* preview/disabled reason visible.
+
+### StreetDealPanel
+
+* central modal/table card-like offer during Street Deal phase;
+* option buttons clear and reachable;
+* uses canonical `option_a` / `option_b`.
+
+### ContractPanel / ContactPanel / GameLogPanel
+
+* side column / secondary info;
+* do not dominate central gameplay;
+* scroll/expand where needed;
+* readable at 1280×720.
+
+### GameOverScreen
+
+* final result presentation;
+* New Game control;
+* no gameplay commands after Game Over.
+
+---
+
+## CardView boundary
+
+CardView remains:
+
+* template-based;
+* type-driven;
+* not full-card PNG viewer;
+* no hardcoded card IDs like `laundry`, `stash`, `thug`, `cops`;
+* no owner module calls;
+* no `GameStateManager.state` access;
+* no effect parsing as rules.
+
+M16.1 may adjust CardView size/layout behavior if needed for tabletop screen.
+M16.1 must not attempt full M16.2 Card Visual System.
+
+---
+
+## Known M16 minor fixes
+
+If still present, fix before/inside M16.1:
+
+### 1. Setup stale contract offers
+
+Seed/role/turf change must invalidate old contract offers:
+
+* selected contract clears;
+* contract options reset;
+* Start disabled until offers regenerated and contract selected.
+
+### 2. UI static boundary coverage
+
+Static scan must cover:
+
+* `res://scenes/main`;
+* `res://scenes/game`;
+* `res://scenes/ui`.
+
+Cursor hook should treat all three as UI roots.
+
+Direct owner-module calls from UI must fail static scan.
+
+Only fix these if actual repository still has the issue.
+Add regression tests.
+
+---
+
+## Tests
+
+Required existing tests must stay green.
+
+Add/update focused tests:
+
+### Layout/scene tests
+
+* required scenes instantiate;
+* GameScreen has tabletop zones;
+* PhaseHeader exists;
+* central phase content exists;
+* human zone exists;
+* AI zones exist;
+* side info/log column exists;
+* core buttons reachable by node paths.
+
+### Setup stale-offer regression
+
+If issue exists:
+
+* generate offers;
+* select contract;
+* change seed/role/turf;
+* contract selection clears;
+* options reset;
+* Start disabled.
+
+### Static tests
+
+* UI roots include `scenes/main`, `scenes/game`, `scenes/ui`;
+* UI does not call owner modules directly;
+* UI does not mutate active state;
+* UI does not contain gameplay random;
+* UI `.gd` files < 250 lines;
+* logic has no UI scene dependency.
+
+### Render/layout checks
+
+* 1280×720;
+* 1920×1080;
+* report pass/fail/skipped honestly.
+
+Do not duplicate gameplay expected formulas in UI tests.
+Do not use replay tests to assert visual layout.
+Do not weaken existing assertions.
+
+---
+
+## Forbidden UI patterns
+
+UI files must not contain:
+
+* `GameStateManager.state[`;
+* direct `["nal"] +=` / `-=`;
+* direct `["vp"] +=` / `-=`;
+* `["hand"].append` / `.erase`;
+* `["combat_log"].append`;
+* `["purchased_this_round"].append`;
+* `randf(`;
+* `randi(`;
+* `randomize(`;
+* `RandomNumberGenerator`;
+* `MarketLogic.buy_card`;
+* `CombatEngine.resolve_attack`;
+* `StreetDealLogic.select_street_deal`;
+* `ContactLogic.select_contact`;
+* `ContractLogic.claim_contract`;
+* `AIBotController.run_action_for_ai`;
+* direct low-level gameplay owner calls.
+
+---
+
+## Defect fix policy
+
+Можно исправлять только:
+
+* confirmed UI layout defect;
+* scene parse/runtime error;
+* stale UI-local state defect;
+* UI static boundary gap;
+* UI-to-facade integration defect;
+* missing presentation view needed by layout;
+* test-confirmed regression.
+
+Для каждого fix:
+
+1. Покажи reproduction/failing test.
+2. Укажи owner file/module.
+3. Добавь regression test.
+4. Внеси минимальное изменение.
+5. Запусти targeted, affected и full suites.
+
+Не исправляй gameplay через UI.
+Не подгоняй expected result теста под bug.
+
+---
+
+## Ограничения
+
+* Не добавляй gameplay rules/content и rebalance.
+* Не меняй IDs, formulas, public contracts или phase graph.
+* Не меняй RNG algorithm/call order/random step.
+* Не добавляй wall-clock nondeterminism.
+* Не добавляй persistence/save-load.
+* Не создавай ReplayManager или DebugSnapshotManager.
+* Не добавляй M17 hardening scope.
+* Не добавляй React, TypeScript, Tailwind, Zustand, Docker, network, telemetry, backend, web routing или Web export.
+* Не делай большой unrelated refactor.
+* Не ослабляй tests, scans и assertions.
+* Не заявляй pass для незапущенной проверки.
+* Не удаляй unrelated user changes.
+* Каждый `.gd` файл строго меньше 250 строк.
+
+---
+
+## Порядок работы
+
+1. Изучи docs и repository.
+2. Проверь M0–M16 readiness и baseline.
+3. Проаудируй current UI layout/scene tree.
+4. Проаудируй `CARD_STYLE_REFERENCE` availability.
+5. Проаудируй known M16 minor issues.
+6. Построй layout audit matrix.
+7. Предложи tabletop scene hierarchy.
+8. Дай план без кода и дождись моего «ок».
+9. После «ок» сначала добавь/обнови failing layout/static tests.
+10. Исправь known UI-local/static defects, если подтверждены.
+11. Переделай GameScreen/GameRoot layout.
+12. Обнови panels/widgets только минимально для новой композиции.
+13. Запусти targeted UI tests/static scans.
+14. Запусти integration/replay/canonical smoke/full suite.
+15. Выполни viewport checks.
+16. Выдай evidence-based M16.1 gate report.
+
+---
+
+## Формат ответа
+
+1. Сначала дай план без кода.
+2. Покажи current layout audit matrix.
+3. Покажи proposed tabletop scene hierarchy.
+4. Отдельно сообщи статус known M16 minor issues.
+5. Укажи blockers и OQ.
+6. Дождись моего «ок».
+7. До «ок» не изменяй файлы.
+8. После «ок» показывай изменения с полными `res://...` путями.
+9. Для каждого файла кратко указывай UI responsibility.
+10. Для fix указывай reproduction, owner и regression test.
+11. Перечисли реально запущенные commands/tests/scans.
+12. Для viewport checks укажи pass/fail/skipped и причину.
+13. Не заявляй pass по inspection вместо execution.
+14. В конце дай M16.1 gate checklist.
+
+---
+
+## M16.1 Gate Checklist
+
+* [ ] M0–M16 readiness и baseline проверены.
+* [ ] Current layout audit matrix подготовлена.
+* [ ] `CARD_STYLE_REFERENCE` доступна и не импортируется как runtime asset.
+* [ ] Known M16 minor issues проверены.
+* [ ] Stale setup contract offers исправлены или подтверждены absent.
+* [ ] UI static roots покрывают scenes/main, scenes/game, scenes/ui.
+* [ ] Proposed tabletop hierarchy реализована.
+* [ ] GameScreen больше не выглядит как debug/panel stack.
+* [ ] Phase/round/active player всегда видны.
+* [ ] Human board/hand/action zone ясно выделены.
+* [ ] Market/Action/Street Deal занимают central phase area.
+* [ ] AI zones видны и различимы.
+* [ ] Contract/Contact/Log находятся в secondary side area.
+* [ ] Core buttons reachable без drag-and-drop.
+* [ ] Layout usable at 1280×720.
+* [ ] Layout usable at 1920×1080.
+* [ ] UI вызывает gameplay только через GameStateManager.
+* [ ] UI не мутирует active state напрямую.
+* [ ] UI не содержит gameplay validation/random/effect logic.
+* [ ] UI layout/scene/static tests проходят.
+* [ ] Existing payload tests проходят.
+* [ ] Canonical smoke проходит.
+* [ ] Integration/replay tests проходят.
+* [ ] Full GUT suite проходит.
+* [ ] `tools/run_static_scans.ps1` проходит.
+* [ ] Все `.gd` files меньше 250 строк.
+* [ ] M16.2/M16.3/M16.4/M16.5/M16.6/M17 scope не добавлен.
+* [ ] Новые gameplay rules не добавлены.

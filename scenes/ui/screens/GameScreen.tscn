@@ -18,98 +18,176 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="Layout" type="VBoxContainer" parent="."]
+[node name="TabletopMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 16.0
-offset_top = 12.0
-offset_right = -16.0
-offset_bottom = -12.0
+offset_left = 12.0
+offset_top = 10.0
+offset_right = -12.0
+offset_bottom = -10.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 10
 
-[node name="Header" type="HBoxContainer" parent="Layout"]
+[node name="TabletopLayout" type="VBoxContainer" parent="TabletopMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
 
-[node name="RoundLabel" type="Label" parent="Layout/Header"]
+[node name="PhaseHeader" type="PanelContainer" parent="TabletopMargin/TabletopLayout"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
+
+[node name="HeaderContent" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/PhaseHeader"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RoundLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(155, 0)
+layout_mode = 2
 text = "ROUND 1 / 15"
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 21
 
-[node name="PhaseLabel" type="Label" parent="Layout/Header"]
+[node name="PhaseLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
-size_flags_horizontal = 3
+custom_minimum_size = Vector2(155, 0)
+layout_mode = 2
 text = "INCOME"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 25
 
-[node name="ActiveLabel" type="Label" parent="Layout/Header"]
+[node name="ActiveLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
-text = "RESOLVE PHASE"
-
-[node name="BusyLabel" type="Label" parent="Layout"]
-unique_name_in_owner = true
-text = "AI ACTIVITY · SEE GAME LOG"
+layout_mode = 2
+size_flags_horizontal = 3
+text = "RESOLVE THE CURRENT PHASE"
 horizontal_alignment = 1
 
-[node name="PlayerBoardsScroll" type="ScrollContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 245)
-horizontal_scroll_mode = 2
-vertical_scroll_mode = 0
-
-[node name="PlayerBoards" type="GridContainer" parent="Layout/PlayerBoardsScroll"]
+[node name="BusyLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
-columns = 4
-theme_override_constants/h_separation = 10
+layout_mode = 2
+text = "AI ACTIVITY · SEE LOG"
+theme_override_colors/font_color = Color(0.72, 0.55, 0.32, 1)
 
-[node name="HumanBoard" parent="Layout/PlayerBoardsScroll/PlayerBoards" instance=ExtResource("2")]
-[node name="AiBoard1" parent="Layout/PlayerBoardsScroll/PlayerBoards" instance=ExtResource("2")]
-[node name="AiBoard2" parent="Layout/PlayerBoardsScroll/PlayerBoards" instance=ExtResource("2")]
-[node name="AiBoard3" parent="Layout/PlayerBoardsScroll/PlayerBoards" instance=ExtResource("2")]
+[node name="ErrorLabel" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent" instance=ExtResource("9")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+horizontal_alignment = 2
 
-[node name="Content" type="HBoxContainer" parent="Layout"]
+[node name="Workspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]
+layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 10
+theme_override_constants/separation = 8
 
-[node name="PhaseScroll" type="ScrollContainer" parent="Layout/Content"]
+[node name="PlayArea" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace"]
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_constants/separation = 8
 
-[node name="PhasePanels" type="VBoxContainer" parent="Layout/Content/PhaseScroll"]
+[node name="AIZones" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 154)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AiBoard1" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="IncomeButton" type="Button" parent="Layout/Content/PhaseScroll/PhasePanels"]
+[node name="AiBoard2" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 90)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AiBoard3" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/AIZones" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CentralPhaseArea" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PhasePanels" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea"]
+layout_mode = 2
+
+[node name="IncomeButton" type="Button" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 96)
+layout_mode = 2
+size_flags_vertical = 3
 text = "RESOLVE INCOME / CONTINUE"
 
-[node name="MarketPanel" parent="Layout/Content/PhaseScroll/PhasePanels" instance=ExtResource("3")]
+[node name="MarketPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("3")]
 unique_name_in_owner = true
-
-[node name="ActionPanel" parent="Layout/Content/PhaseScroll/PhasePanels" instance=ExtResource("4")]
-unique_name_in_owner = true
-
-[node name="StreetDealPanel" parent="Layout/Content/PhaseScroll/PhasePanels" instance=ExtResource("5")]
-unique_name_in_owner = true
-
-[node name="SidebarScroll" type="ScrollContainer" parent="Layout/Content"]
-custom_minimum_size = Vector2(330, 0)
+layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Sidebar" type="VBoxContainer" parent="Layout/Content/SidebarScroll"]
+[node name="ActionPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("4")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="StreetDealPanel" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/CentralPhaseArea/PhasePanels" instance=ExtResource("5")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HumanZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 154)
+layout_mode = 2
+
+[node name="HumanZoneLayout" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ZoneLabel" type="Label" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone/HumanZoneLayout"]
+custom_minimum_size = Vector2(92, 0)
+layout_mode = 2
+text = "YOUR\nTURF"
+horizontal_alignment = 1
+vertical_alignment = 1
+theme_override_colors/font_color = Color(0.78, 0.62, 0.34, 1)
+theme_override_font_sizes/font_size = 19
+
+[node name="HumanBoard" parent="TabletopMargin/TabletopLayout/Workspace/PlayArea/HumanZone/HumanZoneLayout" instance=ExtResource("2")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SideInfoColumn" type="PanelContainer" parent="TabletopMargin/TabletopLayout/Workspace"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(310, 0)
-
-[node name="ContractPanel" parent="Layout/Content/SidebarScroll/Sidebar" instance=ExtResource("6")]
-unique_name_in_owner = true
-
-[node name="ContactPanel" parent="Layout/Content/SidebarScroll/Sidebar" instance=ExtResource("7")]
-unique_name_in_owner = true
-
-[node name="GameLogPanel" parent="Layout/Content/SidebarScroll/Sidebar" instance=ExtResource("8")]
-unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ErrorLabel" parent="Layout" instance=ExtResource("9")]
+[node name="SideInfo" type="VBoxContainer" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SideTitle" type="Label" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo"]
+layout_mode = 2
+text = "CASE FILE"
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(0.72, 0.55, 0.32, 1)
+theme_override_font_sizes/font_size = 18
+
+[node name="ContractPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("6")]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ContactPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("7")]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="GameLogPanel" parent="TabletopMargin/TabletopLayout/Workspace/SideInfoColumn/SideInfo" instance=ExtResource("8")]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3

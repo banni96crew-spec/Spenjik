@@ -1,5 +1,10 @@
 extends GutTest
 
+const UI_ROOTS: Array[String] = [
+	"res://scenes/main",
+	"res://scenes/game",
+	"res://scenes/ui",
+]
 const FORBIDDEN_UI_PATTERNS: Array[String] = [
 	"GameStateManager.state[",
 	"[\"nal\"] +=", "[\"nal\"] -=",
@@ -21,9 +26,11 @@ const FORBIDDEN_CARD_VIEW_PATTERNS: Array[String] = [
 
 
 func test_ui_scripts_obey_gameplay_boundaries() -> void:
-	var paths: Array[String] = StaticScanHelper.get_gd_files_under(
-		"res://scenes"
-	)
+	var paths: Array[String] = []
+	for root: String in UI_ROOTS:
+		var root_paths: Array[String] = StaticScanHelper.get_gd_files_under(root)
+		assert_gt(root_paths.size(), 0, "UI root must contain scripts: %s" % root)
+		paths.append_array(root_paths)
 	assert_gt(paths.size(), 0, "M16 UI scripts must exist")
 	for path: String in paths:
 		var pattern: String = StaticScanHelper.find_pattern(

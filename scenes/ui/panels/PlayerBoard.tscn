@@ -5,20 +5,21 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/widgets/DefenseBadges.tscn" id="3"]
 
 [node name="PlayerBoard" type="PanelContainer"]
-custom_minimum_size = Vector2(270, 225)
+custom_minimum_size = Vector2(210, 146)
 script = ExtResource("1")
 
 [node name="Layout" type="VBoxContainer" parent="."]
-theme_override_constants/separation = 6
+theme_override_constants/separation = 2
 
 [node name="NameLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true
 text = "PLAYER"
-theme_override_font_sizes/font_size = 23
+theme_override_font_sizes/font_size = 18
 
 [node name="ProfileLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.56, 0.5, 0.4, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="NalVpDisplay" parent="Layout" instance=ExtResource("2")]
 unique_name_in_owner = true
@@ -29,11 +30,13 @@ unique_name_in_owner = true
 unique_name_in_owner = true
 size_flags_horizontal = 3
 text = "ENGINE"
+theme_override_font_sizes/font_size = 12
 
 [node name="StatusLabel" type="Label" parent="Layout/Columns"]
 unique_name_in_owner = true
 size_flags_horizontal = 3
 text = "STATUS"
+theme_override_font_sizes/font_size = 12
 
 [node name="DefenseBadges" parent="Layout" instance=ExtResource("3")]
 unique_name_in_owner = true
@@ -41,3 +44,4 @@ unique_name_in_owner = true
 [node name="StateLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.7, 0.58, 0.38, 1)
+theme_override_font_sizes/font_size = 12

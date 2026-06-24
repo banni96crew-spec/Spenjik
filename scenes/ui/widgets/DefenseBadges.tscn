@@ -4,15 +4,19 @@
 
 [node name="DefenseBadges" type="HBoxContainer"]
 script = ExtResource("1")
+theme_override_constants/separation = 7
 
 [node name="CopsLabel" type="Label" parent="."]
 unique_name_in_owner = true
 text = "COPS OFF"
+theme_override_font_sizes/font_size = 11
 
 [node name="CartelLabel" type="Label" parent="."]
 unique_name_in_owner = true
 text = "CARTEL NONE"
+theme_override_font_sizes/font_size = 11
 
 [node name="JudgeLabel" type="Label" parent="."]
 unique_name_in_owner = true
 text = "JUDGE NONE"
+theme_override_font_sizes/font_size = 11

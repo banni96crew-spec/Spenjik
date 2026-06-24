@@ -75,6 +75,7 @@ docs/
     19_IMPLEMENTATION_ORDER.md
     20_LLM_AGENT_RULES.md
     21_OPEN_QUESTIONS_AND_FIXES.md
+    M16.1_UI_LAYOUT_REWORK.md
 
 ## 5. File Responsibilities
 
@@ -101,6 +102,7 @@ File	Responsibility
 19_IMPLEMENTATION_ORDER.md	Step-by-step development order for Cursor / Claude
 20_LLM_AGENT_RULES.md	General LLM-agent rules, restrictions, guardrails
 21_OPEN_QUESTIONS_AND_FIXES.md	Resolved fixes, accepted decisions, and deferred non-MVP questions
+M16.1_UI_LAYOUT_REWORK.md	Tabletop layout zones, responsive desktop composition, and M16.1 layout tests
 
 ## 6. Recommended Reading Order for Human Review
 
@@ -126,6 +128,7 @@ For manual PRD refinement, read in this order:
 18. 19_IMPLEMENTATION_ORDER.md
 19. 20_LLM_AGENT_RULES.md
 20. 21_OPEN_QUESTIONS_AND_FIXES.md
+21. M16.1_UI_LAYOUT_REWORK.md
 
 ## 7. Recommended Reading Order for LLM Agents
 
@@ -166,6 +169,16 @@ Provide the agent with:
 - 16_GAME_STATE_MANAGER_API.md
 - 17_UI_UX_SPEC.md
 - 06_ECONOMY_AND_MARKET.md only as a reference, without permission to implement logic in UI
+
+Task: implement M16.1 UI Layout Rework
+
+Provide the agent with:
+- 20_LLM_AGENT_RULES.md
+- M16.1_UI_LAYOUT_REWORK.md
+- 17_UI_UX_SPEC.md
+- 16_GAME_STATE_MANAGER_API.md
+- 15_GODOT_ARCHITECTURE.md
+- 18_TEST_PLAN.md
 
 ## 8. Development Context Packs
 
