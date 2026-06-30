@@ -75,7 +75,11 @@ func _render_players(view: Dictionary) -> void:
 		var player_id: String = str(player["id"])
 		var board: PlayerBoard = boards.get(player_id)
 		if board != null:
-			board.render(player, profiles.get(player_id, {}))
+			board.render(
+				player,
+				profiles.get(player_id, {}),
+				view.get("card_definitions", {})
+			)
 
 
 func _set_phase_visibility(phase: String) -> void:

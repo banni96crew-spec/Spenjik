@@ -1,5 +1,5 @@
 class_name CardView
-extends PanelContainer
+extends Control
 
 signal card_selected(card_id: String)
 
@@ -19,6 +19,7 @@ var select_button: Button
 
 var _card_surface: PanelContainer
 var _art_frame: PanelContainer
+var _layout_context: String = "market"
 var _hovered: bool = false
 var _disabled_visual: bool = false
 var _affordable: bool = true
@@ -33,10 +34,12 @@ func _ready() -> void:
 	select_button.pressed.connect(_on_pressed)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
-	add_theme_stylebox_override("panel", CardVisualStyle.card_surface(
-		Color.TRANSPARENT, 0, Color.TRANSPARENT
-	))
+	_apply_layout_context("market")
 	_apply_visuals()
+
+
+func _get_minimum_size() -> Vector2:
+	return get_layout_size()
 
 
 func _bind_nodes() -> void:
@@ -83,8 +86,40 @@ func set_card(
 	_update_state_label(data, card_state)
 	if data.has("selected"):
 		set_selected(bool(data.get("selected", false)))
+	_apply_layout_context(str(data.get("context", "market")))
+	if _layout_context == "compact":
+		base_price_label.visible = false
 	tooltip_text = "%s\n%s" % [title_label.text, effect_label.text]
 	_apply_visuals()
+
+
+func get_layout_size() -> Vector2:
+	return (
+		CardVisualTokens.COMPACT_CARD_SIZE
+		if _layout_context == "compact"
+		else CardVisualTokens.MARKET_CARD_SIZE
+	)
+
+
+func _apply_layout_context(context: String) -> void:
+	_layout_context = "compact" if context == "compact" else "market"
+	var card_size: Vector2 = get_layout_size()
+	custom_minimum_size = card_size
+	size = card_size
+	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	select_button.visible = _layout_context != "compact"
+	price_label.visible = _layout_context != "compact"
+	currency_glyph.visible = _layout_context != "compact"
+	type_marker_top.visible = _layout_context != "compact"
+	var title_size: int = 14 if _layout_context == "compact" else 16
+	var effect_size: int = 10 if _layout_context == "compact" else 12
+	title_label.add_theme_font_size_override("font_size", title_size)
+	effect_label.add_theme_font_size_override("font_size", effect_size)
+	title_label.max_lines_visible = 2 if _layout_context == "compact" else 2
+	effect_label.max_lines_visible = 2 if _layout_context == "compact" else 3
+	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
 
 func set_selected(value: bool) -> void:

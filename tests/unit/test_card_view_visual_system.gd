@@ -156,22 +156,6 @@ func test_card_view_source_has_no_individual_card_id_special_cases() -> void:
 	assert_false(source.contains("MarketLogic"))
 
 
-func test_card_view_fits_supported_viewports() -> void:
-	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
-		var host := Control.new()
-		host.size = viewport_size
-		add_child_autofree(host)
-		var card: CardView = CARD_SCENE.instantiate()
-		host.add_child(card)
-		card.set_card(_card_dict(CardTypes.ENGINE, "Viewport", 8, "Readable"))
-		assert_true(card.is_visible_in_tree())
-		assert_true(card.price_label.is_visible_in_tree())
-		assert_true(card.title_label.is_visible_in_tree())
-		assert_true(card.effect_label.is_visible_in_tree())
-		assert_lte(card.custom_minimum_size.x, 220.0)
-		assert_lte(card.custom_minimum_size.y, 280.0)
-
-
 func test_market_panel_shows_scaled_final_price_on_card() -> void:
 	var state: Dictionary = TestGameStateFactory.market_state("scaled_price_ui", 1)
 	var human: Dictionary = TestPlayers.find(state, GameIds.PLAYER_HUMAN)

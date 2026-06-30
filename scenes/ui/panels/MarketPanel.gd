@@ -31,6 +31,10 @@ func refresh(_view: Dictionary) -> void:
 		return
 	for card: Dictionary in result["view"]["cards"]:
 		var widget: CardView = CARD_SCENE.instantiate()
+		widget.custom_minimum_size = CardVisualTokens.MARKET_CARD_SIZE
+		widget.size = CardVisualTokens.MARKET_CARD_SIZE
+		widget.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		widget.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		cards_row.add_child(widget)
 		var enriched: Dictionary = _enrich_market_card(card)
 		widget.set_card(enriched)
