@@ -62,7 +62,7 @@ size_flags_horizontal = 3
 
 [node name="ArtFrame" type="PanelContainer" parent="CardSurface/Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 54)
 layout_mode = 2
 size_flags_vertical = 0
 clip_contents = true
@@ -75,29 +75,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 theme_override_colors/font_color = Color(0.352941, 0.313726, 0.25098, 1)
 theme_override_font_sizes/font_size = 9
-
-[node name="TitleDividerRow" type="HBoxContainer" parent="CardSurface/Layout"]
-layout_mode = 2
-alignment = 1
-
-[node name="TitleDividerLeft" type="ColorRect" parent="CardSurface/Layout/TitleDividerRow"]
-custom_minimum_size = Vector2(28, 1)
-layout_mode = 2
-size_flags_vertical = 4
-color = Color(0.352941, 0.313726, 0.25098, 1)
-
-[node name="TitleDividerGlyph" type="Label" parent="CardSurface/Layout/TitleDividerRow"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "◆"
-theme_override_colors/font_color = Color(0.533333, 0.470588, 0.376471, 1)
-theme_override_font_sizes/font_size = 8
-
-[node name="TitleDividerRight" type="ColorRect" parent="CardSurface/Layout/TitleDividerRow"]
-custom_minimum_size = Vector2(28, 1)
-layout_mode = 2
-size_flags_vertical = 4
-color = Color(0.352941, 0.313726, 0.25098, 1)
 
 [node name="TitleLabel" type="Label" parent="CardSurface/Layout"]
 unique_name_in_owner = true
@@ -119,7 +96,7 @@ horizontal_alignment = 1
 autowrap_mode = 3
 clip_text = true
 max_lines_visible = 3
-theme_override_font_sizes/font_size = 13
+theme_override_font_sizes/font_size = 15
 
 [node name="BasePriceLabel" type="Label" parent="CardSurface/Layout"]
 unique_name_in_owner = true
@@ -154,15 +131,9 @@ horizontal_alignment = 2
 theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
 theme_override_font_sizes/font_size = 12
 
-[node name="TypeMarkerBottom" type="Label" parent="CardSurface/Layout/BottomBar"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "?"
-theme_override_font_sizes/font_size = 12
-
 [node name="SelectButton" type="Button" parent="CardSurface/Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 28)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 size_flags_vertical = 8
 text = "SELECT"

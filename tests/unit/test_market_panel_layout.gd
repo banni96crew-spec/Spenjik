@@ -63,6 +63,47 @@ func test_market_card_text_does_not_change_card_size() -> void:
 	assert_false(card.effect_label.text.is_empty())
 
 
+func test_market_panel_reason_label_shows_selected_card_disabled_reason() -> void:
+	var state: Dictionary = TestGameStateFactory.market_state("market_reason", 1)
+	var human: Dictionary = TestPlayers.find(state, GameIds.PLAYER_HUMAN)
+	human["nal"] = 0
+	state["market"]["always_available_card_ids"] = [GameIds.CARD_LAUNDRY]
+	state["market"]["all_available_card_ids"] = [GameIds.CARD_LAUNDRY]
+	GameStateManager.state = state
+	var panel: MarketPanel = MARKET_SCENE.instantiate()
+	add_child_autofree(panel)
+	panel.refresh({})
+	var card: CardView = panel.cards_row.get_child(0) as CardView
+	assert_not_null(card)
+	assert_false(card.state_label.visible)
+	assert_false(card.effect_label.text.is_empty())
+	panel._on_card_selected(GameIds.CARD_LAUNDRY)
+	assert_string_contains(
+		panel.reason_label.text,
+		ErrorTextMap.to_text(ValidationErrors.NOT_ENOUGH_NAL)
+	)
+
+
+func test_market_panel_cards_keep_effect_after_refresh_with_selection() -> void:
+	var state: Dictionary = _market_state_with_cards(2)
+	var human: Dictionary = TestPlayers.find(state, GameIds.PLAYER_HUMAN)
+	human["nal"] = 0
+	GameStateManager.state = state
+	var panel: MarketPanel = MARKET_SCENE.instantiate()
+	add_child_autofree(panel)
+	panel.refresh({})
+	panel._on_card_selected(GameIds.CARD_LAUNDRY)
+	panel.refresh({})
+	var card: CardView = panel.cards_row.get_child(0) as CardView
+	assert_not_null(card)
+	assert_false(card.effect_label.text.is_empty())
+	assert_false(card.state_label.visible)
+	assert_string_contains(
+		panel.reason_label.text,
+		ErrorTextMap.to_text(ValidationErrors.NOT_ENOUGH_NAL)
+	)
+
+
 func _market_state_with_cards(count: int) -> Dictionary:
 	var state: Dictionary = TestGameStateFactory.market_state("market_layout", 1)
 	var ids: Array[String] = [

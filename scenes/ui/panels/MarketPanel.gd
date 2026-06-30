@@ -43,25 +43,15 @@ func refresh(_view: Dictionary) -> void:
 	if not _selection_exists(result["view"]["cards"]):
 		selected_card_id = ""
 		_clear_preview()
+	else:
+		_sync_selection_ui()
 	end_button.disabled = bool(result["view"]["ready_for_action"])
 	_refresh_rebuild()
 
 
 func _on_card_selected(card_id: String) -> void:
 	selected_card_id = card_id
-	var price: Dictionary = GameStateManager.get_card_price_preview(
-		GameIds.PLAYER_HUMAN, card_id
-	)
-	var reason: String = GameStateManager.get_purchase_disabled_reason(
-		GameIds.PLAYER_HUMAN, card_id
-	)
-	if price["ok"]:
-		preview_label.text = "FINAL PRICE: %d NAL\n%s" % [
-			int(price["final_price"]),
-			_format_modifiers(price["modifiers"]),
-		]
-	reason_label.set_reason(reason)
-	buy_button.disabled = reason != ValidationErrors.OK
+	_sync_selection_ui()
 	for child: Node in cards_row.get_children():
 		var widget := child as CardView
 		if widget != null:
@@ -79,10 +69,28 @@ func _enrich_market_card(card: Dictionary) -> Dictionary:
 	)
 	if price["ok"]:
 		enriched["price"] = int(price["final_price"])
-	enriched["disabled_reason"] = reason
 	enriched["affordable"] = reason == ValidationErrors.OK
 	enriched["disabled"] = reason != ValidationErrors.OK
+	enriched["context"] = "market"
 	return enriched
+
+
+func _sync_selection_ui() -> void:
+	if selected_card_id.is_empty():
+		return
+	var price: Dictionary = GameStateManager.get_card_price_preview(
+		GameIds.PLAYER_HUMAN, selected_card_id
+	)
+	var reason: String = GameStateManager.get_purchase_disabled_reason(
+		GameIds.PLAYER_HUMAN, selected_card_id
+	)
+	if price["ok"]:
+		preview_label.text = "FINAL PRICE: %d NAL\n%s" % [
+			int(price["final_price"]),
+			_format_modifiers(price["modifiers"]),
+		]
+	reason_label.set_reason(reason)
+	buy_button.disabled = reason != ValidationErrors.OK
 
 
 func _on_buy() -> void:

@@ -21,7 +21,7 @@ func test_card_view_scene_instantiates() -> void:
 	assert_not_null(card)
 	assert_not_null(card.get_node_or_null("%PriceLabel"))
 	assert_not_null(card.get_node_or_null("%TypeMarkerTop"))
-	assert_not_null(card.get_node_or_null("%TypeMarkerBottom"))
+	assert_null(card.get_node_or_null("%TypeMarkerBottom"))
 	assert_not_null(card.get_node_or_null("%ArtPlaceholder"))
 	assert_not_null(card.get_node_or_null("%TitleLabel"))
 	assert_not_null(card.get_node_or_null("%EffectLabel"))
@@ -44,7 +44,6 @@ func test_compact_card_shows_identity_fields_and_count_badge() -> void:
 	})
 	assert_eq(card.get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
 	assert_true(card.type_marker_top.visible)
-	assert_true(card.type_marker_bottom.visible)
 	assert_eq(card.title_label.text, "LAUNDRY")
 	assert_eq(card.effect_label.text, "+2 Nal during Income")
 	assert_false(card.price_label.is_visible_in_tree())
@@ -75,7 +74,6 @@ func test_card_view_accepts_all_card_type_display_dictionaries() -> void:
 		var card: CardView = _card()
 		card.set_card(samples[card_type])
 		assert_eq(card.type_marker_top.text, CardTypeStyleMap.marker_for_type(card_type))
-		assert_eq(card.type_marker_bottom.text, CardTypeStyleMap.marker_for_type(card_type))
 		assert_eq(card.title_label.text, samples[card_type]["title"].to_upper())
 		assert_eq(card.effect_label.text, samples[card_type]["effect_summary"])
 
@@ -141,26 +139,27 @@ func test_final_price_field_is_accepted() -> void:
 
 func test_selected_disabled_and_affordable_states_use_supplied_data() -> void:
 	var card: CardView = _card()
+	var effect_text := "+2 Nal during Income"
 	card.set_card({
 		"id": "stateful",
 		"type": CardTypes.WAR,
 		"price": 3,
+		"effect_summary": effect_text,
 		"affordable": false,
 		"disabled": true,
 		"disabled_reason": ValidationErrors.NOT_ENOUGH_NAL,
 		"selected": true,
+		"context": "market",
 	})
 	assert_true(card.selected)
 	assert_eq(card.select_button.text, "SELECTED")
-	assert_true(card.state_label.visible)
-	assert_string_contains(
-		card.state_label.text,
-		ErrorTextMap.to_text(ValidationErrors.NOT_ENOUGH_NAL)
-	)
+	assert_false(card.state_label.visible)
+	assert_eq(card.effect_label.text, effect_text)
 	assert_eq(
 		card.price_label.get_theme_color("font_color"),
 		CardVisualTokens.UNAVAILABLE_PRICE
 	)
+	assert_eq(card._card_surface.modulate, CardVisualTokens.DIMMED_MODULATE)
 
 
 func test_hover_and_selection_do_not_emit_gameplay_signals() -> void:

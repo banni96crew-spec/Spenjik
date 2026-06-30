@@ -9,7 +9,6 @@ var selected: bool = false
 var price_label: Label
 var currency_glyph: Label
 var type_marker_top: Label
-var type_marker_bottom: Label
 var art_placeholder: Label
 var title_label: Label
 var effect_label: Label
@@ -50,7 +49,6 @@ func _bind_nodes() -> void:
 	price_label = %PriceLabel
 	currency_glyph = %CurrencyGlyph
 	type_marker_top = %TypeMarkerTop
-	type_marker_bottom = %TypeMarkerBottom
 	art_placeholder = %ArtPlaceholder
 	title_label = %TitleLabel
 	effect_label = %EffectLabel
@@ -76,18 +74,13 @@ func set_card(
 	_display_price = _resolve_display_price(data, display_price)
 	_affordable = bool(data.get("affordable", true))
 	_disabled_visual = bool(data.get("disabled", false))
-	if data.has("disabled_reason"):
-		var reason: String = str(data.get("disabled_reason", ""))
-		_disabled_visual = reason != ValidationErrors.OK
 	title_label.text = str(data.get("title", card_id)).to_upper()
 	effect_label.text = str(data.get("effect_summary", ""))
-	var marker: String = str(_type_style.get("marker", "?"))
-	type_marker_top.text = marker
-	type_marker_bottom.text = marker
+	type_marker_top.text = str(_type_style.get("marker", "?"))
 	art_placeholder.text = str(_type_style.get("art", ""))
 	price_label.text = str(_display_price)
 	_update_base_price_label()
-	_update_state_label(data, card_state)
+	_update_state_label(card_state)
 	if data.has("selected"):
 		set_selected(bool(data.get("selected", false)))
 	_apply_layout_context(str(data.get("context", "market")))
@@ -117,12 +110,12 @@ func _apply_layout_context(context: String) -> void:
 	_price_row.visible = not is_compact
 	select_button.visible = not is_compact
 	type_marker_top.visible = true
-	type_marker_bottom.visible = true
 	_art_frame.custom_minimum_size.y = (
 		CardVisualTokens.COMPACT_ART_HEIGHT
 		if is_compact else CardVisualTokens.MARKET_ART_HEIGHT
 	)
 	_art_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	art_placeholder.visible = is_compact
 	title_label.visible = true
 	effect_label.visible = true
 	var title_size: int = (
@@ -141,6 +134,8 @@ func _apply_layout_context(context: String) -> void:
 	effect_label.max_lines_visible = 3
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	if not is_compact:
+		select_button.custom_minimum_size.y = CardVisualTokens.MARKET_SELECT_BUTTON_HEIGHT
 
 
 func set_selected(value: bool) -> void:
@@ -178,12 +173,11 @@ func _update_base_price_label() -> void:
 		base_price_label.text = "BASE %d" % _base_price
 
 
-func _update_state_label(data: Dictionary, card_state: String) -> void:
-	var text: String = card_state
-	if text.is_empty() and data.has("disabled_reason"):
-		text = ErrorTextMap.to_text(str(data.get("disabled_reason", "")))
-	state_label.text = text
-	state_label.visible = not text.is_empty() and _layout_context != "compact"
+func _update_state_label(card_state: String) -> void:
+	state_label.text = card_state
+	state_label.visible = (
+		not card_state.is_empty() and _layout_context == "compact"
+	)
 
 
 func _apply_visuals() -> void:
@@ -203,7 +197,6 @@ func _apply_visuals() -> void:
 	title_label.add_theme_color_override("font_color", CardVisualTokens.INK)
 	effect_label.add_theme_color_override("font_color", CardVisualTokens.INK)
 	type_marker_top.add_theme_color_override("font_color", accent)
-	type_marker_bottom.add_theme_color_override("font_color", accent)
 	art_placeholder.add_theme_color_override("font_color", CardVisualTokens.GRIME)
 	count_badge.add_theme_color_override("font_color", CardVisualTokens.INK)
 	var price_color: Color = (
