@@ -25,6 +25,7 @@ func test_required_public_api_exists() -> void:
 		"get_valid_engine_targets", "get_action_disabled_reason",
 		"claim_contract", "get_contract_state",
 		"get_contract_claim_disabled_reason", "select_street_deal",
+		"complete_human_street_deal",
 		"get_street_deal_view", "get_street_deal_disabled_reason",
 		"get_debt_status", "select_contact", "activate_contact",
 		"get_contact_offer", "get_contact_state",

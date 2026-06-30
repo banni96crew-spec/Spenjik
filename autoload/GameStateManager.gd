@@ -141,6 +141,10 @@ func get_contract_claim_disabled_reason(player_id: String, contract_id: String) 
 	return str(ContractLogic.validate_contract_claim(state, player_id, contract_id)["error"])
 func select_street_deal(payload: Dictionary) -> Dictionary:
 	return _commit(StreetDealLogic.select_street_deal(_working(), payload))
+func complete_human_street_deal(payload: Dictionary) -> Dictionary:
+	return _commit(
+		AIPhaseCoordinator.complete_human_street_deal(_working(), payload)
+	)
 func get_street_deal_view(player_id: String) -> Dictionary:
 	if state.is_empty():
 		return _view_failure()
@@ -154,7 +158,7 @@ func get_debt_status(player_id: String) -> Dictionary:
 		return _view_failure()
 	return GameViewBuilder.get_debt_status(state, player_id)
 func select_contact(payload: Dictionary) -> Dictionary:
-	return _commit(ContactLogic.select_contact(_working(), payload))
+	return _commit(AIPhaseCoordinator.complete_human_contact(_working(), payload))
 func activate_contact(payload: Dictionary) -> Dictionary:
 	return _commit(ContactLogic.activate_contact(_working(), payload))
 func get_contact_offer(player_id: String) -> Dictionary:
