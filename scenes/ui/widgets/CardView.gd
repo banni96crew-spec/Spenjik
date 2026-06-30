@@ -118,13 +118,27 @@ func _apply_layout_context(context: String) -> void:
 	select_button.visible = not is_compact
 	type_marker_top.visible = true
 	type_marker_bottom.visible = true
-	_art_frame.custom_minimum_size.y = 40 if is_compact else 72
-	var title_size: int = 13 if is_compact else 16
-	var effect_size: int = 11 if is_compact else 12
+	_art_frame.custom_minimum_size.y = (
+		CardVisualTokens.COMPACT_ART_HEIGHT
+		if is_compact else CardVisualTokens.MARKET_ART_HEIGHT
+	)
+	_art_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	title_label.visible = true
+	effect_label.visible = true
+	var title_size: int = (
+		CardVisualTokens.COMPACT_TITLE_FONT
+		if is_compact else CardVisualTokens.MARKET_TITLE_FONT
+	)
+	var effect_size: int = (
+		CardVisualTokens.COMPACT_EFFECT_FONT
+		if is_compact else CardVisualTokens.MARKET_EFFECT_FONT
+	)
+	var price_size: int = CardVisualTokens.MARKET_PRICE_FONT
 	title_label.add_theme_font_size_override("font_size", title_size)
 	effect_label.add_theme_font_size_override("font_size", effect_size)
+	price_label.add_theme_font_size_override("font_size", price_size)
 	title_label.max_lines_visible = 2
-	effect_label.max_lines_visible = 3 if is_compact else 3
+	effect_label.max_lines_visible = 3
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 

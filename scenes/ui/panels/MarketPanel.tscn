@@ -14,14 +14,14 @@ text = "THE MARKET"
 theme_override_font_sizes/font_size = 22
 
 [node name="CardsScroll" type="ScrollContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 238)
+custom_minimum_size = Vector2(0, 244)
 size_flags_vertical = 3
 horizontal_scroll_mode = 2
 vertical_scroll_mode = 0
 
 [node name="CardsRow" type="HBoxContainer" parent="Layout/CardsScroll"]
 unique_name_in_owner = true
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="PreviewLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true

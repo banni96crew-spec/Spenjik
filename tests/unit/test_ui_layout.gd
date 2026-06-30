@@ -55,6 +55,37 @@ func test_game_layout_exposes_tabletop_zones_at_supported_viewports() -> void:
 		screen.get_parent().queue_free()
 
 
+func test_game_layout_width_budget_at_design_viewport() -> void:
+	var expected_center: float = UITabletopLayoutTokens.expected_center_column_width(
+		UITabletopLayoutTokens.DESIGN_VIEWPORT.x
+	)
+	assert_gte(
+		expected_center,
+		UITabletopLayoutTokens.MIN_CENTER_WIDTH_FOR_SIX_MARKET_CARDS,
+		"Center column budget too narrow for six market cards"
+	)
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var screen: GameScreen = _host_scene(
+		"res://scenes/ui/screens/GameScreen.tscn",
+		UITabletopLayoutTokens.DESIGN_VIEWPORT
+	)
+	if screen == null:
+		return
+	screen.refresh()
+	var left: Control = screen.get_node("%LeftOpponentZone")
+	var right: Control = screen.get_node("%RightOpponentZone")
+	var side: Control = screen.get_node("%SideInfoColumn")
+	assert_lte(int(side.custom_minimum_size.x), 280)
+	assert_lte(int(left.custom_minimum_size.x), 180)
+	assert_lte(int(right.custom_minimum_size.x), 180)
+	assert_gte(
+		screen.size.x,
+		UITabletopLayoutTokens.DESIGN_VIEWPORT.x * 0.95,
+		"Tabletop root should use most design viewport width"
+	)
+	screen.get_parent().queue_free()
+
+
 func test_core_phase_buttons_have_stable_reachable_paths() -> void:
 	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
 		var screen: Node = _host_scene(

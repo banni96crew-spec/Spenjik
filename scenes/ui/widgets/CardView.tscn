@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://scenes/ui/widgets/CardView.gd" id="1"]
 
 [node name="CardView" type="Control"]
-custom_minimum_size = Vector2(185, 245)
-size = Vector2(185, 245)
+custom_minimum_size = Vector2(172, 236)
+size = Vector2(172, 236)
 size_flags_horizontal = 0
 size_flags_vertical = 0
 mouse_filter = 0
@@ -24,7 +24,7 @@ clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 3
 
 [node name="TopBar" type="HBoxContainer" parent="CardSurface/Layout"]
 layout_mode = 2
@@ -41,20 +41,20 @@ theme_override_constants/separation = 2
 unique_name_in_owner = true
 layout_mode = 2
 text = "0"
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 23
 
 [node name="CurrencyGlyph" type="Label" parent="CardSurface/Layout/TopBar/PriceColumn/PriceRow"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "₦"
 theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 
 [node name="TypeMarkerTop" type="Label" parent="CardSurface/Layout/TopBar/PriceColumn"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "?"
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 
 [node name="Spacer" type="Control" parent="CardSurface/Layout/TopBar"]
 layout_mode = 2
@@ -62,9 +62,9 @@ size_flags_horizontal = 3
 
 [node name="ArtFrame" type="PanelContainer" parent="CardSurface/Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-size_flags_vertical = 3
+size_flags_vertical = 0
 clip_contents = true
 
 [node name="ArtPlaceholder" type="Label" parent="CardSurface/Layout/ArtFrame"]
@@ -74,14 +74,14 @@ text = "ILLUSTRATION"
 horizontal_alignment = 1
 vertical_alignment = 1
 theme_override_colors/font_color = Color(0.352941, 0.313726, 0.25098, 1)
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 9
 
 [node name="TitleDividerRow" type="HBoxContainer" parent="CardSurface/Layout"]
 layout_mode = 2
 alignment = 1
 
 [node name="TitleDividerLeft" type="ColorRect" parent="CardSurface/Layout/TitleDividerRow"]
-custom_minimum_size = Vector2(36, 1)
+custom_minimum_size = Vector2(28, 1)
 layout_mode = 2
 size_flags_vertical = 4
 color = Color(0.352941, 0.313726, 0.25098, 1)
@@ -91,10 +91,10 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "◆"
 theme_override_colors/font_color = Color(0.533333, 0.470588, 0.376471, 1)
-theme_override_font_sizes/font_size = 9
+theme_override_font_sizes/font_size = 8
 
 [node name="TitleDividerRight" type="ColorRect" parent="CardSurface/Layout/TitleDividerRow"]
-custom_minimum_size = Vector2(36, 1)
+custom_minimum_size = Vector2(28, 1)
 layout_mode = 2
 size_flags_vertical = 4
 color = Color(0.352941, 0.313726, 0.25098, 1)
@@ -102,22 +102,24 @@ color = Color(0.352941, 0.313726, 0.25098, 1)
 [node name="TitleLabel" type="Label" parent="CardSurface/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
 text = "CARD"
 horizontal_alignment = 1
 autowrap_mode = 3
 clip_text = true
 max_lines_visible = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 19
 
 [node name="EffectLabel" type="Label" parent="CardSurface/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
 text = "Effect"
 horizontal_alignment = 1
 autowrap_mode = 3
 clip_text = true
 max_lines_visible = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 13
 
 [node name="BasePriceLabel" type="Label" parent="CardSurface/Layout"]
 unique_name_in_owner = true
@@ -160,6 +162,7 @@ theme_override_font_sizes/font_size = 12
 
 [node name="SelectButton" type="Button" parent="CardSurface/Layout"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
 size_flags_vertical = 8
 text = "SELECT"
