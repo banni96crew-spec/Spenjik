@@ -4,13 +4,21 @@ const BOARD_SCENE := preload("res://scenes/ui/panels/PlayerBoard.tscn")
 const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
 
 
+func test_player_board_scene_has_no_owned_cards_scroll() -> void:
+	var scene_text: String = FileAccess.get_file_as_string(
+		"res://scenes/ui/panels/PlayerBoard.tscn"
+	)
+	assert_false(scene_text.contains("OwnedCardsScroll"))
+	assert_true(scene_text.contains("OwnedCardsRow"))
+
+
 func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
 	var view: Dictionary = GameStateManager.get_view()["view"]
 	var definitions: Dictionary = view["card_definitions"]
 	var human: Dictionary = _player(view, GameIds.PLAYER_HUMAN).duplicate(true)
 	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
-	human["engine"]["laundries"] = 1
+	human["engine"]["laundries"] = 2
 	human["status_buildings"]["stash"] = 1
 	human["defense"]["cops_active"] = true
 	human["hand"] = [GameIds.CARD_THUG]
@@ -22,33 +30,58 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	add_child_autofree(ai_board)
 	human_board.render(human, {}, definitions)
 	ai_board.render(ai, {"profile_id": "enforcer"}, definitions)
-	assert_gte(human_board.owned_cards_row.get_child_count(), 4)
+	assert_eq(human_board.owned_cards_row.get_child_count(), 4)
 	assert_eq(ai_board.owned_cards_row.get_child_count(), 2)
 	for child: Node in human_board.owned_cards_row.get_children():
 		var chip := child as CardView
 		assert_not_null(chip)
 		assert_eq(chip.get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
 		assert_false(chip.select_button.visible)
+		assert_true(chip.type_marker_top.visible)
+		assert_false(chip.title_label.text.is_empty())
+		assert_false(chip.effect_label.text.is_empty())
+	var laundry_chip: CardView = _find_owned_card(
+		human_board, GameIds.CARD_LAUNDRY
+	)
+	assert_not_null(laundry_chip)
+	assert_true(laundry_chip.count_badge.visible)
+	assert_eq(laundry_chip.count_badge.text, "x2")
 
 
-func test_player_owned_cards_builder_reconstructs_state_counts() -> void:
+func test_player_owned_cards_builder_groups_duplicate_counts() -> void:
 	var definitions: Dictionary = PresentationViewBuilder.cards_by_id()
 	var player: Dictionary = TestPlayers.player(GameIds.PLAYER_HUMAN)
 	player["engine"]["laundries"] = 2
-	player["status_buildings"]["stash"] = 1
+	player["status_buildings"]["stash"] = 3
 	player["defense"]["cartel_state"] = DefenseStates.ACTIVE
-	player["hand"] = [GameIds.CARD_CLEANER]
+	player["hand"] = [GameIds.CARD_CLEANER, GameIds.CARD_CLEANER]
 	var displays: Array[Dictionary] = PlayerOwnedCardsBuilder.build_owned_displays(
 		player, definitions
 	)
-	assert_eq(displays.size(), 5)
-	var ids: Array[String] = []
+	assert_eq(displays.size(), 4)
+	var by_id: Dictionary = {}
 	for display: Dictionary in displays:
-		ids.append(str(display.get("id", "")))
-	assert_eq(ids.count(GameIds.CARD_LAUNDRY), 2)
-	assert_true(ids.has(GameIds.CARD_STASH))
-	assert_true(ids.has(GameIds.CARD_CARTEL))
-	assert_true(ids.has(GameIds.CARD_CLEANER))
+		by_id[str(display.get("id", ""))] = display
+	assert_eq(int(by_id[GameIds.CARD_LAUNDRY].get("count", 1)), 2)
+	assert_eq(int(by_id[GameIds.CARD_STASH].get("count", 1)), 3)
+	assert_eq(int(by_id[GameIds.CARD_CLEANER].get("count", 1)), 2)
+	assert_false(by_id[GameIds.CARD_CARTEL].has("count"))
+
+
+func test_owned_cards_row_is_not_inside_scroll_container() -> void:
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	var row: Node = board.owned_cards_row
+	assert_not_null(row)
+	assert_false(row.get_parent() is ScrollContainer)
+
+
+func _find_owned_card(board: PlayerBoard, card_id: String) -> CardView:
+	for child: Node in board.owned_cards_row.get_children():
+		var chip := child as CardView
+		if chip != null and chip.card_id == card_id:
+			return chip
+	return null
 
 
 func _player(view: Dictionary, player_id: String) -> Dictionary:

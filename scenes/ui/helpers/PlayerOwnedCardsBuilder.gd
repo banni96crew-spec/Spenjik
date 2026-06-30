@@ -32,8 +32,9 @@ static func build_owned_displays(
 	_append_defense_cards(
 		displays, player.get("defense", {}), card_definitions
 	)
-	for card_id: Variant in player.get("hand", []):
-		_append_display(displays, str(card_id), card_definitions)
+	_append_hand_cards(
+		displays, player.get("hand", []), card_definitions
+	)
 	return displays
 
 
@@ -48,10 +49,26 @@ static func _append_counted_cards(
 		var value: Variant = state.get(state_key, 0)
 		if typeof(value) == TYPE_BOOL:
 			if value:
-				_append_display(displays, card_id, card_definitions)
+				_append_display(displays, card_id, card_definitions, 1)
 			continue
-		for _i: int in int(value):
-			_append_display(displays, card_id, card_definitions)
+		var count: int = int(value)
+		if count > 0:
+			_append_display(displays, card_id, card_definitions, count)
+
+
+static func _append_hand_cards(
+	displays: Array[Dictionary],
+	hand: Array,
+	card_definitions: Dictionary
+) -> void:
+	var counts: Dictionary = {}
+	for card_id: Variant in hand:
+		var id: String = str(card_id)
+		counts[id] = int(counts.get(id, 0)) + 1
+	for card_id: Variant in counts.keys():
+		_append_display(
+			displays, str(card_id), card_definitions, int(counts[card_id])
+		)
 
 
 static func _append_defense_cards(
@@ -60,20 +77,23 @@ static func _append_defense_cards(
 	card_definitions: Dictionary
 ) -> void:
 	if bool(defense.get("cops_active", false)):
-		_append_display(displays, GameIds.CARD_COPS, card_definitions)
+		_append_display(displays, GameIds.CARD_COPS, card_definitions, 1)
 	if str(defense.get("cartel_state", "")) == DefenseStates.ACTIVE:
-		_append_display(displays, GameIds.CARD_CARTEL, card_definitions)
+		_append_display(displays, GameIds.CARD_CARTEL, card_definitions, 1)
 	if str(defense.get("judge_state", "")) == DefenseStates.ACTIVE:
-		_append_display(displays, GameIds.CARD_JUDGE, card_definitions)
+		_append_display(displays, GameIds.CARD_JUDGE, card_definitions, 1)
 
 
 static func _append_display(
 	displays: Array[Dictionary],
 	card_id: String,
-	card_definitions: Dictionary
+	card_definitions: Dictionary,
+	count: int = 1
 ) -> void:
 	if not card_definitions.has(card_id):
 		return
 	var display: Dictionary = card_definitions[card_id].duplicate()
 	display["context"] = "compact"
+	if count > 1:
+		display["count"] = count
 	displays.append(display)

@@ -15,10 +15,12 @@ var title_label: Label
 var effect_label: Label
 var base_price_label: Label
 var state_label: Label
+var count_badge: Label
 var select_button: Button
 
 var _card_surface: PanelContainer
 var _art_frame: PanelContainer
+var _price_row: Control
 var _layout_context: String = "market"
 var _hovered: bool = false
 var _disabled_visual: bool = false
@@ -54,9 +56,11 @@ func _bind_nodes() -> void:
 	effect_label = %EffectLabel
 	base_price_label = %BasePriceLabel
 	state_label = %StateLabel
+	count_badge = %CountBadge
 	select_button = %SelectButton
 	_card_surface = %CardSurface
 	_art_frame = %ArtFrame
+	_price_row = price_label.get_parent()
 
 
 func set_card(
@@ -87,6 +91,7 @@ func set_card(
 	if data.has("selected"):
 		set_selected(bool(data.get("selected", false)))
 	_apply_layout_context(str(data.get("context", "market")))
+	_update_count_badge(data)
 	if _layout_context == "compact":
 		base_price_label.visible = false
 	tooltip_text = "%s\n%s" % [title_label.text, effect_label.text]
@@ -108,16 +113,18 @@ func _apply_layout_context(context: String) -> void:
 	size = card_size
 	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	select_button.visible = _layout_context != "compact"
-	price_label.visible = _layout_context != "compact"
-	currency_glyph.visible = _layout_context != "compact"
-	type_marker_top.visible = _layout_context != "compact"
-	var title_size: int = 14 if _layout_context == "compact" else 16
-	var effect_size: int = 10 if _layout_context == "compact" else 12
+	var is_compact: bool = _layout_context == "compact"
+	_price_row.visible = not is_compact
+	select_button.visible = not is_compact
+	type_marker_top.visible = true
+	type_marker_bottom.visible = true
+	_art_frame.custom_minimum_size.y = 40 if is_compact else 72
+	var title_size: int = 13 if is_compact else 16
+	var effect_size: int = 11 if is_compact else 12
 	title_label.add_theme_font_size_override("font_size", title_size)
 	effect_label.add_theme_font_size_override("font_size", effect_size)
-	title_label.max_lines_visible = 2 if _layout_context == "compact" else 2
-	effect_label.max_lines_visible = 2 if _layout_context == "compact" else 3
+	title_label.max_lines_visible = 2
+	effect_label.max_lines_visible = 3 if is_compact else 3
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 
@@ -142,9 +149,17 @@ func _resolve_display_price(data: Dictionary, display_price: int) -> int:
 	return _base_price
 
 
+func _update_count_badge(data: Dictionary) -> void:
+	var count: int = int(data.get("count", 1))
+	var show_badge: bool = _layout_context == "compact" and count > 1
+	count_badge.visible = show_badge
+	if show_badge:
+		count_badge.text = "x%d" % count
+
+
 func _update_base_price_label() -> void:
 	var show_base: bool = _base_price > 0 and _display_price != _base_price
-	base_price_label.visible = show_base
+	base_price_label.visible = show_base and _layout_context != "compact"
 	if show_base:
 		base_price_label.text = "BASE %d" % _base_price
 
@@ -154,7 +169,7 @@ func _update_state_label(data: Dictionary, card_state: String) -> void:
 	if text.is_empty() and data.has("disabled_reason"):
 		text = ErrorTextMap.to_text(str(data.get("disabled_reason", "")))
 	state_label.text = text
-	state_label.visible = not text.is_empty()
+	state_label.visible = not text.is_empty() and _layout_context != "compact"
 
 
 func _apply_visuals() -> void:
@@ -176,6 +191,7 @@ func _apply_visuals() -> void:
 	type_marker_top.add_theme_color_override("font_color", accent)
 	type_marker_bottom.add_theme_color_override("font_color", accent)
 	art_placeholder.add_theme_color_override("font_color", CardVisualTokens.GRIME)
+	count_badge.add_theme_color_override("font_color", CardVisualTokens.INK)
 	var price_color: Color = (
 		CardVisualTokens.UNAVAILABLE_PRICE
 		if not _affordable else CardVisualTokens.INK

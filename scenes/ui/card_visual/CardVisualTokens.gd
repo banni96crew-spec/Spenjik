@@ -13,8 +13,8 @@ const UNAVAILABLE_PRICE := Color("6e5a52")
 const HOVER_BORDER_BOOST := Color("e8d8b0")
 
 const CURRENCY_GLYPH := "₦"
-const MARKET_CARD_SIZE := Vector2(210, 265)
-const COMPACT_CARD_SIZE := Vector2(108, 148)
+const MARKET_CARD_SIZE := Vector2(185, 245)
+const COMPACT_CARD_SIZE := Vector2(135, 175)
 const CORNER_RADIUS := 12
 const BORDER_NORMAL := 2
 const BORDER_SELECTED := 4

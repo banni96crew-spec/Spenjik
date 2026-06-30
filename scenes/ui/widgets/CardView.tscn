@@ -3,8 +3,8 @@
 [ext_resource type="Script" path="res://scenes/ui/widgets/CardView.gd" id="1"]
 
 [node name="CardView" type="Control"]
-custom_minimum_size = Vector2(210, 265)
-size = Vector2(210, 265)
+custom_minimum_size = Vector2(185, 245)
+size = Vector2(185, 245)
 size_flags_horizontal = 0
 size_flags_vertical = 0
 mouse_filter = 0
@@ -142,6 +142,15 @@ layout_mode = 2
 [node name="BottomSpacer" type="Control" parent="CardSurface/Layout/BottomBar"]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="CountBadge" type="Label" parent="CardSurface/Layout/BottomBar"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "x2"
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
+theme_override_font_sizes/font_size = 12
 
 [node name="TypeMarkerBottom" type="Label" parent="CardSurface/Layout/BottomBar"]
 unique_name_in_owner = true

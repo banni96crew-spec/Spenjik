@@ -28,6 +28,40 @@ func test_card_view_scene_instantiates() -> void:
 	assert_not_null(card.get_node_or_null("%BasePriceLabel"))
 	assert_not_null(card.get_node_or_null("%StateLabel"))
 	assert_not_null(card.get_node_or_null("%SelectButton"))
+	assert_not_null(card.get_node_or_null("%CountBadge"))
+
+
+func test_compact_card_shows_identity_fields_and_count_badge() -> void:
+	var card: CardView = _card()
+	card.set_card({
+		"id": "owned_laundry",
+		"type": CardTypes.ENGINE,
+		"title": "Laundry",
+		"base_price": 8,
+		"effect_summary": "+2 Nal during Income",
+		"context": "compact",
+		"count": 2,
+	})
+	assert_eq(card.get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
+	assert_true(card.type_marker_top.visible)
+	assert_true(card.type_marker_bottom.visible)
+	assert_eq(card.title_label.text, "LAUNDRY")
+	assert_eq(card.effect_label.text, "+2 Nal during Income")
+	assert_false(card.price_label.is_visible_in_tree())
+	assert_true(card.count_badge.visible)
+	assert_eq(card.count_badge.text, "x2")
+
+
+func test_compact_card_hides_count_badge_for_single_copy() -> void:
+	var card: CardView = _card()
+	card.set_card({
+		"id": "owned_stash",
+		"type": CardTypes.STATUS,
+		"title": "Stash",
+		"effect_summary": "Authority bonus",
+		"context": "compact",
+	})
+	assert_false(card.count_badge.visible)
 
 
 func test_card_view_accepts_all_card_type_display_dictionaries() -> void:

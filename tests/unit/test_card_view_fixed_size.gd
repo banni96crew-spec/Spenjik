@@ -79,6 +79,52 @@ func test_card_view_fits_supported_viewports_with_fixed_size() -> void:
 		assert_eq(card.size, CardVisualTokens.MARKET_CARD_SIZE)
 
 
+func test_compact_card_keeps_fixed_size_for_long_text() -> void:
+	var expected := CardVisualTokens.COMPACT_CARD_SIZE
+	var card: CardView = _card()
+	card.set_card({
+		"id": "compact_long",
+		"type": CardTypes.ENGINE,
+		"title": "VERY LONG OWNED TITLE THAT MUST NOT RESIZE THE COMPACT CARD",
+		"effect_summary": (
+			"Long owned effect summary that should wrap and trim without changing "
+			+ "the compact card footprint on the player board."
+		),
+		"context": "compact",
+		"count": 2,
+	})
+	assert_eq(card.custom_minimum_size, expected)
+	assert_eq(card.size, expected)
+
+
+func test_market_cards_fit_1280_viewport_without_oversized_width() -> void:
+	var state: Dictionary = TestGameStateFactory.market_state("market_viewport", 1)
+	state["market"]["always_available_card_ids"] = [
+		GameIds.CARD_LAUNDRY,
+		GameIds.CARD_STASH,
+		GameIds.CARD_THUG,
+		GameIds.CARD_COPS,
+		GameIds.CARD_INFORMANT,
+		GameIds.CARD_WORKSHOP,
+	]
+	state["market"]["all_available_card_ids"] = (
+		state["market"]["always_available_card_ids"].duplicate()
+	)
+	GameStateManager.state = state
+	var host := Control.new()
+	host.size = Vector2(1280, 720)
+	add_child_autofree(host)
+	var panel: MarketPanel = MARKET_SCENE.instantiate()
+	host.add_child(panel)
+	panel.refresh({})
+	var max_width: float = CardVisualTokens.MARKET_CARD_SIZE.x
+	for child: Node in panel.cards_row.get_children():
+		var card := child as CardView
+		assert_not_null(card)
+		assert_lte(card.size.x, max_width)
+		assert_eq(card.size, CardVisualTokens.MARKET_CARD_SIZE)
+
+
 func _card() -> CardView:
 	var card: CardView = CARD_SCENE.instantiate()
 	add_child_autofree(card)

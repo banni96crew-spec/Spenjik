@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/widgets/DefenseBadges.tscn" id="3"]
 
 [node name="PlayerBoard" type="PanelContainer"]
-custom_minimum_size = Vector2(210, 180)
+custom_minimum_size = Vector2(280, 0)
 script = ExtResource("1")
 
 [node name="Layout" type="VBoxContainer" parent="."]
@@ -29,14 +29,9 @@ unique_name_in_owner = true
 text = "OWNED"
 theme_override_font_sizes/font_size = 12
 
-[node name="OwnedCardsScroll" type="ScrollContainer" parent="Layout"]
-custom_minimum_size = Vector2(0, 156)
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 2
-
-[node name="OwnedCardsRow" type="HFlowContainer" parent="Layout/OwnedCardsScroll"]
+[node name="OwnedCardsRow" type="HFlowContainer" parent="Layout"]
 unique_name_in_owner = true
+size_flags_vertical = 3
 theme_override_constants/h_separation = 6
 theme_override_constants/v_separation = 6
 
