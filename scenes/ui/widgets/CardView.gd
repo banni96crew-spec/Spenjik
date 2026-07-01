@@ -9,6 +9,7 @@ var selected: bool = false
 var price_label: Label
 var currency_glyph: Label
 var type_marker_top: Label
+var art_texture: Control
 var art_placeholder: Label
 var title_label: Label
 var effect_label: Label
@@ -49,6 +50,7 @@ func _bind_nodes() -> void:
 	price_label = %PriceLabel
 	currency_glyph = %CurrencyGlyph
 	type_marker_top = %TypeMarkerTop
+	art_texture = %ArtTexture
 	art_placeholder = %ArtPlaceholder
 	title_label = %TitleLabel
 	effect_label = %EffectLabel
@@ -87,6 +89,7 @@ func set_card(
 	_update_count_badge(data)
 	if _layout_context == "compact":
 		base_price_label.visible = false
+	_update_art_texture()
 	tooltip_text = "%s\n%s" % [title_label.text, effect_label.text]
 	_apply_visuals()
 
@@ -186,6 +189,16 @@ func _update_state_label(card_state: String) -> void:
 	state_label.visible = (
 		not card_state.is_empty() and _layout_context != "market"
 	)
+
+
+func _update_art_texture() -> void:
+	var path: String = "res://assets/cards/illustrations/card_%s.png" % card_id
+	var texture: Texture2D = null
+	if ResourceLoader.exists(path):
+		texture = load(path) as Texture2D
+	art_texture.set("texture", texture)
+	art_texture.visible = texture != null
+	art_placeholder.visible = texture == null
 
 
 func _apply_visuals() -> void:

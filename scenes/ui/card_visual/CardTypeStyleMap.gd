@@ -1,10 +1,9 @@
 class_name CardTypeStyleMap
 extends RefCounted
 
-const MARKER_GEAR := "⚙"
+const MARKER_ENGINE := "♜"
 const MARKER_CROWN := "♛"
-const MARKER_WAR := "⚔"
-const MARKER_WAR_FALLBACK := "✕✕"
+const MARKER_WAR := "♞"
 const MARKER_SHIELD := "⛨"
 
 
@@ -16,7 +15,7 @@ static func style_for_type(card_type: String) -> Dictionary:
 	match card_type:
 		CardTypes.ENGINE:
 			return {
-				"marker": MARKER_GEAR,
+				"marker": MARKER_ENGINE,
 				"art": "MACHINERY",
 				"accent": CardVisualTokens.INK,
 				"border": CardVisualTokens.INK,

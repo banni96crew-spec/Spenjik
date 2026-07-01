@@ -50,7 +50,7 @@ theme_override_constants/separation = 8
 [node name="RoundSlot" type="Control" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
 clip_contents = true
-custom_minimum_size = Vector2(132, 0)
+custom_minimum_size = Vector2(96, 0)
 layout_mode = 2
 
 [node name="RoundLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/RoundSlot"]
@@ -137,10 +137,17 @@ theme_override_font_sizes/font_size = 13
 
 [node name="ErrorLabel" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot/StatusContent" instance=ExtResource("9")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(258, 0)
+custom_minimum_size = Vector2(178, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 horizontal_alignment = 2
+
+[node name="CaseFileToggleButton" type="Button" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot/StatusContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 2
+text = "CASE >"
+theme_override_font_sizes/font_size = 12
 
 [node name="TableWorkspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]
 unique_name_in_owner = true
@@ -227,15 +234,6 @@ layout_mode = 2
 [node name="HumanZoneLayout" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone"]
 layout_mode = 2
 theme_override_constants/separation = 8
-
-[node name="ZoneLabel" type="Label" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone/HumanZoneLayout"]
-custom_minimum_size = Vector2(92, 0)
-layout_mode = 2
-text = "YOUR\nTURF"
-horizontal_alignment = 1
-vertical_alignment = 1
-theme_override_colors/font_color = Color(0.78, 0.62, 0.34, 1)
-theme_override_font_sizes/font_size = 19
 
 [node name="HumanBoard" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone/HumanZoneLayout" instance=ExtResource("2")]
 unique_name_in_owner = true

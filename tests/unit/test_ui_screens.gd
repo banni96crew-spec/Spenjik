@@ -47,6 +47,8 @@ func test_game_screen_has_required_panels() -> void:
 		return
 	for path: String in [
 		"TabletopMargin/TabletopLayout/PhaseHeader",
+		"TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot/"
+			+ "StatusContent/CaseFileToggleButton",
 		"TabletopMargin/TabletopLayout/TableWorkspace/LeftOpponentZone/AiBoard1",
 		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
 			+ "TopOpponentZone/AiBoard2",
@@ -70,6 +72,12 @@ func test_game_screen_has_required_panels() -> void:
 			+ "SideInfo/GameLogPanel",
 	]:
 		assert_not_null(screen.get_node_or_null(path), path)
+	assert_null(
+		screen.get_node_or_null(
+			"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+				+ "HumanZone/HumanZoneLayout/ZoneLabel"
+		)
+	)
 	assert_null(screen.get_node_or_null("TabletopMargin/TabletopLayout/TableWorkspace/AIZones"))
 	screen.free()
 

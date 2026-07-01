@@ -88,6 +88,58 @@ func test_game_layout_width_budget_at_design_viewport() -> void:
 	screen.get_parent().queue_free()
 
 
+func test_human_zone_uses_space_released_by_removed_label() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var screen: GameScreen = _host_scene(
+		"res://scenes/ui/screens/GameScreen.tscn",
+		UITabletopLayoutTokens.DESIGN_VIEWPORT
+	)
+	if screen == null:
+		return
+	var human_zone_layout: HBoxContainer = screen.get_node(
+		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
+			+ "HumanZone/HumanZoneLayout"
+	)
+	var human_board: PlayerBoard = screen.get_node("%HumanBoard")
+	assert_null(human_zone_layout.get_node_or_null("ZoneLabel"))
+	assert_eq(human_board.get_parent(), human_zone_layout)
+	assert_eq(human_zone_layout.get_child_count(), 1)
+	assert_eq(human_board.size_flags_horizontal, Control.SIZE_EXPAND_FILL)
+	screen.get_parent().queue_free()
+
+
+func test_case_file_defaults_hidden_and_center_expands() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var screen: GameScreen = _host_scene(
+		"res://scenes/ui/screens/GameScreen.tscn",
+		UITabletopLayoutTokens.DESIGN_VIEWPORT
+	)
+	if screen == null:
+		return
+	screen.refresh()
+	await _settle_layout()
+	var center_column: Control = screen.get_node("%CenterColumn")
+	var hidden_width: float = center_column.size.x
+	assert_not_null(screen.case_file_toggle_button)
+	assert_false(screen.is_case_file_visible())
+	assert_false(screen.side_info_column.visible)
+	assert_eq(screen.case_file_toggle_button.text, "CASE >")
+
+	screen.set_case_file_visible(true)
+	await _settle_layout()
+	var open_width: float = center_column.size.x
+	assert_true(screen.is_case_file_visible())
+	assert_true(screen.side_info_column.visible)
+	assert_eq(screen.case_file_toggle_button.text, "CASE <")
+	assert_gt(hidden_width, open_width)
+
+	screen.set_case_file_visible(false)
+	await _settle_layout()
+	assert_false(screen.side_info_column.visible)
+	assert_gt(center_column.size.x, open_width)
+	screen.get_parent().queue_free()
+
+
 func test_core_phase_buttons_have_stable_reachable_paths() -> void:
 	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
 		var screen: Node = _host_scene(
@@ -134,6 +186,11 @@ func _host_scene(path: String, viewport_size: Vector2) -> Variant:
 	host.add_child(instance)
 	instance.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return instance
+
+
+func _settle_layout() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 
 func _valid_config() -> Dictionary:

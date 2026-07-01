@@ -22,6 +22,7 @@ func test_card_view_scene_instantiates() -> void:
 	assert_not_null(card.get_node_or_null("%PriceLabel"))
 	assert_not_null(card.get_node_or_null("%TypeMarkerTop"))
 	assert_null(card.get_node_or_null("%TypeMarkerBottom"))
+	assert_not_null(card.get_node_or_null("%ArtTexture"))
 	assert_not_null(card.get_node_or_null("%ArtPlaceholder"))
 	assert_not_null(card.get_node_or_null("%TitleLabel"))
 	assert_not_null(card.get_node_or_null("%EffectLabel"))
@@ -63,6 +64,23 @@ func test_compact_card_hides_count_badge_for_single_copy() -> void:
 	assert_false(card.count_badge.visible)
 
 
+func test_card_illustration_uses_card_id_path_and_falls_back() -> void:
+	var illustrated: CardView = _card()
+	illustrated.set_card({
+		"id": GameIds.CARD_LAUNDRY,
+		"type": CardTypes.ENGINE,
+		"title": "Laundry",
+	})
+	assert_not_null(illustrated.art_texture.get("texture"))
+	assert_true(illustrated.art_texture.visible)
+	assert_false(illustrated.art_placeholder.visible)
+
+	var missing: CardView = _card()
+	missing.set_card({"id": "missing_art", "type": CardTypes.STATUS})
+	assert_null(missing.art_texture.get("texture"))
+	assert_true(missing.art_placeholder.visible)
+
+
 func test_card_view_accepts_all_card_type_display_dictionaries() -> void:
 	var samples: Dictionary = {
 		CardTypes.ENGINE: _card_dict(CardTypes.ENGINE, "Engine Card", 8, "Income bonus"),
@@ -84,14 +102,11 @@ func test_type_markers_are_distinct_and_reserved() -> void:
 		var marker: String = CardTypeStyleMap.marker_for_type(card_type)
 		assert_false(markers.has(marker), "Duplicate marker: %s" % marker)
 		markers.append(marker)
-	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.ENGINE), CardTypeStyleMap.MARKER_GEAR)
+	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.ENGINE), CardTypeStyleMap.MARKER_ENGINE)
 	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.STATUS), CardTypeStyleMap.MARKER_CROWN)
-	assert_true(
-		CardTypeStyleMap.marker_for_type(CardTypes.WAR) in [
-			CardTypeStyleMap.MARKER_WAR, CardTypeStyleMap.MARKER_WAR_FALLBACK,
-		]
-	)
+	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.WAR), CardTypeStyleMap.MARKER_WAR)
 	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.DEFENSE), CardTypeStyleMap.MARKER_SHIELD)
+	assert_eq(CardTypeStyleMap.MARKER_SHIELD, "⛨")
 	assert_ne(
 		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
 		CardTypeStyleMap.marker_for_type(CardTypes.ENGINE)

@@ -9,16 +9,20 @@ signal command_failed(error: String)
 @onready var income_button: Button = %IncomeButton
 @onready var busy_label: Label = %BusyLabel
 @onready var error_label: DisabledReasonLabel = %ErrorLabel
+@onready var case_file_toggle_button: Button = %CaseFileToggleButton
 @onready var human_board: PlayerBoard = %HumanBoard
 @onready var ai_board_1: PlayerBoard = %AiBoard1
 @onready var ai_board_2: PlayerBoard = %AiBoard2
 @onready var ai_board_3: PlayerBoard = %AiBoard3
+@onready var side_info_column: Control = %SideInfoColumn
 @onready var market_panel: MarketPanel = %MarketPanel
 @onready var action_panel: ActionPanel = %ActionPanel
 @onready var street_deal_panel: StreetDealPanel = %StreetDealPanel
 @onready var contract_panel: ContractPanel = %ContractPanel
 @onready var contact_panel: ContactPanel = %ContactPanel
 @onready var game_log_panel: GameLogPanel = %GameLogPanel
+
+var _case_file_visible: bool = false
 
 
 func _ready() -> void:
@@ -27,11 +31,13 @@ func _ready() -> void:
 	ai_board_2.set_card_orientation(PlayerBoard.CARD_ORIENTATION_NORMAL)
 	ai_board_3.set_card_orientation(PlayerBoard.CARD_ORIENTATION_SIDE_RIGHT)
 	income_button.pressed.connect(_on_advance_income)
+	case_file_toggle_button.pressed.connect(_on_case_file_toggle_pressed)
 	for panel: Node in [
 		market_panel, action_panel, street_deal_panel,
 		contract_panel, contact_panel,
 	]:
 		panel.command_finished.connect(_handle_result)
+	set_case_file_visible(false)
 
 
 func refresh() -> void:
@@ -63,6 +69,16 @@ func clear_phase_selection() -> void:
 
 func show_error(error: String) -> void:
 	_show_error(error)
+
+
+func set_case_file_visible(value: bool) -> void:
+	_case_file_visible = value
+	side_info_column.visible = value
+	case_file_toggle_button.text = "CASE <" if value else "CASE >"
+
+
+func is_case_file_visible() -> bool:
+	return _case_file_visible
 
 
 func _render_players(view: Dictionary) -> void:
@@ -103,6 +119,10 @@ func _active_text(view: Dictionary) -> String:
 
 func _on_advance_income() -> void:
 	_handle_result(GameStateManager.advance_phase())
+
+
+func _on_case_file_toggle_pressed() -> void:
+	set_case_file_visible(not _case_file_visible)
 
 
 func _handle_result(result: Dictionary) -> void:
