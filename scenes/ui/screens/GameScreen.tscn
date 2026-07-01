@@ -41,40 +41,96 @@ layout_mode = 2
 
 [node name="HeaderContent" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/PhaseHeader"]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 8
 
-[node name="RoundLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
+[node name="RoundSlot" type="Control" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(155, 0)
+clip_contents = true
+custom_minimum_size = Vector2(172, 0)
 layout_mode = 2
+
+[node name="RoundLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/RoundSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "ROUND 1 / 15"
+clip_text = true
+text_overrun_behavior = 3
 theme_override_font_sizes/font_size = 21
 
-[node name="PhaseLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
+[node name="PhaseSlot" type="Control" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(155, 0)
+clip_contents = true
+custom_minimum_size = Vector2(166, 0)
 layout_mode = 2
+
+[node name="PhaseLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/PhaseSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "INCOME"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 theme_override_font_sizes/font_size = 25
 
-[node name="ActiveLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
+[node name="ActiveSlot" type="Control" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="ActiveLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/ActiveSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "RESOLVE THE CURRENT PHASE"
 horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="BusyLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
+[node name="StatusSlot" type="Control" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent"]
 unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(398, 0)
+layout_mode = 2
+
+[node name="StatusContent" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="BusyLabel" type="Label" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot/StatusContent"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 0)
 layout_mode = 2
 text = "AI ACTIVITY · SEE LOG"
+clip_text = true
+text_overrun_behavior = 3
 theme_override_colors/font_color = Color(0.72, 0.55, 0.32, 1)
 
-[node name="ErrorLabel" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent" instance=ExtResource("9")]
+[node name="ErrorLabel" parent="TabletopMargin/TabletopLayout/PhaseHeader/HeaderContent/StatusSlot/StatusContent" instance=ExtResource("9")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(258, 0)
 layout_mode = 2
+size_flags_horizontal = 3
 horizontal_alignment = 2
 
 [node name="TableWorkspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]

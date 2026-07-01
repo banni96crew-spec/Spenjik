@@ -111,7 +111,7 @@ func test_missing_optional_fields_do_not_crash() -> void:
 	assert_false(card.base_price_label.visible)
 
 
-func test_price_and_final_price_display_with_secondary_base_price() -> void:
+func test_price_and_final_price_display_uses_primary_price_slot() -> void:
 	var card: CardView = _card()
 	card.set_card({
 		"id": "priced",
@@ -122,7 +122,7 @@ func test_price_and_final_price_display_with_secondary_base_price() -> void:
 		"effect_summary": "Scaled",
 	})
 	assert_eq(card.price_label.text, "10")
-	assert_true(card.base_price_label.visible)
+	assert_false(card.base_price_label.visible)
 	assert_string_contains(card.base_price_label.text, "8")
 
 
@@ -210,7 +210,7 @@ func test_market_panel_shows_scaled_final_price_on_card() -> void:
 	assert_true(preview["ok"], str(preview))
 	assert_eq(card.price_label.text, str(int(preview["final_price"])))
 	assert_ne(int(preview["final_price"]), int(preview["base_price"]))
-	assert_true(card.base_price_label.visible)
+	assert_false(card.base_price_label.visible)
 	assert_string_contains(card.base_price_label.text, str(int(preview["base_price"])))
 
 

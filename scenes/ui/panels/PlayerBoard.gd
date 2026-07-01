@@ -2,6 +2,12 @@ class_name PlayerBoard
 extends PanelContainer
 
 const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
+const CARD_ORIENTATION_WRAPPER := preload("res://scenes/ui/widgets/CardOrientationWrapper.gd")
+const CARD_ORIENTATION_NORMAL := "normal"
+const CARD_ORIENTATION_SIDE_LEFT := "side_left"
+const CARD_ORIENTATION_SIDE_RIGHT := "side_right"
+
+var _card_orientation: String = CARD_ORIENTATION_NORMAL
 
 @onready var name_label: Label = %NameLabel
 @onready var profile_label: Label = %ProfileLabel
@@ -9,6 +15,10 @@ const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
 @onready var owned_cards_row: HFlowContainer = %OwnedCardsRow
 @onready var defenses: DefenseBadges = %DefenseBadges
 @onready var state_label: Label = %StateLabel
+
+
+func set_card_orientation(orientation: String) -> void:
+	_card_orientation = orientation
 
 
 func render(
@@ -40,8 +50,11 @@ func _render_owned_cards(
 	for display: Dictionary in PlayerOwnedCardsBuilder.build_owned_displays(
 		player, card_definitions
 	):
+		var wrapper = CARD_ORIENTATION_WRAPPER.new()
 		var chip: CardView = CARD_SCENE.instantiate()
-		owned_cards_row.add_child(chip)
+		wrapper.set_orientation(_card_orientation)
+		owned_cards_row.add_child(wrapper)
+		wrapper.set_card_view(chip)
 		chip.set_card(display)
 		chip.set_interactive(false)
 

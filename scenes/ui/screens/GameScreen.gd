@@ -22,6 +22,10 @@ signal command_failed(error: String)
 
 
 func _ready() -> void:
+	human_board.set_card_orientation(PlayerBoard.CARD_ORIENTATION_NORMAL)
+	ai_board_1.set_card_orientation(PlayerBoard.CARD_ORIENTATION_SIDE_LEFT)
+	ai_board_2.set_card_orientation(PlayerBoard.CARD_ORIENTATION_NORMAL)
+	ai_board_3.set_card_orientation(PlayerBoard.CARD_ORIENTATION_SIDE_RIGHT)
 	income_button.pressed.connect(_on_advance_income)
 	for panel: Node in [
 		market_panel, action_panel, street_deal_panel,

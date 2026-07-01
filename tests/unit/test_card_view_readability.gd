@@ -17,6 +17,8 @@ func test_market_card_title_and_effect_are_visible() -> void:
 	assert_true(card.effect_label.visible)
 	assert_false(card.title_label.text.is_empty())
 	assert_false(card.effect_label.text.is_empty())
+	assert_gt(card.title_label.custom_minimum_size.y, 0.0)
+	assert_gt(card.effect_label.custom_minimum_size.y, 0.0)
 	assert_gte(
 		card.title_label.get_theme_font_size("font_size"),
 		CardVisualTokens.MARKET_TITLE_FONT
@@ -101,6 +103,11 @@ func test_market_art_frame_uses_token_height() -> void:
 	assert_eq(
 		int(card._art_frame.custom_minimum_size.y),
 		CardVisualTokens.MARKET_ART_HEIGHT
+	)
+	assert_gt(
+		CardVisualTokens.MARKET_ART_HEIGHT,
+		54,
+		"Market art area should be larger than the previous M16.2 layout"
 	)
 
 

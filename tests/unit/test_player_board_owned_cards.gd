@@ -2,6 +2,7 @@ extends GutTest
 
 const BOARD_SCENE := preload("res://scenes/ui/panels/PlayerBoard.tscn")
 const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
+const WRAPPER_SCRIPT := preload("res://scenes/ui/widgets/CardOrientationWrapper.gd")
 
 
 func test_player_board_scene_has_no_owned_cards_scroll() -> void:
@@ -28,18 +29,25 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	var ai_board: PlayerBoard = BOARD_SCENE.instantiate()
 	add_child_autofree(human_board)
 	add_child_autofree(ai_board)
+	ai_board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
 	human_board.render(human, {}, definitions)
 	ai_board.render(ai, {"profile_id": "enforcer"}, definitions)
 	assert_eq(human_board.owned_cards_row.get_child_count(), 4)
 	assert_eq(ai_board.owned_cards_row.get_child_count(), 2)
 	for child: Node in human_board.owned_cards_row.get_children():
-		var chip := child as CardView
+		assert_true(child.get_script() == WRAPPER_SCRIPT)
+		assert_eq(str(child.get("orientation")), WRAPPER_SCRIPT.ORIENTATION_NORMAL)
+		var chip := _card_from_child(child)
 		assert_not_null(chip)
 		assert_eq(chip.get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
 		assert_false(chip.select_button.visible)
 		assert_true(chip.type_marker_top.visible)
 		assert_false(chip.title_label.text.is_empty())
 		assert_false(chip.effect_label.text.is_empty())
+	for child: Node in ai_board.owned_cards_row.get_children():
+		assert_true(child.get_script() == WRAPPER_SCRIPT)
+		assert_eq(str(child.get("orientation")), WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.SIDE_FOOTPRINT)
 	var laundry_chip: CardView = _find_owned_card(
 		human_board, GameIds.CARD_LAUNDRY
 	)
@@ -78,10 +86,16 @@ func test_owned_cards_row_is_not_inside_scroll_container() -> void:
 
 func _find_owned_card(board: PlayerBoard, card_id: String) -> CardView:
 	for child: Node in board.owned_cards_row.get_children():
-		var chip := child as CardView
+		var chip := _card_from_child(child)
 		if chip != null and chip.card_id == card_id:
 			return chip
 	return null
+
+
+func _card_from_child(child: Node) -> CardView:
+	if child.get_script() == WRAPPER_SCRIPT:
+		return child.get("card_view") as CardView
+	return child as CardView
 
 
 func _player(view: Dictionary, player_id: String) -> Dictionary:

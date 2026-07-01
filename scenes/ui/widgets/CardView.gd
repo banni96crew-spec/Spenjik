@@ -130,6 +130,10 @@ func _apply_layout_context(context: String) -> void:
 	title_label.add_theme_font_size_override("font_size", title_size)
 	effect_label.add_theme_font_size_override("font_size", effect_size)
 	price_label.add_theme_font_size_override("font_size", price_size)
+	title_label.get_parent().size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	effect_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	title_label.custom_minimum_size.y = 24 if not is_compact else 18
+	effect_label.custom_minimum_size.y = 34 if not is_compact else 28
 	title_label.max_lines_visible = 2
 	effect_label.max_lines_visible = 3
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -168,7 +172,7 @@ func _update_count_badge(data: Dictionary) -> void:
 
 func _update_base_price_label() -> void:
 	var show_base: bool = _base_price > 0 and _display_price != _base_price
-	base_price_label.visible = show_base and _layout_context != "compact"
+	base_price_label.visible = false
 	if show_base:
 		base_price_label.text = "BASE %d" % _base_price
 
