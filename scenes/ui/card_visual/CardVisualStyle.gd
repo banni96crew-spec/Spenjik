@@ -22,9 +22,9 @@ static func art_frame(border_color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = CardVisualTokens.ART_BG
 	style.border_color = border_color.darkened(0.35)
-	style.set_border_width_all(1)
-	style.set_corner_radius_all(8)
-	style.set_content_margin_all(6)
+	style.set_border_width_all(0)
+	style.set_corner_radius_all(CardVisualTokens.CORNER_RADIUS)
+	style.set_content_margin_all(0)
 	return style
 
 

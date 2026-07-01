@@ -100,22 +100,26 @@ func get_layout_size() -> Vector2:
 
 
 func _apply_layout_context(context: String) -> void:
-	_layout_context = "compact" if context == "compact" else "market"
+	_layout_context = (
+		"compact" if context == "compact"
+		else "owned" if context == "owned"
+		else "market"
+	)
 	var card_size: Vector2 = get_layout_size()
 	custom_minimum_size = card_size
 	size = card_size
 	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var is_compact: bool = _layout_context == "compact"
-	_price_row.visible = not is_compact
-	select_button.visible = not is_compact
+	var is_owned: bool = _layout_context == "owned"
+	_price_row.visible = not is_compact and not is_owned
+	select_button.visible = not is_compact and not is_owned
 	type_marker_top.visible = true
-	_art_frame.custom_minimum_size.y = (
-		CardVisualTokens.COMPACT_ART_HEIGHT
-		if is_compact else CardVisualTokens.MARKET_ART_HEIGHT
+	_art_frame.custom_minimum_size = (
+		CardVisualTokens.COMPACT_CARD_SIZE
+		if is_compact else CardVisualTokens.MARKET_CARD_SIZE
 	)
-	_art_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	art_placeholder.visible = is_compact
+	art_placeholder.visible = true
 	title_label.visible = true
 	effect_label.visible = true
 	var title_size: int = (
@@ -164,7 +168,7 @@ func _resolve_display_price(data: Dictionary, display_price: int) -> int:
 
 func _update_count_badge(data: Dictionary) -> void:
 	var count: int = int(data.get("count", 1))
-	var show_badge: bool = _layout_context == "compact" and count > 1
+	var show_badge: bool = _layout_context != "market" and count > 1
 	count_badge.visible = show_badge
 	if show_badge:
 		count_badge.text = "x%d" % count
@@ -180,7 +184,7 @@ func _update_base_price_label() -> void:
 func _update_state_label(card_state: String) -> void:
 	state_label.text = card_state
 	state_label.visible = (
-		not card_state.is_empty() and _layout_context == "compact"
+		not card_state.is_empty() and _layout_context != "market"
 	)
 
 

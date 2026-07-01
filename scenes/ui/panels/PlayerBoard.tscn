@@ -1,8 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/panels/PlayerBoard.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/ui/widgets/NalVpDisplay.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://scenes/ui/widgets/DefenseBadges.tscn" id="3"]
 
 [node name="PlayerBoard" type="PanelContainer"]
 script = ExtResource("1")
@@ -29,19 +28,11 @@ theme_override_font_sizes/font_size = 18
 [node name="VpLabel" parent="Layout/NalVpDisplay" index="2"]
 theme_override_font_sizes/font_size = 18
 
-[node name="OwnedLabel" type="Label" parent="Layout"]
-unique_name_in_owner = true
-text = "OWNED"
-theme_override_font_sizes/font_size = 13
-
 [node name="OwnedCardsRow" type="HFlowContainer" parent="Layout"]
 unique_name_in_owner = true
 size_flags_vertical = 3
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-
-[node name="DefenseBadges" parent="Layout" instance=ExtResource("3")]
-unique_name_in_owner = true
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="StateLabel" type="Label" parent="Layout"]
 unique_name_in_owner = true

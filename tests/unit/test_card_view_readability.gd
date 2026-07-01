@@ -30,7 +30,7 @@ func test_market_card_title_and_effect_are_visible() -> void:
 	assert_true(card.type_marker_top.visible)
 	assert_null(card.get_node_or_null("%TypeMarkerBottom"))
 	assert_true(card.price_label.is_visible_in_tree())
-	assert_false(card.art_placeholder.visible)
+	assert_true(card.art_placeholder.visible)
 
 
 func test_compact_card_title_and_effect_are_visible() -> void:
@@ -49,6 +49,25 @@ func test_compact_card_title_and_effect_are_visible() -> void:
 	assert_false(card.effect_label.text.is_empty())
 	assert_true(card.type_marker_top.visible)
 	assert_true(card.count_badge.visible)
+
+
+func test_owned_card_uses_market_size_with_title_and_effect() -> void:
+	var card: CardView = _card()
+	card.set_card({
+		"id": "owned_readable",
+		"type": CardTypes.WAR,
+		"title": "Bruiser",
+		"effect_summary": "Steal Nal or destroy Stash",
+		"context": "owned",
+		"count": 2,
+	})
+	assert_eq(card.get_layout_size(), CardVisualTokens.MARKET_CARD_SIZE)
+	assert_eq(card.size, CardVisualTokens.MARKET_CARD_SIZE)
+	assert_false(card.title_label.text.is_empty())
+	assert_false(card.effect_label.text.is_empty())
+	assert_true(card.count_badge.visible)
+	assert_false(card.select_button.visible)
+	assert_false(card.price_label.is_visible_in_tree())
 
 
 func test_long_market_text_keeps_fixed_card_size() -> void:
@@ -91,7 +110,7 @@ func test_market_effect_stays_visible_when_disabled() -> void:
 		assert_false(card.state_label.visible)
 
 
-func test_market_art_frame_uses_token_height() -> void:
+func test_market_art_frame_covers_full_card() -> void:
 	var card: CardView = _card()
 	card.set_card({
 		"id": "market_art",
@@ -101,14 +120,11 @@ func test_market_art_frame_uses_token_height() -> void:
 		"context": "market",
 	})
 	assert_eq(
-		int(card._art_frame.custom_minimum_size.y),
-		CardVisualTokens.MARKET_ART_HEIGHT
+		card._art_frame.custom_minimum_size,
+		CardVisualTokens.MARKET_CARD_SIZE
 	)
-	assert_gt(
-		CardVisualTokens.MARKET_ART_HEIGHT,
-		54,
-		"Market art area should be larger than the previous M16.2 layout"
-	)
+	assert_eq(CardVisualTokens.MARKET_ART_HEIGHT, int(CardVisualTokens.MARKET_CARD_SIZE.y))
+	assert_true(card.art_placeholder.visible)
 
 
 func _card() -> CardView:

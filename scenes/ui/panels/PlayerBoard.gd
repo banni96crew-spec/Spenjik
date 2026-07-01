@@ -13,7 +13,6 @@ var _card_orientation: String = CARD_ORIENTATION_NORMAL
 @onready var profile_label: Label = %ProfileLabel
 @onready var resources: NalVpDisplay = %NalVpDisplay
 @onready var owned_cards_row: HFlowContainer = %OwnedCardsRow
-@onready var defenses: DefenseBadges = %DefenseBadges
 @onready var state_label: Label = %StateLabel
 
 
@@ -37,7 +36,6 @@ func render(
 		int(player.get("nal", 0)), int(player.get("vp", 0))
 	)
 	_render_owned_cards(player, card_definitions)
-	defenses.set_defense(player.get("defense", {}))
 	state_label.text = _state_text(player)
 
 
@@ -52,10 +50,12 @@ func _render_owned_cards(
 	):
 		var wrapper = CARD_ORIENTATION_WRAPPER.new()
 		var chip: CardView = CARD_SCENE.instantiate()
+		var owned_display: Dictionary = display.duplicate(true)
+		owned_display["context"] = "owned"
 		wrapper.set_orientation(_card_orientation)
 		owned_cards_row.add_child(wrapper)
 		wrapper.set_card_view(chip)
-		chip.set_card(display)
+		chip.set_card(owned_display)
 		chip.set_interactive(false)
 
 

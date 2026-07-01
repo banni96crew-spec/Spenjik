@@ -4,7 +4,7 @@ extends Control
 const ORIENTATION_NORMAL := "normal"
 const ORIENTATION_SIDE_LEFT := "side_left"
 const ORIENTATION_SIDE_RIGHT := "side_right"
-const SIDE_FOOTPRINT := Vector2(160, 126)
+const SIDE_FOOTPRINT := Vector2(236, 172)
 
 var orientation: String = ORIENTATION_NORMAL
 var card_view: CardView
@@ -40,20 +40,18 @@ func _apply_orientation() -> void:
 	card_view.position = Vector2.ZERO
 	if orientation == ORIENTATION_NORMAL:
 		return
-	var compact: Vector2 = CardVisualTokens.COMPACT_CARD_SIZE
-	var scale_factor: float = SIDE_FOOTPRINT.x / compact.y
-	card_view.scale = Vector2(scale_factor, scale_factor)
+	var card_size: Vector2 = CardVisualTokens.MARKET_CARD_SIZE
 	if orientation == ORIENTATION_SIDE_LEFT:
-		card_view.rotation_degrees = -90.0
-		card_view.position = Vector2(0.0, compact.x * scale_factor)
-	else:
 		card_view.rotation_degrees = 90.0
-		card_view.position = Vector2(compact.y * scale_factor, 0.0)
+		card_view.position = Vector2(card_size.y, 0.0)
+	else:
+		card_view.rotation_degrees = -90.0
+		card_view.position = Vector2(0.0, card_size.x)
 
 
 func _footprint() -> Vector2:
 	return (
-		CardVisualTokens.COMPACT_CARD_SIZE
+		CardVisualTokens.MARKET_CARD_SIZE
 		if orientation == ORIENTATION_NORMAL
 		else SIDE_FOOTPRINT
 	)

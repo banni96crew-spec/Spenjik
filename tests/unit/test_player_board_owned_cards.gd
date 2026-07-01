@@ -11,6 +11,8 @@ func test_player_board_scene_has_no_owned_cards_scroll() -> void:
 	)
 	assert_false(scene_text.contains("OwnedCardsScroll"))
 	assert_true(scene_text.contains("OwnedCardsRow"))
+	assert_false(scene_text.contains("OwnedLabel"))
+	assert_false(scene_text.contains("DefenseBadges"))
 
 
 func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
@@ -39,7 +41,7 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 		assert_eq(str(child.get("orientation")), WRAPPER_SCRIPT.ORIENTATION_NORMAL)
 		var chip := _card_from_child(child)
 		assert_not_null(chip)
-		assert_eq(chip.get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
+		assert_eq(chip.get_layout_size(), CardVisualTokens.MARKET_CARD_SIZE)
 		assert_false(chip.select_button.visible)
 		assert_true(chip.type_marker_top.visible)
 		assert_false(chip.title_label.text.is_empty())
@@ -48,6 +50,7 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 		assert_true(child.get_script() == WRAPPER_SCRIPT)
 		assert_eq(str(child.get("orientation")), WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
 		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.SIDE_FOOTPRINT)
+		assert_eq(_card_from_child(child).get_layout_size(), CardVisualTokens.MARKET_CARD_SIZE)
 	var laundry_chip: CardView = _find_owned_card(
 		human_board, GameIds.CARD_LAUNDRY
 	)

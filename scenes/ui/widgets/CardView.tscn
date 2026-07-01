@@ -20,52 +20,18 @@ grow_horizontal = 2
 grow_vertical = 2
 clip_contents = true
 
-[node name="Layout" type="VBoxContainer" parent="CardSurface"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 2
-
-[node name="TopBar" type="HBoxContainer" parent="CardSurface/Layout"]
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="PriceRow" type="HBoxContainer" parent="CardSurface/Layout/TopBar"]
-layout_mode = 2
-theme_override_constants/separation = 2
-
-[node name="PriceLabel" type="Label" parent="CardSurface/Layout/TopBar/PriceRow"]
+[node name="ArtFrame" type="PanelContainer" parent="CardSurface"]
 unique_name_in_owner = true
-layout_mode = 2
-text = "0"
-theme_override_font_sizes/font_size = 23
-
-[node name="CurrencyGlyph" type="Label" parent="CardSurface/Layout/TopBar/PriceRow"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "₦"
-theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
-theme_override_font_sizes/font_size = 15
-
-[node name="Spacer" type="Control" parent="CardSurface/Layout/TopBar"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="TypeMarkerTop" type="Label" parent="CardSurface/Layout/TopBar"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "?"
-horizontal_alignment = 2
-theme_override_font_sizes/font_size = 18
-
-[node name="ArtFrame" type="PanelContainer" parent="CardSurface/Layout"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
-layout_mode = 2
-size_flags_vertical = 0
+custom_minimum_size = Vector2(172, 236)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 clip_contents = true
 
-[node name="ArtPlaceholder" type="Label" parent="CardSurface/Layout/ArtFrame"]
+[node name="ArtPlaceholder" type="Label" parent="CardSurface/ArtFrame"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "ILLUSTRATION"
@@ -74,11 +40,65 @@ vertical_alignment = 1
 theme_override_colors/font_color = Color(0.352941, 0.313726, 0.25098, 1)
 theme_override_font_sizes/font_size = 9
 
-[node name="TextBlock" type="VBoxContainer" parent="CardSurface/Layout"]
+[node name="OverlayMargin" type="MarginContainer" parent="CardSurface"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="CardSurface/OverlayMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 2
+
+[node name="TopBar" type="HBoxContainer" parent="CardSurface/OverlayMargin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PriceRow" type="HBoxContainer" parent="CardSurface/OverlayMargin/Layout/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="PriceLabel" type="Label" parent="CardSurface/OverlayMargin/Layout/TopBar/PriceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0"
+theme_override_font_sizes/font_size = 23
+
+[node name="CurrencyGlyph" type="Label" parent="CardSurface/OverlayMargin/Layout/TopBar/PriceRow"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "N"
+theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
+theme_override_font_sizes/font_size = 15
+
+[node name="TopSpacer" type="Control" parent="CardSurface/OverlayMargin/Layout/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TypeMarkerTop" type="Label" parent="CardSurface/OverlayMargin/Layout/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "?"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 18
+
+[node name="VerticalSpacer" type="Control" parent="CardSurface/OverlayMargin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TextBlock" type="VBoxContainer" parent="CardSurface/OverlayMargin/Layout"]
 layout_mode = 2
 theme_override_constants/separation = 1
 
-[node name="TitleLabel" type="Label" parent="CardSurface/Layout/TextBlock"]
+[node name="TitleLabel" type="Label" parent="CardSurface/OverlayMargin/Layout/TextBlock"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "CARD"
@@ -88,7 +108,7 @@ clip_text = true
 max_lines_visible = 2
 theme_override_font_sizes/font_size = 17
 
-[node name="EffectLabel" type="Label" parent="CardSurface/Layout/TextBlock"]
+[node name="EffectLabel" type="Label" parent="CardSurface/OverlayMargin/Layout/TextBlock"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Effect"
@@ -98,7 +118,7 @@ clip_text = true
 max_lines_visible = 3
 theme_override_font_sizes/font_size = 13
 
-[node name="BasePriceLabel" type="Label" parent="CardSurface/Layout"]
+[node name="BasePriceLabel" type="Label" parent="CardSurface/OverlayMargin/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
 visible = false
@@ -107,7 +127,7 @@ horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.533333, 0.470588, 0.376471, 1)
 theme_override_font_sizes/font_size = 10
 
-[node name="StateLabel" type="Label" parent="CardSurface/Layout"]
+[node name="StateLabel" type="Label" parent="CardSurface/OverlayMargin/Layout"]
 unique_name_in_owner = true
 layout_mode = 2
 visible = false
@@ -115,14 +135,14 @@ horizontal_alignment = 1
 theme_override_colors/font_color = Color(0.533333, 0.470588, 0.376471, 1)
 theme_override_font_sizes/font_size = 10
 
-[node name="BottomBar" type="HBoxContainer" parent="CardSurface/Layout"]
+[node name="BottomBar" type="HBoxContainer" parent="CardSurface/OverlayMargin/Layout"]
 layout_mode = 2
 
-[node name="BottomSpacer" type="Control" parent="CardSurface/Layout/BottomBar"]
+[node name="BottomSpacer" type="Control" parent="CardSurface/OverlayMargin/Layout/BottomBar"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="CountBadge" type="Label" parent="CardSurface/Layout/BottomBar"]
+[node name="CountBadge" type="Label" parent="CardSurface/OverlayMargin/Layout/BottomBar"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -131,9 +151,9 @@ horizontal_alignment = 2
 theme_override_colors/font_color = Color(0.847059, 0.776471, 0.635294, 1)
 theme_override_font_sizes/font_size = 12
 
-[node name="SelectButton" type="Button" parent="CardSurface/Layout"]
+[node name="SelectButton" type="Button" parent="CardSurface/OverlayMargin/Layout"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 size_flags_vertical = 8
 text = "SELECT"

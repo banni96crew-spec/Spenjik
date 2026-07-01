@@ -16,15 +16,26 @@ func test_header_round_and_phase_positions_stay_fixed_between_market_and_action(
 	assert_true(GameStateManager.advance_phase()["ok"])
 	var screen: GameScreen = _screen()
 	screen.refresh()
-	await get_tree().process_frame
+	await _settle_layout()
 	var market_round_x: float = screen.round_label.global_position.x
 	var market_phase_x: float = screen.phase_label.global_position.x
+	var market_header_x: float = screen.get_node("%PhaseHeader").global_position.x
 	var market_height: float = screen.get_node("%PhaseHeader").size.y
+	assert_lte(market_height, 36.0)
+	assert_eq(
+		screen.round_label.get_theme_font_size("font_size"),
+		CardVisualTokens.HEADER_FONT
+	)
+	assert_eq(
+		screen.phase_label.get_theme_font_size("font_size"),
+		CardVisualTokens.HEADER_FONT
+	)
 	assert_true(GameStateManager.end_market_for_player(GameIds.PLAYER_HUMAN)["ok"])
 	screen.refresh()
-	await get_tree().process_frame
+	await _settle_layout()
 	assert_eq(screen.round_label.global_position.x, market_round_x)
 	assert_eq(screen.phase_label.global_position.x, market_phase_x)
+	assert_eq(screen.get_node("%PhaseHeader").global_position.x, market_header_x)
 	assert_eq(screen.get_node("%PhaseHeader").size.y, market_height)
 
 
@@ -32,7 +43,7 @@ func test_busy_error_and_long_active_text_do_not_move_round_or_phase() -> void:
 	GameStateManager.state = TestGameStateFactory.action_state("header_busy", 1)
 	var screen: GameScreen = _screen()
 	screen.refresh()
-	await get_tree().process_frame
+	await _settle_layout()
 	var round_x: float = screen.round_label.global_position.x
 	var phase_x: float = screen.phase_label.global_position.x
 	screen.active_label.text = (
@@ -40,7 +51,7 @@ func test_busy_error_and_long_active_text_do_not_move_round_or_phase() -> void:
 	)
 	screen.busy_label.visible = true
 	screen.show_error(ValidationErrors.REQUIREMENT_NOT_MET)
-	await get_tree().process_frame
+	await _settle_layout()
 	assert_eq(screen.round_label.global_position.x, round_x)
 	assert_eq(screen.phase_label.global_position.x, phase_x)
 
@@ -53,6 +64,11 @@ func _screen() -> GameScreen:
 	host.add_child(screen)
 	screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return screen
+
+
+func _settle_layout() -> void:
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 
 func _valid_config() -> Dictionary:

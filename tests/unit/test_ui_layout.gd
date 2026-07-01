@@ -76,8 +76,10 @@ func test_game_layout_width_budget_at_design_viewport() -> void:
 	var right: Control = screen.get_node("%RightOpponentZone")
 	var side: Control = screen.get_node("%SideInfoColumn")
 	assert_lte(int(side.custom_minimum_size.x), 280)
-	assert_lte(int(left.custom_minimum_size.x), 180)
-	assert_lte(int(right.custom_minimum_size.x), 180)
+	assert_lte(int(left.custom_minimum_size.x), 250)
+	assert_lte(int(right.custom_minimum_size.x), 250)
+	assert_gte(int(left.custom_minimum_size.x), int(CardVisualTokens.MARKET_CARD_SIZE.y))
+	assert_gte(int(right.custom_minimum_size.x), int(CardVisualTokens.MARKET_CARD_SIZE.y))
 	assert_gte(
 		screen.size.x,
 		UITabletopLayoutTokens.DESIGN_VIEWPORT.x * 0.95,
