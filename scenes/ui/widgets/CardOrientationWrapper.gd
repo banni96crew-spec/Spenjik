@@ -5,6 +5,7 @@ const ORIENTATION_NORMAL := "normal"
 const ORIENTATION_SIDE_LEFT := "side_left"
 const ORIENTATION_SIDE_RIGHT := "side_right"
 const SIDE_FOOTPRINT := Vector2(236, 172)
+const COMPACT_SIDE_FOOTPRINT := Vector2(168, 132)
 
 var orientation: String = ORIENTATION_NORMAL
 var card_view: CardView
@@ -40,7 +41,7 @@ func _apply_orientation() -> void:
 	card_view.position = Vector2.ZERO
 	if orientation == ORIENTATION_NORMAL:
 		return
-	var card_size: Vector2 = CardVisualTokens.MARKET_CARD_SIZE
+	var card_size: Vector2 = _card_size()
 	if orientation == ORIENTATION_SIDE_LEFT:
 		card_view.rotation_degrees = 90.0
 		card_view.position = Vector2(card_size.y, 0.0)
@@ -50,8 +51,14 @@ func _apply_orientation() -> void:
 
 
 func _footprint() -> Vector2:
+	var card_size: Vector2 = _card_size()
+	if orientation == ORIENTATION_NORMAL:
+		return card_size
+	return Vector2(card_size.y, card_size.x)
+
+
+func _card_size() -> Vector2:
 	return (
-		CardVisualTokens.MARKET_CARD_SIZE
-		if orientation == ORIENTATION_NORMAL
-		else SIDE_FOOTPRINT
+		card_view.get_layout_size()
+		if card_view != null else CardVisualTokens.MARKET_CARD_SIZE
 	)

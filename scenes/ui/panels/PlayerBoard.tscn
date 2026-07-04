@@ -4,37 +4,86 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/widgets/NalVpDisplay.tscn" id="2"]
 
 [node name="PlayerBoard" type="PanelContainer"]
+clip_contents = true
 script = ExtResource("1")
 
-[node name="Layout" type="VBoxContainer" parent="."]
+[node name="BoardRoot" type="Control" parent="."]
+clip_contents = true
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="BoardRoot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_constants/separation = 4
 
-[node name="NameLabel" type="Label" parent="Layout"]
+[node name="NameLabel" type="Label" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 text = "PLAYER"
 theme_override_font_sizes/font_size = 20
 
-[node name="ProfileLabel" type="Label" parent="Layout"]
+[node name="ProfileLabel" type="Label" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.56, 0.5, 0.4, 1)
 theme_override_font_sizes/font_size = 13
 
-[node name="NalVpDisplay" parent="Layout" instance=ExtResource("2")]
+[node name="NalVpDisplay" parent="BoardRoot/Layout" instance=ExtResource("2")]
 unique_name_in_owner = true
 
-[node name="NalLabel" parent="Layout/NalVpDisplay" index="0"]
+[node name="NalLabel" parent="BoardRoot/Layout/NalVpDisplay" index="0"]
 theme_override_font_sizes/font_size = 18
 
-[node name="VpLabel" parent="Layout/NalVpDisplay" index="2"]
+[node name="VpLabel" parent="BoardRoot/Layout/NalVpDisplay" index="2"]
 theme_override_font_sizes/font_size = 18
 
-[node name="OwnedCardsRow" type="HFlowContainer" parent="Layout"]
+[node name="OwnedCardsRow" type="HFlowContainer" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 size_flags_vertical = 3
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 
-[node name="StateLabel" type="Label" parent="Layout"]
+[node name="StateLabel" type="Label" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.7, 0.58, 0.38, 1)
 theme_override_font_sizes/font_size = 13
+
+[node name="CompactLayout" type="HBoxContainer" parent="BoardRoot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="CompactInfoRail" type="VBoxContainer" parent="BoardRoot/CompactLayout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+theme_override_constants/separation = 1
+
+[node name="CompactCardsScroll" type="ScrollContainer" parent="BoardRoot/CompactLayout"]
+unique_name_in_owner = true
+clip_contents = true
+custom_minimum_size = Vector2(0, 172)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="CompactCardsRow" type="HBoxContainer" parent="BoardRoot/CompactLayout/CompactCardsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8

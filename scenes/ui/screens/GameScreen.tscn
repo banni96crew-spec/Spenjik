@@ -152,6 +152,7 @@ theme_override_font_sizes/font_size = 12
 
 [node name="TableWorkspace" type="HBoxContainer" parent="TabletopMargin/TabletopLayout"]
 unique_name_in_owner = true
+clip_contents = true
 layout_mode = 1
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -181,7 +182,8 @@ theme_override_constants/separation = 6
 
 [node name="TopOpponentZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 258)
+clip_contents = true
+custom_minimum_size = Vector2(0, 326)
 layout_mode = 2
 
 [node name="AiBoard2" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/TopOpponentZone" instance=ExtResource("2")]
@@ -191,6 +193,7 @@ size_flags_horizontal = 3
 
 [node name="CenterTable" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
+clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -229,7 +232,8 @@ size_flags_vertical = 3
 
 [node name="HumanZone" type="PanelContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 258)
+clip_contents = true
+custom_minimum_size = Vector2(0, 326)
 layout_mode = 2
 
 [node name="HumanZoneLayout" type="HBoxContainer" parent="TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/HumanZone"]

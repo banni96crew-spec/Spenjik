@@ -8,7 +8,7 @@ var selected: bool = false
 
 var price_label: Label
 var currency_glyph: Label
-var type_marker_top: Label
+var type_marker_top: CardTypeMarker
 var art_texture: Control
 var art_placeholder: Label
 var title_label: Label
@@ -78,7 +78,7 @@ func set_card(
 	_disabled_visual = bool(data.get("disabled", false))
 	title_label.text = str(data.get("title", card_id)).to_upper()
 	effect_label.text = str(data.get("effect_summary", ""))
-	type_marker_top.text = str(_type_style.get("marker", "?"))
+	type_marker_top.set_marker(str(_type_style.get("marker_asset", "")))
 	art_placeholder.text = str(_type_style.get("art", ""))
 	price_label.text = str(_display_price)
 	_update_base_price_label()
@@ -217,7 +217,7 @@ func _apply_visuals() -> void:
 	)
 	title_label.add_theme_color_override("font_color", CardVisualTokens.INK)
 	effect_label.add_theme_color_override("font_color", CardVisualTokens.INK)
-	type_marker_top.add_theme_color_override("font_color", accent)
+	type_marker_top.set_marker_color(accent)
 	art_placeholder.add_theme_color_override("font_color", CardVisualTokens.GRIME)
 	count_badge.add_theme_color_override("font_color", CardVisualTokens.INK)
 	var price_color: Color = (

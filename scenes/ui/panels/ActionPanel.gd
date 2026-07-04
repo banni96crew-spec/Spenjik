@@ -104,7 +104,8 @@ func _fill_modes() -> void:
 	for mode: String in modes:
 		mode_options.add_item(mode.replace("_", " ").capitalize())
 		mode_options.set_item_metadata(mode_options.item_count - 1, mode)
-	mode_options.visible = not modes.is_empty()
+	mode_options.get_parent().visible = not modes.is_empty()
+	mode_options.visible = mode_options.get_parent().visible
 	_select_metadata(mode_options, selected_mode)
 
 
@@ -123,7 +124,8 @@ func _fill_targets() -> void:
 func _fill_engine_targets() -> void:
 	engine_options.clear()
 	engine_options.add_item("Choose Engine card")
-	engine_options.visible = selected_card_id == GameIds.CARD_SABOTEUR
+	engine_options.get_parent().visible = selected_card_id == GameIds.CARD_SABOTEUR
+	engine_options.visible = engine_options.get_parent().visible
 	if not engine_options.visible or selected_target_id.is_empty():
 		return
 	var result: Dictionary = GameStateManager.get_valid_engine_targets(

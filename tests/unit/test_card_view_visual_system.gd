@@ -6,14 +6,11 @@ const FORBIDDEN_CARD_ID_WORDS: Array[String] = [
 	"laundry", "stash", "thug", "cops",
 ]
 
-
 func before_each() -> void:
 	GameStateManager.reset_game()
 
-
 func after_each() -> void:
 	GameStateManager.reset_game()
-
 
 func test_card_view_scene_instantiates() -> void:
 	var card: CardView = CARD_SCENE.instantiate()
@@ -30,7 +27,6 @@ func test_card_view_scene_instantiates() -> void:
 	assert_not_null(card.get_node_or_null("%StateLabel"))
 	assert_not_null(card.get_node_or_null("%SelectButton"))
 	assert_not_null(card.get_node_or_null("%CountBadge"))
-
 
 func test_compact_card_shows_identity_fields_and_count_badge() -> void:
 	var card: CardView = _card()
@@ -50,10 +46,6 @@ func test_compact_card_shows_identity_fields_and_count_badge() -> void:
 	assert_false(card.price_label.is_visible_in_tree())
 	assert_true(card.count_badge.visible)
 	assert_eq(card.count_badge.text, "x2")
-
-
-func test_compact_card_hides_count_badge_for_single_copy() -> void:
-	var card: CardView = _card()
 	card.set_card({
 		"id": "owned_stash",
 		"type": CardTypes.STATUS,
@@ -91,7 +83,7 @@ func test_card_view_accepts_all_card_type_display_dictionaries() -> void:
 	for card_type: String in CardTypes.ALL:
 		var card: CardView = _card()
 		card.set_card(samples[card_type])
-		assert_eq(card.type_marker_top.text, CardTypeStyleMap.marker_for_type(card_type))
+		assert_eq(card.type_marker_top.marker_asset, CardTypeStyleMap.marker_for_type(card_type))
 		assert_eq(card.title_label.text, samples[card_type]["title"].to_upper())
 		assert_eq(card.effect_label.text, samples[card_type]["effect_summary"])
 
@@ -102,10 +94,10 @@ func test_type_markers_are_distinct_and_reserved() -> void:
 		var marker: String = CardTypeStyleMap.marker_for_type(card_type)
 		assert_false(markers.has(marker), "Duplicate marker: %s" % marker)
 		markers.append(marker)
-	assert_eq([CardTypeStyleMap.marker_for_type(CardTypes.ENGINE),
-		CardTypeStyleMap.marker_for_type(CardTypes.STATUS),
-		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
-		CardTypeStyleMap.marker_for_type(CardTypes.DEFENSE)], ["⚙", "♛", "⚔", "⬟"])
+	assert_eq(_markers(), [
+		CardTypeMarker.ASSET_ENGINE, CardTypeMarker.ASSET_STATUS,
+		CardTypeMarker.ASSET_WAR, CardTypeMarker.ASSET_DEFENSE,
+	])
 	assert_ne(
 		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
 		CardTypeStyleMap.marker_for_type(CardTypes.ENGINE)
@@ -201,6 +193,7 @@ func test_card_view_source_has_no_individual_card_id_special_cases() -> void:
 	assert_false(source.contains("GameStateManager"))
 	assert_false(source.contains("PriceLogic"))
 	assert_false(source.contains("MarketLogic"))
+	assert_false(source.contains("♛"))
 
 
 func test_market_panel_shows_scaled_final_price_on_card() -> void:
@@ -232,6 +225,15 @@ func _card() -> CardView:
 	var card: CardView = CARD_SCENE.instantiate()
 	add_child_autofree(card)
 	return card
+
+
+func _markers() -> Array[String]:
+	return [
+		CardTypeStyleMap.marker_for_type(CardTypes.ENGINE),
+		CardTypeStyleMap.marker_for_type(CardTypes.STATUS),
+		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
+		CardTypeStyleMap.marker_for_type(CardTypes.DEFENSE),
+	]
 
 
 func _card_dict(

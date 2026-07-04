@@ -10,6 +10,7 @@ func test_player_board_scene_has_no_owned_cards_scroll() -> void:
 		"res://scenes/ui/panels/PlayerBoard.tscn"
 	)
 	assert_false(scene_text.contains("OwnedCardsScroll"))
+	assert_true(scene_text.contains("CompactCardsScroll"))
 	assert_true(scene_text.contains("OwnedCardsRow"))
 	assert_false(scene_text.contains("OwnedLabel"))
 	assert_false(scene_text.contains("DefenseBadges"))
@@ -57,6 +58,42 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	assert_not_null(laundry_chip)
 	assert_true(laundry_chip.count_badge.visible)
 	assert_eq(laundry_chip.count_badge.text, "x2")
+
+
+func test_low_height_board_uses_compact_card_strip_without_accumulation() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var view: Dictionary = GameStateManager.get_view()["view"]
+	var human: Dictionary = _player(view, GameIds.PLAYER_HUMAN).duplicate(true)
+	human["engine"]["laundries"] = 2
+	human["status_buildings"]["stash"] = 1
+	human["hand"] = [GameIds.CARD_THUG]
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	board.set_low_height_mode(true)
+	board.render(human, {}, view["card_definitions"])
+	board.render(human, {}, view["card_definitions"])
+	assert_false(board.layout.visible)
+	assert_true(board.get_node("%CompactLayout").visible)
+	assert_true(board.owned_cards_row.get_parent() is ScrollContainer)
+	assert_eq(board.owned_cards_row.get_child_count(), 3)
+	for child: Node in board.owned_cards_row.get_children():
+		assert_eq(_card_from_child(child).get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
+		assert_eq(child.custom_minimum_size, CardVisualTokens.COMPACT_CARD_SIZE)
+
+
+func test_low_height_rotated_cards_use_compact_side_footprint() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var view: Dictionary = GameStateManager.get_view()["view"]
+	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
+	ai["engine"]["accountants"] = 1
+	ai["hand"] = [GameIds.CARD_BRUISER]
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+	board.set_low_height_mode(true)
+	board.render(ai, {"profile_id": "enforcer"}, view["card_definitions"])
+	for child: Node in board.owned_cards_row.get_children():
+		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
 
 
 func test_player_owned_cards_builder_groups_duplicate_counts() -> void:

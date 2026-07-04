@@ -30,7 +30,18 @@ func test_card_view_remains_child_of_orientation_wrapper() -> void:
 	assert_eq(wrapper.card_view.get_layout_size(), CardVisualTokens.MARKET_CARD_SIZE)
 
 
-func _wrapper(orientation: String) -> Variant:
+func test_compact_orientation_uses_compact_footprint() -> void:
+	var normal = _wrapper(WRAPPER_SCRIPT.ORIENTATION_NORMAL, "compact")
+	var left = _wrapper(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT, "compact")
+	var right = _wrapper(WRAPPER_SCRIPT.ORIENTATION_SIDE_RIGHT, "compact")
+	assert_eq(normal.custom_minimum_size, CardVisualTokens.COMPACT_CARD_SIZE)
+	assert_eq(left.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
+	assert_eq(right.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
+	assert_eq(left.card_view.rotation_degrees, 90.0)
+	assert_eq(right.card_view.rotation_degrees, -90.0)
+
+
+func _wrapper(orientation: String, context: String = "owned") -> Variant:
 	var wrapper = WRAPPER_SCRIPT.new()
 	add_child_autofree(wrapper)
 	var card: CardView = CARD_SCENE.instantiate()
@@ -40,7 +51,7 @@ func _wrapper(orientation: String) -> Variant:
 		"type": CardTypes.ENGINE,
 		"title": "Wrapped",
 		"effect_summary": "Presentation only",
-		"context": "owned",
+		"context": context,
 	})
 	wrapper.set_orientation(orientation)
 	return wrapper

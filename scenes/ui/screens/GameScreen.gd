@@ -14,6 +14,9 @@ signal command_failed(error: String)
 @onready var ai_board_1: PlayerBoard = %AiBoard1
 @onready var ai_board_2: PlayerBoard = %AiBoard2
 @onready var ai_board_3: PlayerBoard = %AiBoard3
+@onready var top_opponent_zone: Control = %TopOpponentZone
+@onready var center_table: Control = %CenterTable
+@onready var human_zone: Control = %HumanZone
 @onready var side_info_column: Control = %SideInfoColumn
 @onready var market_panel: MarketPanel = %MarketPanel
 @onready var action_panel: ActionPanel = %ActionPanel
@@ -46,6 +49,7 @@ func refresh() -> void:
 		_show_error(result["error"])
 		return
 	var view: Dictionary = result["view"]
+	_apply_responsive_layout()
 	round_label.text = "ROUND %d / 15" % int(view["round"])
 	phase_label.text = UIViewFormatters.phase_name(view["current_phase"])
 	active_label.text = _active_text(view)
@@ -100,6 +104,18 @@ func _render_players(view: Dictionary) -> void:
 				profiles.get(player_id, {}),
 				view.get("card_definitions", {})
 			)
+
+
+func _apply_responsive_layout() -> void:
+	var screen_height: float = size.y if size.y > 0.0 else get_viewport_rect().size.y
+	var low_height: bool = screen_height <= 760.0
+	ai_board_1.set_low_height_mode(false)
+	ai_board_2.set_low_height_mode(low_height)
+	ai_board_3.set_low_height_mode(false)
+	human_board.set_low_height_mode(low_height)
+	top_opponent_zone.custom_minimum_size.y = 176.0 if low_height else 326.0
+	human_zone.custom_minimum_size.y = 176.0 if low_height else 326.0
+	center_table.custom_minimum_size.y = 304.0 if low_height else 0.0
 
 
 func _set_phase_visibility(phase: String) -> void:

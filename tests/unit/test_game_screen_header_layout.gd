@@ -72,6 +72,9 @@ func test_header_does_not_get_overlapped_on_real_buy_phase_transitions() -> void
 		await _settle_layout()
 		screen.market_panel.call("_on_end_market")
 		await _settle_layout()
+		_assert_table_zones_fit_workspace(screen)
+		_assert_board_cards_fit_workspace(screen)
+		_assert_action_buttons_fit_workspace(screen)
 		screen.action_panel.call("_on_end_action")
 		_assert_header_metrics(screen, header)
 		_assert_workspace_below_header(screen)
@@ -136,6 +139,53 @@ func _assert_market_cards_match_view(screen: GameScreen) -> void:
 		screen.market_panel.cards_row.get_child_count(),
 		result["view"]["cards"].size()
 	)
+
+
+func _assert_table_zones_fit_workspace(screen: GameScreen) -> void:
+	var workspace: Control = screen.get_node("%TableWorkspace")
+	for node_name: String in ["TopOpponentZone", "CenterTable", "HumanZone"]:
+		var zone: Control = screen.get_node("%" + node_name)
+		assert_gte(zone.global_position.y, workspace.global_position.y, node_name)
+		assert_lte(
+			zone.global_position.y + zone.size.y,
+			workspace.global_position.y + workspace.size.y,
+			node_name
+		)
+
+
+func _assert_action_buttons_fit_workspace(screen: GameScreen) -> void:
+	var workspace: Control = screen.get_node("%TableWorkspace")
+	for node_name: String in [
+		"ExecuteButton", "DiscardButton", "CancelButton", "EndButton",
+	]:
+		var button: Button = screen.action_panel.get_node("%" + node_name)
+		assert_true(button.is_visible_in_tree(), node_name)
+		assert_gte(button.global_position.y, workspace.global_position.y, node_name)
+		assert_lte(
+			button.global_position.y + button.size.y,
+			workspace.global_position.y + workspace.size.y,
+			node_name
+		)
+
+
+func _assert_board_cards_fit_workspace(screen: GameScreen) -> void:
+	var workspace: Control = screen.get_node("%TableWorkspace")
+	for board: PlayerBoard in [screen.ai_board_2, screen.human_board]:
+		var row_parent := board.owned_cards_row.get_parent() as Control
+		var details: String = "%s board=%s/%s row_parent=%s/%s" % [
+			board.name, str(board.global_position), str(board.size),
+			str(row_parent.global_position), str(row_parent.size),
+		]
+		for child: Node in board.owned_cards_row.get_children():
+			var card: Control = child as Control
+			assert_not_null(card)
+			assert_gte(card.global_position.y, workspace.global_position.y,
+				"%s card above workspace" % details)
+			assert_lte(
+				card.global_position.y + card.size.y,
+				workspace.global_position.y + workspace.size.y,
+				"%s card below workspace" % details
+			)
 
 
 func _settle_layout() -> void:
