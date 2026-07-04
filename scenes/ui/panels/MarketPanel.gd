@@ -154,7 +154,8 @@ func _format_modifiers(modifiers: Array) -> String:
 
 func _clear_cards() -> void:
 	for child: Node in cards_row.get_children():
-		child.queue_free()
+		cards_row.remove_child(child)
+		child.free()
 
 
 func _clear_preview() -> void:

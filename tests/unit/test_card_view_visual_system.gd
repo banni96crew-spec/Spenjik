@@ -102,11 +102,10 @@ func test_type_markers_are_distinct_and_reserved() -> void:
 		var marker: String = CardTypeStyleMap.marker_for_type(card_type)
 		assert_false(markers.has(marker), "Duplicate marker: %s" % marker)
 		markers.append(marker)
-	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.ENGINE), CardTypeStyleMap.MARKER_ENGINE)
-	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.STATUS), CardTypeStyleMap.MARKER_CROWN)
-	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.WAR), CardTypeStyleMap.MARKER_WAR)
-	assert_eq(CardTypeStyleMap.marker_for_type(CardTypes.DEFENSE), CardTypeStyleMap.MARKER_SHIELD)
-	assert_eq(CardTypeStyleMap.MARKER_SHIELD, "⛨")
+	assert_eq([CardTypeStyleMap.marker_for_type(CardTypes.ENGINE),
+		CardTypeStyleMap.marker_for_type(CardTypes.STATUS),
+		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
+		CardTypeStyleMap.marker_for_type(CardTypes.DEFENSE)], ["⚙", "♛", "⚔", "⬟"])
 	assert_ne(
 		CardTypeStyleMap.marker_for_type(CardTypes.WAR),
 		CardTypeStyleMap.marker_for_type(CardTypes.ENGINE)

@@ -1,10 +1,10 @@
 class_name CardTypeStyleMap
 extends RefCounted
 
-const MARKER_ENGINE := "♜"
+const MARKER_ENGINE := "⚙"
 const MARKER_CROWN := "♛"
-const MARKER_WAR := "♞"
-const MARKER_SHIELD := "⛨"
+const MARKER_WAR := "⚔"
+const MARKER_SHIELD := "⬟"
 
 
 static func marker_for_type(card_type: String) -> String:

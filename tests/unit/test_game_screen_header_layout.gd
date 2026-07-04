@@ -1,6 +1,7 @@
 extends GutTest
 
 const GAME_SCREEN := preload("res://scenes/ui/screens/GameScreen.tscn")
+const GAME_ROOT := preload("res://scenes/game/GameRoot.tscn")
 
 
 func before_each() -> void:
@@ -56,6 +57,33 @@ func test_busy_error_and_long_active_text_do_not_move_round_or_phase() -> void:
 	assert_eq(screen.phase_label.global_position.x, phase_x)
 
 
+func test_header_does_not_get_overlapped_on_real_buy_phase_transitions() -> void:
+	for viewport_size: Vector2 in [Vector2(1280, 720), Vector2(1920, 1080)]:
+		var root: GameRoot = _root(viewport_size)
+		assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+		await _settle_layout()
+		var screen: GameScreen = root.game_screen
+		var header: Dictionary = _header_metrics(screen)
+		_assert_workspace_below_header(screen)
+		screen.call("_on_advance_income")
+		_assert_header_metrics(screen, header)
+		_assert_workspace_below_header(screen)
+		_assert_market_cards_match_view(screen)
+		await _settle_layout()
+		screen.market_panel.call("_on_end_market")
+		await _settle_layout()
+		screen.action_panel.call("_on_end_action")
+		_assert_header_metrics(screen, header)
+		_assert_workspace_below_header(screen)
+		await _settle_layout()
+		screen.call("_on_advance_income")
+		_assert_header_metrics(screen, header)
+		_assert_workspace_below_header(screen)
+		_assert_market_cards_match_view(screen)
+		await _settle_layout()
+		GameStateManager.reset_game()
+
+
 func _screen() -> GameScreen:
 	var host := Control.new()
 	host.size = Vector2(1280, 720)
@@ -64,6 +92,50 @@ func _screen() -> GameScreen:
 	host.add_child(screen)
 	screen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	return screen
+
+
+func _root(viewport_size: Vector2) -> GameRoot:
+	var host := Control.new()
+	host.size = viewport_size
+	add_child_autofree(host)
+	var root: GameRoot = GAME_ROOT.instantiate()
+	host.add_child(root)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return root
+
+
+func _header_metrics(screen: GameScreen) -> Dictionary:
+	var header: Control = screen.get_node("%PhaseHeader")
+	return {
+		"header_position": header.global_position,
+		"header_size": header.size,
+		"round_position": screen.round_label.global_position,
+		"phase_position": screen.phase_label.global_position,
+	}
+
+
+func _assert_header_metrics(screen: GameScreen, expected: Dictionary) -> void:
+	var current: Dictionary = _header_metrics(screen)
+	for key: String in expected.keys():
+		assert_eq(current[key], expected[key], key)
+	assert_true(screen.get_node("%PhaseHeader").visible)
+	assert_true(screen.round_label.is_visible_in_tree())
+	assert_true(screen.phase_label.is_visible_in_tree())
+
+
+func _assert_workspace_below_header(screen: GameScreen) -> void:
+	var header: Control = screen.get_node("%PhaseHeader")
+	var workspace: Control = screen.get_node("%TableWorkspace")
+	assert_gte(workspace.global_position.y, header.global_position.y + header.size.y)
+
+
+func _assert_market_cards_match_view(screen: GameScreen) -> void:
+	var result: Dictionary = GameStateManager.get_market_view(GameIds.PLAYER_HUMAN)
+	assert_true(result["ok"])
+	assert_eq(
+		screen.market_panel.cards_row.get_child_count(),
+		result["view"]["cards"].size()
+	)
 
 
 func _settle_layout() -> void:
