@@ -24,6 +24,28 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 4
 
+[node name="IdentityBar" type="HBoxContainer" parent="BoardRoot/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="IdentitySpacer" type="Control" parent="BoardRoot/Layout/IdentityBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusBar" type="HBoxContainer" parent="BoardRoot/Layout"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="StatusSpacer" type="Control" parent="BoardRoot/Layout/StatusBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="NameLabel" type="Label" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 text = "PLAYER"

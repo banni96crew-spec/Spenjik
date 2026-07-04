@@ -6,6 +6,8 @@ const ASSET_STATUS := "status"
 const ASSET_WAR := "war"
 const ASSET_DEFENSE := "defense"
 const MARKER_SIZE := Vector2(18, 18)
+const WAR_PARTS_PER_DAGGER := 4
+const WAR_DAGGER_COUNT := 2
 
 var marker_asset: String = ASSET_ENGINE
 var marker_color: Color = CardVisualTokens.INK
@@ -29,6 +31,41 @@ func set_marker(asset_id: String) -> void:
 func set_marker_color(value: Color) -> void:
 	marker_color = value
 	queue_redraw()
+
+
+static func war_dagger_specs() -> Array[Dictionary]:
+	return [
+		{
+			"pommel": Vector2(0.16, 0.84),
+			"guard": Vector2(0.46, 0.54),
+			"tip": Vector2(0.84, 0.16),
+		},
+		{
+			"pommel": Vector2(0.84, 0.84),
+			"guard": Vector2(0.54, 0.54),
+			"tip": Vector2(0.16, 0.16),
+		},
+	]
+
+
+static func war_blade_width_at_guard() -> float:
+	return 0.18
+
+
+static func war_blade_width_at_tip() -> float:
+	return 0.03
+
+
+static func war_guard_half_width() -> float:
+	return 0.12
+
+
+static func war_handle_half_width() -> float:
+	return 0.045
+
+
+static func war_pommel_radius() -> float:
+	return 0.055
 
 
 func _draw() -> void:
@@ -65,20 +102,41 @@ func _draw_defense(area: Rect2) -> void:
 
 
 func _draw_war(area: Rect2) -> void:
-	_draw_dagger_silhouette(area, [
-		Vector2(0.20, 0.78), Vector2(0.28, 0.70), Vector2(0.42, 0.56),
-		Vector2(0.50, 0.48), Vector2(0.54, 0.44), Vector2(0.74, 0.18),
-		Vector2(0.62, 0.38), Vector2(0.34, 0.68),
-	])
-	_draw_dagger_silhouette(area, [
-		Vector2(0.80, 0.78), Vector2(0.72, 0.70), Vector2(0.58, 0.56),
-		Vector2(0.50, 0.48), Vector2(0.46, 0.44), Vector2(0.26, 0.18),
-		Vector2(0.38, 0.38), Vector2(0.66, 0.68),
-	])
+	for spec: Dictionary in war_dagger_specs():
+		_draw_dagger_parts(area, spec)
 
 
-func _draw_dagger_silhouette(area: Rect2, coords: Array[Vector2]) -> void:
-	draw_colored_polygon(_points(area, coords), marker_color)
+func _draw_dagger_parts(area: Rect2, spec: Dictionary) -> void:
+	var pommel: Vector2 = spec["pommel"]
+	var guard: Vector2 = spec["guard"]
+	var tip: Vector2 = spec["tip"]
+	var axis: Vector2 = (tip - pommel).normalized()
+	var perp: Vector2 = Vector2(-axis.y, axis.x)
+	var guard_w: float = war_guard_half_width()
+	var handle_w: float = war_handle_half_width()
+	var blade_guard_w: float = war_blade_width_at_guard() * 0.5
+	var blade_tip_w: float = war_blade_width_at_tip() * 0.5
+	draw_colored_polygon(_points(area, [
+		guard + perp * blade_guard_w,
+		tip + perp * blade_tip_w,
+		tip - perp * blade_tip_w,
+		guard - perp * blade_guard_w,
+	]), marker_color)
+	draw_colored_polygon(_points(area, [
+		guard + perp * guard_w,
+		guard - perp * guard_w,
+		guard - perp * guard_w + axis * guard_w * 0.35,
+		guard + perp * guard_w + axis * guard_w * 0.35,
+	]), marker_color)
+	draw_colored_polygon(_points(area, [
+		pommel + perp * handle_w,
+		guard + perp * handle_w,
+		guard - perp * handle_w,
+		pommel - perp * handle_w,
+	]), marker_color)
+	var pommel_center: Vector2 = area.position + area.size * pommel
+	var pommel_r: float = min(area.size.x, area.size.y) * war_pommel_radius()
+	draw_circle(pommel_center, pommel_r, marker_color)
 
 
 func _draw_engine(area: Rect2) -> void:
@@ -93,10 +151,10 @@ func _draw_engine(area: Rect2) -> void:
 	draw_circle(c, w * 0.72, marker_color)
 
 
-func _points(area: Rect2, values: Array[Vector2]) -> PackedVector2Array:
+func _points(area: Rect2, values: Array) -> PackedVector2Array:
 	var result := PackedVector2Array()
-	for point: Vector2 in values:
-		result.append(area.position + area.size * point)
+	for point: Variant in values:
+		result.append(area.position + area.size * (point as Vector2))
 	return result
 
 

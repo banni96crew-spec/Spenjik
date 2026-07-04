@@ -123,8 +123,12 @@ func _apply_responsive_layout() -> void:
 		PlayerBoard.CARD_PRESENTATION_COMPACT
 		if low_height else PlayerBoard.CARD_PRESENTATION_FULL
 	)
-	top_opponent_zone.custom_minimum_size.y = 176.0 if low_height else 352.0
-	human_zone.custom_minimum_size.y = 176.0 if low_height else 352.0
+	top_opponent_zone.custom_minimum_size.y = (
+		176.0 if low_height else float(UITabletopLayoutTokens.NORMAL_BOARD_ZONE_HEIGHT)
+	)
+	human_zone.custom_minimum_size.y = (
+		176.0 if low_height else float(UITabletopLayoutTokens.NORMAL_BOARD_ZONE_HEIGHT)
+	)
 	center_table.custom_minimum_size.y = 304.0 if low_height else 0.0
 
 

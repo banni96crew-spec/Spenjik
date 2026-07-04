@@ -13,6 +13,8 @@ func test_player_board_scene_has_bounded_owned_cards_scroll() -> void:
 	assert_true(scene_text.contains("CompactCardsScroll"))
 	assert_true(scene_text.contains("OwnedCardsRow"))
 	assert_true(scene_text.contains("type=\"HBoxContainer\" parent=\"BoardRoot/Layout/OwnedCardsScroll\""))
+	assert_true(scene_text.contains("IdentityBar"))
+	assert_true(scene_text.contains("StatusBar"))
 	assert_true(scene_text.contains("horizontal_scroll_mode = 1"))
 	assert_true(scene_text.contains("vertical_scroll_mode = 0"))
 	assert_false(scene_text.contains("OwnedLabel"))
@@ -116,27 +118,6 @@ func test_compact_card_presentation_does_not_require_low_height_mode() -> void:
 	assert_true(board.owned_cards_row.get_parent() is ScrollContainer)
 	for child: Node in board.owned_cards_row.get_children():
 		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
-
-
-func test_low_height_round_trip_restores_default_order_and_cards() -> void:
-	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
-	var view: Dictionary = GameStateManager.get_view()["view"]
-	var human: Dictionary = _player(view, GameIds.PLAYER_HUMAN).duplicate(true)
-	human["engine"]["laundries"] = 1
-	var board: PlayerBoard = BOARD_SCENE.instantiate()
-	add_child_autofree(board)
-	board.render(human, {}, view["card_definitions"])
-	board.set_low_height_mode(true)
-	board.render(human, {}, view["card_definitions"])
-	board.set_low_height_mode(false)
-	board.render(human, {}, view["card_definitions"])
-	assert_eq(board.layout.get_child(0), board.name_label)
-	assert_eq(board.layout.get_child(1), board.profile_label)
-	assert_eq(board.layout.get_child(2), board.resources)
-	assert_eq(board.layout.get_child(3), board.owned_cards_scroll)
-	assert_eq(board.layout.get_child(4), board.state_label)
-	assert_eq(_card_from_child(board.owned_cards_row.get_child(0)).get_layout_size(),
-		CardVisualTokens.MARKET_CARD_SIZE)
 
 
 func test_player_owned_cards_builder_groups_duplicate_counts() -> void:

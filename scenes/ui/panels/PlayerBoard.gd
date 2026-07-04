@@ -8,6 +8,7 @@ const CARD_ORIENTATION_SIDE_LEFT := "side_left"
 const CARD_ORIENTATION_SIDE_RIGHT := "side_right"
 const CARD_PRESENTATION_FULL := "full"
 const CARD_PRESENTATION_COMPACT := "compact"
+const OWNED_CARDS_SCROLL_MIN_Y := 244
 
 var _card_orientation: String = CARD_ORIENTATION_NORMAL
 var _card_presentation: String = CARD_PRESENTATION_FULL
@@ -16,6 +17,10 @@ var _low_height_mode: bool = false
 @onready var layout: VBoxContainer = %Layout
 @onready var compact_layout: HBoxContainer = %CompactLayout
 @onready var compact_info_rail: VBoxContainer = %CompactInfoRail
+@onready var identity_spacer: Control = %IdentitySpacer
+@onready var status_spacer: Control = %StatusSpacer
+@onready var identity_bar: HBoxContainer = %IdentityBar
+@onready var status_bar: HBoxContainer = %StatusBar
 @onready var owned_cards_scroll: ScrollContainer = %OwnedCardsScroll
 @onready var compact_cards_scroll: ScrollContainer = %CompactCardsScroll
 @onready var default_cards_row: HBoxContainer = %OwnedCardsRow
@@ -33,7 +38,13 @@ func _ready() -> void:
 
 
 func set_card_orientation(orientation: String) -> void:
-	_card_orientation = orientation
+	_card_orientation = orientation if orientation in [
+		CARD_ORIENTATION_NORMAL,
+		CARD_ORIENTATION_SIDE_LEFT,
+		CARD_ORIENTATION_SIDE_RIGHT,
+	] else CARD_ORIENTATION_NORMAL
+	if is_node_ready():
+		_apply_layout_mode()
 
 
 func set_card_presentation(value: String) -> void:
@@ -106,20 +117,65 @@ func _apply_layout_mode() -> void:
 	compact_layout.visible = _low_height_mode
 	if _low_height_mode:
 		owned_cards_row = compact_cards_row
+		identity_bar.visible = false
+		status_bar.visible = false
 		_move(name_label, compact_info_rail)
 		_move(profile_label, compact_info_rail)
 		_move(resources, compact_info_rail)
 		_move(state_label, compact_info_rail)
+		_restore_compact_info_order()
+	elif _uses_center_dense_layout():
+		owned_cards_row = default_cards_row
+		_apply_center_dense_topology()
 	else:
 		owned_cards_row = default_cards_row
-		_move(name_label, layout)
-		_move(profile_label, layout)
-		_move(resources, layout)
-		_move(state_label, layout)
-		_restore_default_order()
-	if _low_height_mode:
-		_restore_compact_info_order()
+		_apply_side_stacked_topology()
 	_apply_text_density()
+
+
+func _uses_center_dense_layout() -> bool:
+	return (
+		not _low_height_mode
+		and _card_orientation == CARD_ORIENTATION_NORMAL
+	)
+
+
+func _apply_center_dense_topology() -> void:
+	identity_bar.visible = true
+	status_bar.visible = true
+	layout.add_theme_constant_override("separation", 2)
+	owned_cards_scroll.custom_minimum_size.y = OWNED_CARDS_SCROLL_MIN_Y
+	owned_cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_move(name_label, identity_bar)
+	_move(resources, identity_bar)
+	_move(profile_label, status_bar)
+	_move(state_label, status_bar)
+	_order_child(identity_bar, name_label, 0)
+	_order_child(identity_bar, identity_spacer, 1)
+	_order_child(identity_bar, resources, 2)
+	_order_child(status_bar, profile_label, 0)
+	_order_child(status_bar, status_spacer, 1)
+	_order_child(status_bar, state_label, 2)
+	_order_child(layout, identity_bar, 0)
+	_order_child(layout, status_bar, 1)
+	_order_child(layout, owned_cards_scroll, 2)
+
+
+func _apply_side_stacked_topology() -> void:
+	identity_bar.visible = false
+	status_bar.visible = false
+	layout.add_theme_constant_override("separation", 4)
+	owned_cards_scroll.custom_minimum_size = Vector2.ZERO
+	owned_cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_move(name_label, layout)
+	_move(profile_label, layout)
+	_move(resources, layout)
+	_move(state_label, layout)
+	_order_child(layout, name_label, 0)
+	_order_child(layout, profile_label, 1)
+	_order_child(layout, resources, 2)
+	_order_child(layout, owned_cards_scroll, 3)
+	_order_child(layout, state_label, 4)
 
 
 func _move(child: Control, parent: Node) -> void:
@@ -128,14 +184,6 @@ func _move(child: Control, parent: Node) -> void:
 	if child.get_parent() != null:
 		child.get_parent().remove_child(child)
 	parent.add_child(child)
-
-
-func _restore_default_order() -> void:
-	_order_child(layout, name_label, 0)
-	_order_child(layout, profile_label, 1)
-	_order_child(layout, resources, 2)
-	_order_child(layout, owned_cards_scroll, 3)
-	_order_child(layout, state_label, 4)
 
 
 func _restore_compact_info_order() -> void:
@@ -155,9 +203,17 @@ func _uses_compact_cards() -> bool:
 
 
 func _apply_text_density() -> void:
-	var name_size: int = 15 if _low_height_mode else 20
-	var small_size: int = 11 if _low_height_mode else 13
-	var resource_size: int = 13 if _low_height_mode else 18
+	var name_size: int = 20
+	var small_size: int = 13
+	var resource_size: int = 18
+	if _low_height_mode:
+		name_size = 15
+		small_size = 11
+		resource_size = 13
+	elif _uses_center_dense_layout():
+		name_size = 18
+		small_size = 12
+		resource_size = 15
 	name_label.add_theme_font_size_override("font_size", name_size)
 	profile_label.add_theme_font_size_override("font_size", small_size)
 	state_label.add_theme_font_size_override("font_size", small_size)

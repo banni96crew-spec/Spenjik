@@ -8,6 +8,8 @@ const OPPONENT_ZONE_WIDTH := 256
 const SIDE_INFO_WIDTH := 255
 const TABLE_WORKSPACE_SEPARATION := 6
 const MIN_CENTER_WIDTH_FOR_SIX_MARKET_CARDS := 1072
+const CENTER_COLUMN_SEPARATION := 6
+const NORMAL_BOARD_ZONE_HEIGHT := 308
 
 
 static func expected_center_column_width(viewport_width: float) -> float:

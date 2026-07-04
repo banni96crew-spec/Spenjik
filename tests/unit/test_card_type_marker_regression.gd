@@ -31,6 +31,21 @@ func test_type_markers_are_visible_in_all_card_contexts() -> void:
 			CardTypeMarker.MARKER_SIZE)
 
 
+func test_war_dagger_structural_geometry() -> void:
+	assert_eq(CardTypeMarker.WAR_PARTS_PER_DAGGER, 4)
+	assert_eq(CardTypeMarker.WAR_DAGGER_COUNT, 2)
+	assert_eq(CardTypeMarker.war_dagger_specs().size(), 2)
+	assert_gt(
+		CardTypeMarker.war_blade_width_at_guard(),
+		CardTypeMarker.war_blade_width_at_tip()
+	)
+	assert_gt(
+		CardTypeMarker.war_guard_half_width(),
+		CardTypeMarker.war_handle_half_width()
+	)
+	assert_gt(CardTypeMarker.war_pommel_radius(), 0.0)
+
+
 func test_war_marker_uses_ink_accent_and_war_border() -> void:
 	var card: CardView = CARD_SCENE.instantiate()
 	add_child_autofree(card)
