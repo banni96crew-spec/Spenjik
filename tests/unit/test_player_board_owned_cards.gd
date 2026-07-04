@@ -5,11 +5,11 @@ const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
 const WRAPPER_SCRIPT := preload("res://scenes/ui/widgets/CardOrientationWrapper.gd")
 
 
-func test_player_board_scene_has_no_owned_cards_scroll() -> void:
+func test_player_board_scene_has_bounded_owned_cards_scroll() -> void:
 	var scene_text: String = FileAccess.get_file_as_string(
 		"res://scenes/ui/panels/PlayerBoard.tscn"
 	)
-	assert_false(scene_text.contains("OwnedCardsScroll"))
+	assert_true(scene_text.contains("OwnedCardsScroll"))
 	assert_true(scene_text.contains("CompactCardsScroll"))
 	assert_true(scene_text.contains("OwnedCardsRow"))
 	assert_false(scene_text.contains("OwnedLabel"))
@@ -33,6 +33,7 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	add_child_autofree(human_board)
 	add_child_autofree(ai_board)
 	ai_board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+	ai_board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
 	human_board.render(human, {}, definitions)
 	ai_board.render(ai, {"profile_id": "enforcer"}, definitions)
 	assert_eq(human_board.owned_cards_row.get_child_count(), 4)
@@ -50,8 +51,8 @@ func test_player_board_renders_owned_cards_for_human_and_ai() -> void:
 	for child: Node in ai_board.owned_cards_row.get_children():
 		assert_true(child.get_script() == WRAPPER_SCRIPT)
 		assert_eq(str(child.get("orientation")), WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
-		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.SIDE_FOOTPRINT)
-		assert_eq(_card_from_child(child).get_layout_size(), CardVisualTokens.MARKET_CARD_SIZE)
+		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
+		assert_eq(_card_from_child(child).get_layout_size(), CardVisualTokens.COMPACT_CARD_SIZE)
 	var laundry_chip: CardView = _find_owned_card(
 		human_board, GameIds.CARD_LAUNDRY
 	)
@@ -96,6 +97,61 @@ func test_low_height_rotated_cards_use_compact_side_footprint() -> void:
 		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
 
 
+func test_compact_card_presentation_does_not_require_low_height_mode() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var view: Dictionary = GameStateManager.get_view()["view"]
+	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
+	ai["engine"]["accountants"] = 1
+	ai["hand"] = [GameIds.CARD_BRUISER]
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+	board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
+	board.render(ai, {"profile_id": "enforcer"}, view["card_definitions"])
+	assert_true(board.layout.visible)
+	assert_false(board.compact_layout.visible)
+	assert_true(board.owned_cards_row.get_parent() is ScrollContainer)
+	for child: Node in board.owned_cards_row.get_children():
+		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
+
+
+func test_low_height_round_trip_restores_default_order_and_cards() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var view: Dictionary = GameStateManager.get_view()["view"]
+	var human: Dictionary = _player(view, GameIds.PLAYER_HUMAN).duplicate(true)
+	human["engine"]["laundries"] = 1
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	board.render(human, {}, view["card_definitions"])
+	board.set_low_height_mode(true)
+	board.render(human, {}, view["card_definitions"])
+	board.set_low_height_mode(false)
+	board.render(human, {}, view["card_definitions"])
+	assert_eq(board.layout.get_child(0), board.name_label)
+	assert_eq(board.layout.get_child(1), board.profile_label)
+	assert_eq(board.layout.get_child(2), board.resources)
+	assert_eq(board.layout.get_child(3), board.owned_cards_scroll)
+	assert_eq(board.layout.get_child(4), board.state_label)
+	assert_eq(_card_from_child(board.owned_cards_row.get_child(0)).get_layout_size(),
+		CardVisualTokens.MARKET_CARD_SIZE)
+
+
+func test_side_ai_many_owned_displays_use_bounded_scroll() -> void:
+	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var view: Dictionary = GameStateManager.get_view()["view"]
+	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
+	_fill_many_unique_displays(ai)
+	var board: PlayerBoard = BOARD_SCENE.instantiate()
+	add_child_autofree(board)
+	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+	board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
+	board.render(ai, {"profile_id": "enforcer"}, view["card_definitions"])
+	assert_true(board.owned_cards_scroll.size_flags_vertical & Control.SIZE_EXPAND != 0)
+	assert_gt(board.owned_cards_row.get_child_count(), 8)
+	for child: Node in board.owned_cards_row.get_children():
+		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
+
+
 func test_player_owned_cards_builder_groups_duplicate_counts() -> void:
 	var definitions: Dictionary = PresentationViewBuilder.cards_by_id()
 	var player: Dictionary = TestPlayers.player(GameIds.PLAYER_HUMAN)
@@ -116,12 +172,12 @@ func test_player_owned_cards_builder_groups_duplicate_counts() -> void:
 	assert_false(by_id[GameIds.CARD_CARTEL].has("count"))
 
 
-func test_owned_cards_row_is_not_inside_scroll_container() -> void:
+func test_owned_cards_row_uses_bounded_scroll_container() -> void:
 	var board: PlayerBoard = BOARD_SCENE.instantiate()
 	add_child_autofree(board)
 	var row: Node = board.owned_cards_row
 	assert_not_null(row)
-	assert_false(row.get_parent() is ScrollContainer)
+	assert_true(row.get_parent() is ScrollContainer)
 
 
 func _find_owned_card(board: PlayerBoard, card_id: String) -> CardView:
@@ -143,6 +199,23 @@ func _player(view: Dictionary, player_id: String) -> Dictionary:
 		if player.get("id") == player_id:
 			return player
 	return {}
+
+
+func _fill_many_unique_displays(player: Dictionary) -> void:
+	player["engine"]["informers"] = 1
+	player["engine"]["laundries"] = 1
+	player["engine"]["accountants"] = 1
+	player["engine"]["brothel"] = true
+	player["status_buildings"]["stash"] = 1
+	player["status_buildings"]["workshop"] = 1
+	player["status_buildings"]["district_control"] = 1
+	player["defense"]["cops_active"] = true
+	player["defense"]["cartel_state"] = DefenseStates.ACTIVE
+	player["defense"]["judge_state"] = DefenseStates.ACTIVE
+	player["hand"] = [
+		GameIds.CARD_THUG, GameIds.CARD_BRUISER, GameIds.CARD_CLEANER,
+		GameIds.CARD_FEDERAL_RAID, GameIds.CARD_SABOTEUR, GameIds.CARD_INSIDER,
+	]
 
 
 func _valid_config() -> Dictionary:

@@ -27,8 +27,6 @@ func test_game_layout_exposes_tabletop_zones_at_supported_viewports() -> void:
 		var screen: GameScreen = _host_scene(
 			"res://scenes/ui/screens/GameScreen.tscn", viewport_size
 		)
-		if screen == null:
-			continue
 		screen.refresh()
 		assert_eq(screen.size, viewport_size)
 		assert_not_null(screen.get_node("%PhaseHeader"))
@@ -69,12 +67,12 @@ func test_game_layout_width_budget_at_design_viewport() -> void:
 		"res://scenes/ui/screens/GameScreen.tscn",
 		UITabletopLayoutTokens.DESIGN_VIEWPORT
 	)
-	if screen == null:
-		return
 	screen.refresh()
 	var left: Control = screen.get_node("%LeftOpponentZone")
 	var right: Control = screen.get_node("%RightOpponentZone")
 	var side: Control = screen.get_node("%SideInfoColumn")
+	assert_eq(int(left.custom_minimum_size.x), UITabletopLayoutTokens.OPPONENT_ZONE_WIDTH)
+	assert_eq(int(right.custom_minimum_size.x), UITabletopLayoutTokens.OPPONENT_ZONE_WIDTH)
 	assert_lte(int(side.custom_minimum_size.x), 280)
 	assert_lte(int(left.custom_minimum_size.x), 250)
 	assert_lte(int(right.custom_minimum_size.x), 250)
@@ -94,8 +92,6 @@ func test_human_zone_uses_space_released_by_removed_label() -> void:
 		"res://scenes/ui/screens/GameScreen.tscn",
 		UITabletopLayoutTokens.DESIGN_VIEWPORT
 	)
-	if screen == null:
-		return
 	var human_zone_layout: HBoxContainer = screen.get_node(
 		"TabletopMargin/TabletopLayout/TableWorkspace/CenterColumn/"
 			+ "HumanZone/HumanZoneLayout"
@@ -114,8 +110,6 @@ func test_case_file_defaults_hidden_and_center_expands() -> void:
 		"res://scenes/ui/screens/GameScreen.tscn",
 		UITabletopLayoutTokens.DESIGN_VIEWPORT
 	)
-	if screen == null:
-		return
 	screen.refresh()
 	await _settle_layout()
 	var center_column: Control = screen.get_node("%CenterColumn")
@@ -181,6 +175,7 @@ func _host_scene(path: String, viewport_size: Vector2) -> Variant:
 		return null
 	var host := Control.new()
 	host.size = viewport_size
+	host.theme = load("res://themes/main_theme.tres")
 	add_child_autofree(host)
 	var instance: Control = packed.instantiate()
 	host.add_child(instance)

@@ -13,6 +13,8 @@ var marker_color: Color = CardVisualTokens.INK
 
 func _ready() -> void:
 	custom_minimum_size = MARKER_SIZE
+	size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 
 func _get_minimum_size() -> Vector2:
@@ -30,7 +32,7 @@ func set_marker_color(value: Color) -> void:
 
 
 func _draw() -> void:
-	var area: Rect2 = Rect2(Vector2.ZERO, size)
+	var area: Rect2 = _square_area(Rect2(Vector2.ZERO, size))
 	match marker_asset:
 		ASSET_STATUS:
 			_draw_status(area)
@@ -100,3 +102,9 @@ func _points(area: Rect2, values: Array[Vector2]) -> PackedVector2Array:
 	for point: Vector2 in values:
 		result.append(area.position + area.size * point)
 	return result
+
+
+func _square_area(area: Rect2) -> Rect2:
+	var side: float = min(area.size.x, area.size.y)
+	var offset: Vector2 = (area.size - Vector2(side, side)) * 0.5
+	return Rect2(area.position + offset, Vector2(side, side))

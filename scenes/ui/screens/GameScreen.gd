@@ -33,6 +33,10 @@ func _ready() -> void:
 	ai_board_1.set_card_orientation(PlayerBoard.CARD_ORIENTATION_SIDE_LEFT)
 	ai_board_2.set_card_orientation(PlayerBoard.CARD_ORIENTATION_NORMAL)
 	ai_board_3.set_card_orientation(PlayerBoard.CARD_ORIENTATION_SIDE_RIGHT)
+	human_board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_FULL)
+	ai_board_1.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
+	ai_board_2.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
+	ai_board_3.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
 	income_button.pressed.connect(_on_advance_income)
 	case_file_toggle_button.pressed.connect(_on_case_file_toggle_pressed)
 	for panel: Node in [
@@ -113,6 +117,10 @@ func _apply_responsive_layout() -> void:
 	ai_board_2.set_low_height_mode(low_height)
 	ai_board_3.set_low_height_mode(false)
 	human_board.set_low_height_mode(low_height)
+	human_board.set_card_presentation(
+		PlayerBoard.CARD_PRESENTATION_COMPACT
+		if low_height else PlayerBoard.CARD_PRESENTATION_FULL
+	)
 	top_opponent_zone.custom_minimum_size.y = 176.0 if low_height else 326.0
 	human_zone.custom_minimum_size.y = 176.0 if low_height else 326.0
 	center_table.custom_minimum_size.y = 304.0 if low_height else 0.0

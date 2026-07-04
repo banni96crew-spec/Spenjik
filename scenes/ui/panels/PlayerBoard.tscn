@@ -4,11 +4,9 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/widgets/NalVpDisplay.tscn" id="2"]
 
 [node name="PlayerBoard" type="PanelContainer"]
-clip_contents = true
 script = ExtResource("1")
 
 [node name="BoardRoot" type="Control" parent="."]
-clip_contents = true
 layout_mode = 2
 anchors_preset = 15
 anchor_right = 1.0
@@ -45,8 +43,17 @@ theme_override_font_sizes/font_size = 18
 [node name="VpLabel" parent="BoardRoot/Layout/NalVpDisplay" index="2"]
 theme_override_font_sizes/font_size = 18
 
-[node name="OwnedCardsRow" type="HFlowContainer" parent="BoardRoot/Layout"]
+[node name="OwnedCardsScroll" type="ScrollContainer" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 2
+
+[node name="OwnedCardsRow" type="HFlowContainer" parent="BoardRoot/Layout/OwnedCardsScroll"]
+unique_name_in_owner = true
+layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8

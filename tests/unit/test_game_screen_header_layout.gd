@@ -90,6 +90,7 @@ func test_header_does_not_get_overlapped_on_real_buy_phase_transitions() -> void
 func _screen() -> GameScreen:
 	var host := Control.new()
 	host.size = Vector2(1280, 720)
+	host.theme = load("res://themes/main_theme.tres")
 	add_child_autofree(host)
 	var screen: GameScreen = GAME_SCREEN.instantiate()
 	host.add_child(screen)
@@ -100,6 +101,7 @@ func _screen() -> GameScreen:
 func _root(viewport_size: Vector2) -> GameRoot:
 	var host := Control.new()
 	host.size = viewport_size
+	host.theme = load("res://themes/main_theme.tres")
 	add_child_autofree(host)
 	var root: GameRoot = GAME_ROOT.instantiate()
 	host.add_child(root)

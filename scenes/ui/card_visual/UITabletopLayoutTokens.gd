@@ -4,7 +4,7 @@ extends RefCounted
 # Must stay aligned with GameScreen.tscn tabletop layout mins.
 const DESIGN_VIEWPORT := Vector2(1920, 1080)
 const TABLETOP_MARGIN := 6
-const OPPONENT_ZONE_WIDTH := 172
+const OPPONENT_ZONE_WIDTH := 244
 const SIDE_INFO_WIDTH := 255
 const TABLE_WORKSPACE_SEPARATION := 6
 const MIN_CENTER_WIDTH_FOR_SIX_MARKET_CARDS := 1072
