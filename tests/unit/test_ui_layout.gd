@@ -74,8 +74,10 @@ func test_game_layout_width_budget_at_design_viewport() -> void:
 	assert_eq(int(left.custom_minimum_size.x), UITabletopLayoutTokens.OPPONENT_ZONE_WIDTH)
 	assert_eq(int(right.custom_minimum_size.x), UITabletopLayoutTokens.OPPONENT_ZONE_WIDTH)
 	assert_lte(int(side.custom_minimum_size.x), 280)
-	assert_lte(int(left.custom_minimum_size.x), 250)
-	assert_lte(int(right.custom_minimum_size.x), 250)
+	assert_lte(int(left.custom_minimum_size.x), 260)
+	assert_lte(int(right.custom_minimum_size.x), 260)
+	assert_eq(int(left.custom_minimum_size.x), 256)
+	assert_eq(int(right.custom_minimum_size.x), 256)
 	assert_gte(int(left.custom_minimum_size.x), int(CardVisualTokens.MARKET_CARD_SIZE.y))
 	assert_gte(int(right.custom_minimum_size.x), int(CardVisualTokens.MARKET_CARD_SIZE.y))
 	assert_gte(

@@ -65,24 +65,20 @@ func _draw_defense(area: Rect2) -> void:
 
 
 func _draw_war(area: Rect2) -> void:
-	var w: float = max(2.0, area.size.x * 0.15)
-	_draw_knife(area, Vector2(0.22, 0.82), Vector2(0.78, 0.18), w)
-	_draw_knife(area, Vector2(0.78, 0.82), Vector2(0.22, 0.18), w)
+	_draw_dagger_silhouette(area, [
+		Vector2(0.20, 0.78), Vector2(0.28, 0.70), Vector2(0.42, 0.56),
+		Vector2(0.50, 0.48), Vector2(0.54, 0.44), Vector2(0.74, 0.18),
+		Vector2(0.62, 0.38), Vector2(0.34, 0.68),
+	])
+	_draw_dagger_silhouette(area, [
+		Vector2(0.80, 0.78), Vector2(0.72, 0.70), Vector2(0.58, 0.56),
+		Vector2(0.50, 0.48), Vector2(0.46, 0.44), Vector2(0.26, 0.18),
+		Vector2(0.38, 0.38), Vector2(0.66, 0.68),
+	])
 
 
-func _draw_knife(area: Rect2, from: Vector2, to: Vector2, width: float) -> void:
-	var a: Vector2 = area.position + area.size * from
-	var b: Vector2 = area.position + area.size * to
-	var dir: Vector2 = (b - a).normalized()
-	var blade_base: Vector2 = a.lerp(b, 0.64)
-	draw_line(a, blade_base, marker_color, width, true)
-	draw_line(a - dir * width, a + dir * width, marker_color, width * 1.4, true)
-	var normal: Vector2 = Vector2(-dir.y, dir.x)
-	draw_colored_polygon(PackedVector2Array([
-		blade_base - normal * width * 0.72,
-		blade_base + normal * width * 0.72,
-		b,
-	]), marker_color)
+func _draw_dagger_silhouette(area: Rect2, coords: Array[Vector2]) -> void:
+	draw_colored_polygon(_points(area, coords), marker_color)
 
 
 func _draw_engine(area: Rect2) -> void:

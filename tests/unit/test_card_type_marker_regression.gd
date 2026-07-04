@@ -29,3 +29,19 @@ func test_type_markers_are_visible_in_all_card_contexts() -> void:
 		assert_true(card.type_marker_top.visible, context)
 		assert_eq(card.type_marker_top.custom_minimum_size,
 			CardTypeMarker.MARKER_SIZE)
+
+
+func test_war_marker_uses_ink_accent_and_war_border() -> void:
+	var card: CardView = CARD_SCENE.instantiate()
+	add_child_autofree(card)
+	card.set_card({
+		"id": GameIds.CARD_THUG,
+		"type": CardTypes.WAR,
+		"title": "Thug",
+		"effect_summary": "Attack",
+	})
+	assert_eq(card.type_marker_top.marker_color, CardVisualTokens.INK)
+	assert_eq(
+		CardTypeStyleMap.style_for_type(CardTypes.WAR).get("border"),
+		CardVisualTokens.WAR_BORDER
+	)

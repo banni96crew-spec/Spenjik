@@ -31,7 +31,7 @@ static func style_for_type(card_type: String) -> Dictionary:
 			return {
 				"marker_asset": MARKER_WAR,
 				"art": "HOSTILE ACTION",
-				"accent": CardVisualTokens.WAR_RED,
+				"accent": CardVisualTokens.INK,
 				"border": CardVisualTokens.WAR_BORDER,
 			}
 		CardTypes.DEFENSE:

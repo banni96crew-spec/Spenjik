@@ -12,6 +12,9 @@ func test_player_board_scene_has_bounded_owned_cards_scroll() -> void:
 	assert_true(scene_text.contains("OwnedCardsScroll"))
 	assert_true(scene_text.contains("CompactCardsScroll"))
 	assert_true(scene_text.contains("OwnedCardsRow"))
+	assert_true(scene_text.contains("type=\"HBoxContainer\" parent=\"BoardRoot/Layout/OwnedCardsScroll\""))
+	assert_true(scene_text.contains("horizontal_scroll_mode = 1"))
+	assert_true(scene_text.contains("vertical_scroll_mode = 0"))
 	assert_false(scene_text.contains("OwnedLabel"))
 	assert_false(scene_text.contains("DefenseBadges"))
 
@@ -136,22 +139,6 @@ func test_low_height_round_trip_restores_default_order_and_cards() -> void:
 		CardVisualTokens.MARKET_CARD_SIZE)
 
 
-func test_side_ai_many_owned_displays_use_bounded_scroll() -> void:
-	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
-	var view: Dictionary = GameStateManager.get_view()["view"]
-	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
-	_fill_many_unique_displays(ai)
-	var board: PlayerBoard = BOARD_SCENE.instantiate()
-	add_child_autofree(board)
-	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
-	board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_COMPACT)
-	board.render(ai, {"profile_id": "enforcer"}, view["card_definitions"])
-	assert_true(board.owned_cards_scroll.size_flags_vertical & Control.SIZE_EXPAND != 0)
-	assert_gt(board.owned_cards_row.get_child_count(), 8)
-	for child: Node in board.owned_cards_row.get_children():
-		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.COMPACT_SIDE_FOOTPRINT)
-
-
 func test_player_owned_cards_builder_groups_duplicate_counts() -> void:
 	var definitions: Dictionary = PresentationViewBuilder.cards_by_id()
 	var player: Dictionary = TestPlayers.player(GameIds.PLAYER_HUMAN)
@@ -199,23 +186,6 @@ func _player(view: Dictionary, player_id: String) -> Dictionary:
 		if player.get("id") == player_id:
 			return player
 	return {}
-
-
-func _fill_many_unique_displays(player: Dictionary) -> void:
-	player["engine"]["informers"] = 1
-	player["engine"]["laundries"] = 1
-	player["engine"]["accountants"] = 1
-	player["engine"]["brothel"] = true
-	player["status_buildings"]["stash"] = 1
-	player["status_buildings"]["workshop"] = 1
-	player["status_buildings"]["district_control"] = 1
-	player["defense"]["cops_active"] = true
-	player["defense"]["cartel_state"] = DefenseStates.ACTIVE
-	player["defense"]["judge_state"] = DefenseStates.ACTIVE
-	player["hand"] = [
-		GameIds.CARD_THUG, GameIds.CARD_BRUISER, GameIds.CARD_CLEANER,
-		GameIds.CARD_FEDERAL_RAID, GameIds.CARD_SABOTEUR, GameIds.CARD_INSIDER,
-	]
 
 
 func _valid_config() -> Dictionary:
