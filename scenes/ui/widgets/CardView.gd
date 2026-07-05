@@ -3,6 +3,8 @@ extends Control
 
 signal card_selected(card_id: String)
 
+const CARD_TEXT_LAYOUT := preload("res://scenes/ui/card_visual/CardTextLayout.gd")
+
 var card_id: String = ""
 var selected: bool = false
 
@@ -21,6 +23,8 @@ var select_button: Button
 var _card_surface: PanelContainer
 var _art_frame: PanelContainer
 var _price_row: Control
+var _text_block: Control
+var _vertical_spacer: Control
 var _layout_context: String = "market"
 var _hovered: bool = false
 var _disabled_visual: bool = false
@@ -61,6 +65,8 @@ func _bind_nodes() -> void:
 	_card_surface = %CardSurface
 	_art_frame = %ArtFrame
 	_price_row = price_label.get_parent()
+	_text_block = title_label.get_parent()
+	_vertical_spacer = %VerticalSpacer
 
 
 func set_card(
@@ -125,28 +131,10 @@ func _apply_layout_context(context: String) -> void:
 	art_placeholder.visible = true
 	title_label.visible = true
 	effect_label.visible = true
-	var title_size: int = (
-		CardVisualTokens.COMPACT_TITLE_FONT
-		if is_compact else CardVisualTokens.MARKET_TITLE_FONT
+	CARD_TEXT_LAYOUT.apply(
+		_layout_context, title_label, effect_label, price_label,
+		_text_block, _vertical_spacer, select_button
 	)
-	var effect_size: int = (
-		CardVisualTokens.COMPACT_EFFECT_FONT
-		if is_compact else CardVisualTokens.MARKET_EFFECT_FONT
-	)
-	var price_size: int = CardVisualTokens.MARKET_PRICE_FONT
-	title_label.add_theme_font_size_override("font_size", title_size)
-	effect_label.add_theme_font_size_override("font_size", effect_size)
-	price_label.add_theme_font_size_override("font_size", price_size)
-	title_label.get_parent().size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	effect_label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	title_label.custom_minimum_size.y = 24 if not is_compact else 18
-	effect_label.custom_minimum_size.y = 34 if not is_compact else 28
-	title_label.max_lines_visible = 2
-	effect_label.max_lines_visible = 3
-	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-	if not is_compact:
-		select_button.custom_minimum_size.y = CardVisualTokens.MARKET_SELECT_BUTTON_HEIGHT
 
 
 func set_selected(value: bool) -> void:

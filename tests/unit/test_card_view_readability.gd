@@ -17,8 +17,18 @@ func test_market_card_title_and_effect_are_visible() -> void:
 	assert_true(card.effect_label.visible)
 	assert_false(card.title_label.text.is_empty())
 	assert_false(card.effect_label.text.is_empty())
-	assert_gt(card.title_label.custom_minimum_size.y, 0.0)
-	assert_gt(card.effect_label.custom_minimum_size.y, 0.0)
+	var text_block := card.title_label.get_parent() as Control
+	assert_gt(text_block.custom_minimum_size.y, 0.0)
+	assert_eq(card.title_label.max_lines_visible, -1)
+	assert_eq(card.effect_label.max_lines_visible, -1)
+	assert_eq(
+		card.title_label.text_overrun_behavior,
+		TextServer.OVERRUN_NO_TRIMMING
+	)
+	assert_eq(
+		card.effect_label.text_overrun_behavior,
+		TextServer.OVERRUN_NO_TRIMMING
+	)
 	assert_gte(
 		card.title_label.get_theme_font_size("font_size"),
 		CardVisualTokens.MARKET_TITLE_FONT
