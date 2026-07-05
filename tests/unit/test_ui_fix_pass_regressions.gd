@@ -44,7 +44,7 @@ func test_normal_board_zone_heights_stay_stable_across_refreshes() -> void:
 	screen.get_parent().queue_free()
 
 
-func test_ai_boards_use_horizontal_bounded_overflow_at_1080p() -> void:
+func test_ai_boards_use_expected_overflow_topology_at_1080p() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
 	for id: String in [GameIds.PLAYER_AI_1, GameIds.PLAYER_AI_2,
 		GameIds.PLAYER_AI_3]:
@@ -53,12 +53,13 @@ func test_ai_boards_use_horizontal_bounded_overflow_at_1080p() -> void:
 	screen.refresh()
 	await _settle_layout()
 	for pair: Array in [
-		[screen.get_node("%LeftOpponentZone"), screen.ai_board_1],
-		[screen.get_node("%TopOpponentZone"), screen.ai_board_2],
-		[screen.get_node("%RightOpponentZone"), screen.ai_board_3],
+		[screen.get_node("%LeftOpponentZone"), screen.ai_board_1, true],
+		[screen.get_node("%TopOpponentZone"), screen.ai_board_2, false],
+		[screen.get_node("%RightOpponentZone"), screen.ai_board_3, true],
 	]:
 		var zone: Control = pair[0]
 		var board: PlayerBoard = pair[1]
+		var side_vertical: bool = pair[2]
 		assert_gt(board.owned_cards_row.get_child_count(), 8)
 		_assert_inside(zone, board.name_label, "%s name" % board.name)
 		_assert_inside(zone, board.profile_label, "%s profile" % board.name)
@@ -66,7 +67,10 @@ func test_ai_boards_use_horizontal_bounded_overflow_at_1080p() -> void:
 		_assert_inside(zone, board.owned_cards_scroll,
 			"%s card scroll" % board.name)
 		_assert_inside(zone, board.state_label, "%s state" % board.name)
-		_assert_horizontal_strip(board)
+		if side_vertical:
+			_assert_vertical_strip(board)
+		else:
+			_assert_horizontal_strip(board)
 	screen.get_parent().queue_free()
 
 
@@ -141,6 +145,7 @@ func _assert_horizontal_strip(board: PlayerBoard) -> void:
 		board.owned_cards_scroll.vertical_scroll_mode,
 		ScrollContainer.SCROLL_MODE_DISABLED
 	)
+	assert_true(board.owned_cards_row is HBoxContainer)
 	assert_gt(board.owned_cards_row.size.x, board.owned_cards_scroll.size.x)
 	var row_y: float = NAN
 	for child: Node in board.owned_cards_row.get_children():
@@ -151,6 +156,28 @@ func _assert_horizontal_strip(board: PlayerBoard) -> void:
 			row_y = wrapper.global_position.y
 		else:
 			assert_almost_eq(wrapper.global_position.y, row_y, 0.5)
+
+
+func _assert_vertical_strip(board: PlayerBoard) -> void:
+	assert_eq(
+		board.owned_cards_scroll.horizontal_scroll_mode,
+		ScrollContainer.SCROLL_MODE_DISABLED
+	)
+	assert_eq(
+		board.owned_cards_scroll.vertical_scroll_mode,
+		ScrollContainer.SCROLL_MODE_AUTO
+	)
+	assert_true(board.owned_cards_row is VBoxContainer)
+	assert_gt(board.owned_cards_row.size.y, board.owned_cards_scroll.size.y)
+	var row_x: float = NAN
+	for child: Node in board.owned_cards_row.get_children():
+		var wrapper := child as Control
+		assert_not_null(wrapper)
+		assert_lte(wrapper.size.x, board.owned_cards_scroll.size.x + 0.5)
+		if is_nan(row_x):
+			row_x = wrapper.global_position.x
+		else:
+			assert_almost_eq(wrapper.global_position.x, row_x, 0.5)
 
 
 func _fill_many_unique_displays(state: Dictionary, player_id: String) -> void:

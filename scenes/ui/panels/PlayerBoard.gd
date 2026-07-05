@@ -3,6 +3,8 @@ extends PanelContainer
 
 const CARD_SCENE := preload("res://scenes/ui/widgets/CardView.tscn")
 const CARD_ORIENTATION_WRAPPER := preload("res://scenes/ui/widgets/CardOrientationWrapper.gd")
+const CARD_STRIP := preload("res://scenes/ui/helpers/PlayerBoardCardStrip.gd")
+const LAYOUT_CHROME := preload("res://scenes/ui/helpers/PlayerBoardLayoutChrome.gd")
 const CARD_ORIENTATION_NORMAL := "normal"
 const CARD_ORIENTATION_SIDE_LEFT := "side_left"
 const CARD_ORIENTATION_SIDE_RIGHT := "side_right"
@@ -24,7 +26,9 @@ var _low_height_mode: bool = false
 @onready var owned_cards_scroll: ScrollContainer = %OwnedCardsScroll
 @onready var compact_cards_scroll: ScrollContainer = %CompactCardsScroll
 @onready var default_cards_row: HBoxContainer = %OwnedCardsRow
+@onready var default_cards_column: VBoxContainer = %OwnedCardsColumn
 @onready var compact_cards_row: HBoxContainer = %CompactCardsRow
+@onready var compact_cards_column: VBoxContainer = %CompactCardsColumn
 @onready var name_label: Label = %NameLabel
 @onready var profile_label: Label = %ProfileLabel
 @onready var resources: NalVpDisplay = %NalVpDisplay
@@ -88,15 +92,7 @@ func _render_owned_cards(
 	player: Dictionary,
 	card_definitions: Dictionary
 ) -> void:
-	for child: Node in owned_cards_row.get_children():
-		owned_cards_row.remove_child(child)
-		child.free()
-	var inactive_row: Container = default_cards_row
-	if not _low_height_mode:
-		inactive_row = compact_cards_row
-	for child: Node in inactive_row.get_children():
-		inactive_row.remove_child(child)
-		child.free()
+	CARD_STRIP.clear_containers(_all_card_containers())
 	for display: Dictionary in PlayerOwnedCardsBuilder.build_owned_displays(
 		player, card_definitions
 	):
@@ -115,22 +111,43 @@ func _apply_layout_mode() -> void:
 	custom_minimum_size.y = 176.0 if _low_height_mode else 0.0
 	layout.visible = not _low_height_mode
 	compact_layout.visible = _low_height_mode
+	var strip_mode: String = CARD_STRIP.mode_for_orientation(_card_orientation)
 	if _low_height_mode:
-		owned_cards_row = compact_cards_row
+		owned_cards_row = CARD_STRIP.apply_topology(
+			compact_cards_scroll,
+			compact_cards_row,
+			compact_cards_column,
+			strip_mode,
+		)
 		identity_bar.visible = false
 		status_bar.visible = false
-		_move(name_label, compact_info_rail)
-		_move(profile_label, compact_info_rail)
-		_move(resources, compact_info_rail)
-		_move(state_label, compact_info_rail)
-		_restore_compact_info_order()
+		LAYOUT_CHROME.apply_compact_rail(self)
 	elif _uses_center_dense_layout():
-		owned_cards_row = default_cards_row
-		_apply_center_dense_topology()
+		owned_cards_row = CARD_STRIP.apply_topology(
+			owned_cards_scroll,
+			default_cards_row,
+			default_cards_column,
+			strip_mode,
+		)
+		LAYOUT_CHROME.apply_center_dense(self)
 	else:
-		owned_cards_row = default_cards_row
-		_apply_side_stacked_topology()
+		owned_cards_row = CARD_STRIP.apply_topology(
+			owned_cards_scroll,
+			default_cards_row,
+			default_cards_column,
+			strip_mode,
+		)
+		LAYOUT_CHROME.apply_side_stacked(self)
 	_apply_text_density()
+
+
+func _all_card_containers() -> Array:
+	return [
+		default_cards_row,
+		default_cards_column,
+		compact_cards_row,
+		compact_cards_column,
+	]
 
 
 func _uses_center_dense_layout() -> bool:
@@ -138,64 +155,6 @@ func _uses_center_dense_layout() -> bool:
 		not _low_height_mode
 		and _card_orientation == CARD_ORIENTATION_NORMAL
 	)
-
-
-func _apply_center_dense_topology() -> void:
-	identity_bar.visible = true
-	status_bar.visible = true
-	layout.add_theme_constant_override("separation", 2)
-	owned_cards_scroll.custom_minimum_size.y = OWNED_CARDS_SCROLL_MIN_Y
-	owned_cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_move(name_label, identity_bar)
-	_move(resources, identity_bar)
-	_move(profile_label, status_bar)
-	_move(state_label, status_bar)
-	_order_child(identity_bar, name_label, 0)
-	_order_child(identity_bar, identity_spacer, 1)
-	_order_child(identity_bar, resources, 2)
-	_order_child(status_bar, profile_label, 0)
-	_order_child(status_bar, status_spacer, 1)
-	_order_child(status_bar, state_label, 2)
-	_order_child(layout, identity_bar, 0)
-	_order_child(layout, status_bar, 1)
-	_order_child(layout, owned_cards_scroll, 2)
-
-
-func _apply_side_stacked_topology() -> void:
-	identity_bar.visible = false
-	status_bar.visible = false
-	layout.add_theme_constant_override("separation", 4)
-	owned_cards_scroll.custom_minimum_size = Vector2.ZERO
-	owned_cards_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_move(name_label, layout)
-	_move(profile_label, layout)
-	_move(resources, layout)
-	_move(state_label, layout)
-	_order_child(layout, name_label, 0)
-	_order_child(layout, profile_label, 1)
-	_order_child(layout, resources, 2)
-	_order_child(layout, owned_cards_scroll, 3)
-	_order_child(layout, state_label, 4)
-
-
-func _move(child: Control, parent: Node) -> void:
-	if child.get_parent() == parent:
-		return
-	if child.get_parent() != null:
-		child.get_parent().remove_child(child)
-	parent.add_child(child)
-
-
-func _restore_compact_info_order() -> void:
-	_order_child(compact_info_rail, name_label, 0)
-	_order_child(compact_info_rail, profile_label, 1)
-	_order_child(compact_info_rail, resources, 2)
-	_order_child(compact_info_rail, state_label, 3)
-
-
-func _order_child(parent: Node, child: Node, index: int) -> void:
-	if child.get_parent() == parent:
-		parent.move_child(child, index)
 
 
 func _uses_compact_cards() -> bool:

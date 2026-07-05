@@ -14,14 +14,14 @@ func test_inside_contact_flow_offers_selects_and_unlocks_one_contact() -> void:
 		"option_id": StreetDealOptionIds.OPTION_A,
 	})
 	assert_true(offered["ok"], str(offered))
-	var pending: Dictionary = offered["state"]["contacts"]["pending_offer"]
-	assert_eq(pending["source"], StreetDealIds.INSIDE_CONTACT)
-	assert_eq(pending["contact_offer_ids"].size(), 2)
+	var pending_offer: Dictionary = offered["state"]["contacts"]["pending_offer"]
+	assert_eq(pending_offer["source"], StreetDealIds.INSIDE_CONTACT)
+	assert_eq(pending_offer["contact_offer_ids"].size(), 2)
 	assert_gt(
 		offered["state"]["random"]["step"],
 		random_before["step"]
 	)
-	var selected_id: String = pending["contact_offer_ids"][0]
+	var selected_id: String = pending_offer["contact_offer_ids"][0]
 	var selected: Dictionary = ContactLogic.select_contact(
 		offered["state"],
 		{

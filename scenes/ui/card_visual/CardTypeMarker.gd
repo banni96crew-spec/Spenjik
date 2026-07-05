@@ -6,8 +6,7 @@ const ASSET_STATUS := "status"
 const ASSET_WAR := "war"
 const ASSET_DEFENSE := "defense"
 const MARKER_SIZE := Vector2(18, 18)
-const WAR_PARTS_PER_DAGGER := 4
-const WAR_DAGGER_COUNT := 2
+const WAR_RETICLE_TICK_COUNT := 4
 
 var marker_asset: String = ASSET_ENGINE
 var marker_color: Color = CardVisualTokens.INK
@@ -33,39 +32,32 @@ func set_marker_color(value: Color) -> void:
 	queue_redraw()
 
 
-static func war_dagger_specs() -> Array[Dictionary]:
-	return [
-		{
-			"pommel": Vector2(0.16, 0.84),
-			"guard": Vector2(0.46, 0.54),
-			"tip": Vector2(0.84, 0.16),
-		},
-		{
-			"pommel": Vector2(0.84, 0.84),
-			"guard": Vector2(0.54, 0.54),
-			"tip": Vector2(0.16, 0.16),
-		},
-	]
+static func war_reticle_center() -> Vector2:
+	return Vector2(0.5, 0.5)
 
 
-static func war_blade_width_at_guard() -> float:
-	return 0.18
+static func war_reticle_ring_radius() -> float:
+	return 0.34
 
 
-static func war_blade_width_at_tip() -> float:
-	return 0.03
+static func war_reticle_center_dot_radius() -> float:
+	return 0.07
 
 
-static func war_guard_half_width() -> float:
-	return 0.12
+static func war_reticle_tick_inner_radius() -> float:
+	return 0.40
 
 
-static func war_handle_half_width() -> float:
-	return 0.045
+static func war_reticle_tick_outer_radius() -> float:
+	return 0.50
 
 
-static func war_pommel_radius() -> float:
-	return 0.055
+static func war_reticle_ring_gap_degrees() -> float:
+	return 18.0
+
+
+static func war_reticle_tick_angles_deg() -> Array[float]:
+	return [0.0, 90.0, 180.0, 270.0]
 
 
 func _draw() -> void:
@@ -102,41 +94,28 @@ func _draw_defense(area: Rect2) -> void:
 
 
 func _draw_war(area: Rect2) -> void:
-	for spec: Dictionary in war_dagger_specs():
-		_draw_dagger_parts(area, spec)
-
-
-func _draw_dagger_parts(area: Rect2, spec: Dictionary) -> void:
-	var pommel: Vector2 = spec["pommel"]
-	var guard: Vector2 = spec["guard"]
-	var tip: Vector2 = spec["tip"]
-	var axis: Vector2 = (tip - pommel).normalized()
-	var perp: Vector2 = Vector2(-axis.y, axis.x)
-	var guard_w: float = war_guard_half_width()
-	var handle_w: float = war_handle_half_width()
-	var blade_guard_w: float = war_blade_width_at_guard() * 0.5
-	var blade_tip_w: float = war_blade_width_at_tip() * 0.5
-	draw_colored_polygon(_points(area, [
-		guard + perp * blade_guard_w,
-		tip + perp * blade_tip_w,
-		tip - perp * blade_tip_w,
-		guard - perp * blade_guard_w,
-	]), marker_color)
-	draw_colored_polygon(_points(area, [
-		guard + perp * guard_w,
-		guard - perp * guard_w,
-		guard - perp * guard_w + axis * guard_w * 0.35,
-		guard + perp * guard_w + axis * guard_w * 0.35,
-	]), marker_color)
-	draw_colored_polygon(_points(area, [
-		pommel + perp * handle_w,
-		guard + perp * handle_w,
-		guard - perp * handle_w,
-		pommel - perp * handle_w,
-	]), marker_color)
-	var pommel_center: Vector2 = area.position + area.size * pommel
-	var pommel_r: float = min(area.size.x, area.size.y) * war_pommel_radius()
-	draw_circle(pommel_center, pommel_r, marker_color)
+	var center: Vector2 = area.position + area.size * war_reticle_center()
+	var side: float = min(area.size.x, area.size.y)
+	var ring_r: float = side * war_reticle_ring_radius()
+	var line_w: float = max(1.5, side * 0.11)
+	var gap: float = deg_to_rad(war_reticle_ring_gap_degrees())
+	for i: int in WAR_RETICLE_TICK_COUNT:
+		var start_a: float = TAU * float(i) / float(WAR_RETICLE_TICK_COUNT) + gap * 0.5
+		var end_a: float = TAU * float(i + 1) / float(WAR_RETICLE_TICK_COUNT) - gap * 0.5
+		draw_arc(center, ring_r, start_a, end_a, 10, marker_color, line_w, true)
+	for angle_deg: float in war_reticle_tick_angles_deg():
+		var angle: float = deg_to_rad(angle_deg)
+		var direction: Vector2 = Vector2(cos(angle), sin(angle))
+		var inner: float = side * war_reticle_tick_inner_radius()
+		var outer: float = side * war_reticle_tick_outer_radius()
+		draw_line(
+			center + direction * inner,
+			center + direction * outer,
+			marker_color,
+			line_w,
+			true,
+		)
+	draw_circle(center, side * war_reticle_center_dot_radius(), marker_color)
 
 
 func _draw_engine(area: Rect2) -> void:

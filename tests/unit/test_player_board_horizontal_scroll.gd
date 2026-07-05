@@ -2,9 +2,10 @@ extends GutTest
 
 const BOARD_SCENE := preload("res://scenes/ui/panels/PlayerBoard.tscn")
 const WRAPPER_SCRIPT := preload("res://scenes/ui/widgets/CardOrientationWrapper.gd")
+const MEASURE := preload("res://tests/fixtures/GameScreenLayoutMeasure.gd")
 
 
-func test_side_ai_many_owned_displays_use_horizontal_bounded_scroll() -> void:
+func test_side_ai_many_owned_displays_use_vertical_bounded_scroll() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
 	var view: Dictionary = GameStateManager.get_view()["view"]
 	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
@@ -19,22 +20,32 @@ func test_side_ai_many_owned_displays_use_horizontal_bounded_scroll() -> void:
 	await get_tree().process_frame
 	assert_eq(
 		board.owned_cards_scroll.horizontal_scroll_mode,
-		ScrollContainer.SCROLL_MODE_AUTO
+		ScrollContainer.SCROLL_MODE_DISABLED
 	)
 	assert_eq(
 		board.owned_cards_scroll.vertical_scroll_mode,
-		ScrollContainer.SCROLL_MODE_DISABLED
+		ScrollContainer.SCROLL_MODE_AUTO
 	)
+	assert_true(board.owned_cards_row is VBoxContainer)
 	assert_gt(board.owned_cards_row.get_child_count(), 8)
-	var row_y: float = NAN
+	var row_x: float = NAN
+	var prev_y: float = NAN
 	for child: Node in board.owned_cards_row.get_children():
 		assert_eq(child.custom_minimum_size, WRAPPER_SCRIPT.SIDE_FOOTPRINT)
-		if is_nan(row_y):
-			row_y = child.global_position.y
+		if is_nan(row_x):
+			row_x = child.global_position.x
 		else:
-			assert_almost_eq(child.global_position.y, row_y, 0.5)
-	assert_gt(board.owned_cards_row.size.x, board.owned_cards_scroll.size.x)
-	assert_gt(board.owned_cards_scroll.get_h_scroll_bar().max_value, 0.0)
+			assert_almost_eq(child.global_position.x, row_x, 0.5)
+		if is_nan(prev_y):
+			prev_y = child.global_position.y
+		else:
+			assert_gt(child.global_position.y, prev_y)
+			prev_y = child.global_position.y
+	assert_gt(board.owned_cards_row.size.y, board.owned_cards_scroll.size.y)
+	assert_gt(board.owned_cards_scroll.get_v_scroll_bar().max_value, 0.0)
+	assert_true(
+		MEASURE.cross_axis_fits(board.owned_cards_scroll, board.owned_cards_row)
+	)
 	assert_eq(board.name_label.get_parent(), board.layout)
 
 

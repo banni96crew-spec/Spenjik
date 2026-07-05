@@ -47,7 +47,7 @@ func test_orientation_round_trip_center_dense_and_side_stacked() -> void:
 func test_side_ai_worst_case_chrome_fits_zone_content_width() -> void:
 	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
 	var view: Dictionary = GameStateManager.get_view()["view"]
-	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_1).duplicate(true)
+	var ai: Dictionary = _player(view, GameIds.PLAYER_AI_3).duplicate(true)
 	ai["is_strong_ai"] = true
 	ai["nal"] = 23
 	ai["vp"] = 2
@@ -59,12 +59,13 @@ func test_side_ai_worst_case_chrome_fits_zone_content_width() -> void:
 	add_child_autofree(host)
 	var board: PlayerBoard = BOARD_SCENE.instantiate()
 	host.add_child(board)
-	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_LEFT)
+	board.set_card_orientation(WRAPPER_SCRIPT.ORIENTATION_SIDE_RIGHT)
 	board.set_card_presentation(PlayerBoard.CARD_PRESENTATION_FULL)
 	board.render(ai, {"profile_id": "enforcer"}, view["card_definitions"])
 	await get_tree().process_frame
 	await get_tree().process_frame
-	var zone_content_w: float = 256.0 - 20.0
+	assert_eq(board.name_label.text, "RIVAL III · STRONG")
+	var zone_content_w: float = host.size.x
 	assert_lte(board.get_combined_minimum_size().x, zone_content_w + 0.5)
 	_assert_side_stacked_topology(board)
 	for control: Control in [

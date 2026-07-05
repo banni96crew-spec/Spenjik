@@ -48,13 +48,15 @@ func test_level_two_requires_exactly_one_strong_ai() -> void:
 	assert_false(missing_result["ok"])
 	assert_eq(missing_result["error"], ValidationErrors.INVALID_AI_STATE)
 	assert_eq(missing, missing_before)
-	var duplicate: Dictionary = _setup_state(2, RoleIds.MERCHANT)
-	TestPlayers.find(duplicate, GameIds.PLAYER_AI_2)["is_strong_ai"] = true
-	var duplicate_before: Dictionary = duplicate.duplicate(true)
-	var duplicate_result: Dictionary = TurfLevelLogic.apply_setup_modifiers(duplicate)
-	assert_false(duplicate_result["ok"])
-	assert_eq(duplicate_result["error"], ValidationErrors.INVALID_AI_STATE)
-	assert_eq(duplicate, duplicate_before)
+	var two_strong_state: Dictionary = _setup_state(2, RoleIds.MERCHANT)
+	TestPlayers.find(two_strong_state, GameIds.PLAYER_AI_2)["is_strong_ai"] = true
+	var two_strong_before: Dictionary = two_strong_state.duplicate(true)
+	var two_strong_result: Dictionary = TurfLevelLogic.apply_setup_modifiers(
+		two_strong_state
+	)
+	assert_false(two_strong_result["ok"])
+	assert_eq(two_strong_result["error"], ValidationErrors.INVALID_AI_STATE)
+	assert_eq(two_strong_state, two_strong_before)
 
 
 func test_level_two_and_three_apply_cumulative_setup_modifiers() -> void:

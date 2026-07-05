@@ -78,6 +78,12 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
+[node name="OwnedCardsColumn" type="VBoxContainer" parent="BoardRoot/Layout/OwnedCardsScroll"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
 [node name="StateLabel" type="Label" parent="BoardRoot/Layout"]
 unique_name_in_owner = true
 theme_override_colors/font_color = Color(0.7, 0.58, 0.38, 1)
@@ -112,5 +118,11 @@ vertical_scroll_mode = 0
 
 [node name="CompactCardsRow" type="HBoxContainer" parent="BoardRoot/CompactLayout/CompactCardsScroll"]
 unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CompactCardsColumn" type="VBoxContainer" parent="BoardRoot/CompactLayout/CompactCardsScroll"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8

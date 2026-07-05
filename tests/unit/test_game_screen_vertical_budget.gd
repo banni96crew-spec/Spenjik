@@ -1,7 +1,6 @@
 extends GutTest
 
 const GAME_SCREEN := preload("res://scenes/ui/screens/GameScreen.tscn")
-const GAME_ROOT := preload("res://scenes/game/GameRoot.tscn")
 const THEME := preload("res://themes/main_theme.tres")
 
 
@@ -39,13 +38,33 @@ func test_vertical_budget_phase_matrix_at_1080p() -> void:
 	screen.refresh()
 	await _settle_layout()
 	_assert_phase_layout(screen, "ACTION")
-	GameStateManager.reset_game()
-	assert_true(GameStateManager.start_new_game(_valid_config())["ok"])
+	var roundtrip_top_h: float = screen.top_opponent_zone.size.y
+	var roundtrip_human_h: float = screen.human_zone.size.y
+	for id: String in [
+		GameIds.PLAYER_AI_1, GameIds.PLAYER_AI_2, GameIds.PLAYER_AI_3,
+	]:
+		_fill_many_unique_displays(GameStateManager.state, id)
 	screen.refresh()
+	await _settle_layout()
+	var ended: Dictionary = GameStateManager.end_action_for_player(
+		GameIds.PLAYER_HUMAN
+	)
+	assert_true(ended["ok"], str(ended))
+	assert_eq(GameStateManager.get_current_phase(), PhaseIds.INCOME)
+	screen.refresh()
+	await _settle_layout()
 	assert_true(GameStateManager.advance_phase()["ok"])
+	assert_eq(GameStateManager.get_current_phase(), PhaseIds.MARKET)
 	screen.refresh()
 	await _settle_layout()
 	_assert_phase_layout(screen, "MARKET_ROUNDTRIP")
+	assert_eq(screen.top_opponent_zone.size.y, roundtrip_top_h)
+	assert_eq(screen.human_zone.size.y, roundtrip_human_h)
+	for board: PlayerBoard in [
+		screen.ai_board_1, screen.ai_board_3,
+	]:
+		_assert_vertical_strip(board)
+	_assert_horizontal_strip(screen.ai_board_2)
 	screen.get_parent().queue_free()
 
 
@@ -140,6 +159,68 @@ func _assert_inside(parent: Control, child: Control, label: String) -> void:
 func _settle_layout() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
+
+
+func _assert_horizontal_strip(board: PlayerBoard) -> void:
+	assert_eq(
+		board.owned_cards_scroll.horizontal_scroll_mode,
+		ScrollContainer.SCROLL_MODE_AUTO
+	)
+	assert_eq(
+		board.owned_cards_scroll.vertical_scroll_mode,
+		ScrollContainer.SCROLL_MODE_DISABLED
+	)
+	assert_true(board.owned_cards_row is HBoxContainer)
+	assert_gt(board.owned_cards_row.get_child_count(), 8)
+	assert_gt(board.owned_cards_row.size.x, board.owned_cards_scroll.size.x)
+	var row_y: float = NAN
+	for child: Node in board.owned_cards_row.get_children():
+		var wrapper := child as Control
+		assert_not_null(wrapper)
+		assert_lte(wrapper.size.y, board.owned_cards_scroll.size.y + 0.5)
+		if is_nan(row_y):
+			row_y = wrapper.global_position.y
+		else:
+			assert_almost_eq(wrapper.global_position.y, row_y, 0.5)
+
+
+func _assert_vertical_strip(board: PlayerBoard) -> void:
+	assert_eq(
+		board.owned_cards_scroll.horizontal_scroll_mode,
+		ScrollContainer.SCROLL_MODE_DISABLED
+	)
+	assert_eq(
+		board.owned_cards_scroll.vertical_scroll_mode,
+		ScrollContainer.SCROLL_MODE_AUTO
+	)
+	assert_true(board.owned_cards_row is VBoxContainer)
+	assert_gt(board.owned_cards_row.get_child_count(), 8)
+	assert_gt(board.owned_cards_row.size.y, board.owned_cards_scroll.size.y)
+	var row_x: float = NAN
+	for child: Node in board.owned_cards_row.get_children():
+		var wrapper := child as Control
+		assert_not_null(wrapper)
+		assert_lte(wrapper.size.x, board.owned_cards_scroll.size.x + 0.5)
+		if is_nan(row_x):
+			row_x = wrapper.global_position.x
+		else:
+			assert_almost_eq(wrapper.global_position.x, row_x, 0.5)
+
+
+func _fill_many_unique_displays(state: Dictionary, player_id: String) -> void:
+	var player: Dictionary = TestPlayers.find(state, player_id)
+	for key: String in ["informers", "laundries", "accountants"]:
+		player["engine"][key] = 1
+	player["engine"]["brothel"] = true
+	for key: String in ["stash", "workshop", "district_control"]:
+		player["status_buildings"][key] = 1
+	player["defense"]["cops_active"] = true
+	player["defense"]["cartel_state"] = DefenseStates.ACTIVE
+	player["defense"]["judge_state"] = DefenseStates.ACTIVE
+	player["hand"] = [
+		GameIds.CARD_THUG, GameIds.CARD_BRUISER, GameIds.CARD_CLEANER,
+		GameIds.CARD_FEDERAL_RAID, GameIds.CARD_SABOTEUR, GameIds.CARD_INSIDER,
+	]
 
 
 func _valid_config() -> Dictionary:

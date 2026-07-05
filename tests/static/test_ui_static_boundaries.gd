@@ -155,14 +155,14 @@ func _get_runtime_files_under_roots(root_paths: Array[String]) -> Array[String]:
 
 func _get_runtime_files_under(root_path: String) -> Array[String]:
 	var result: Array[String] = []
-	var pending: Array[String] = [root_path]
-	while not pending.is_empty():
-		var current: String = pending.pop_back()
+	var dir_queue: Array[String] = [root_path]
+	while not dir_queue.is_empty():
+		var current: String = dir_queue.pop_back()
 		var directory: DirAccess = DirAccess.open(current)
 		if directory == null:
 			continue
 		for child: String in directory.get_directories():
-			pending.append("%s/%s" % [current, child])
+			dir_queue.append("%s/%s" % [current, child])
 		for file_name: String in directory.get_files():
 			if _has_runtime_extension(file_name):
 				result.append("%s/%s" % [current, file_name])

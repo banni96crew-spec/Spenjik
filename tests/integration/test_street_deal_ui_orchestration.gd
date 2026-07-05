@@ -41,12 +41,12 @@ func test_complete_human_street_deal_waits_for_inside_contact_offer() -> void:
 	assert_true(result["ok"], str(result))
 	assert_eq(GameStateManager.get_current_phase(), PhaseIds.STREET_DEAL)
 	assert_eq(GameStateManager.get_round(), round_before)
-	var pending: Dictionary = GameStateManager.get_state_snapshot()["contacts"][
+	var pending_offer: Dictionary = GameStateManager.get_state_snapshot()["contacts"][
 		"pending_offer"
 	]
-	assert_false(pending.is_empty())
-	assert_eq(pending["source"], StreetDealIds.INSIDE_CONTACT)
-	var contact_id: String = str(pending["contact_offer_ids"][0])
+	assert_false(pending_offer.is_empty())
+	assert_eq(pending_offer["source"], StreetDealIds.INSIDE_CONTACT)
+	var contact_id: String = str(pending_offer["contact_offer_ids"][0])
 	var selected: Dictionary = GameStateManager.select_contact({
 		"player_id": GameIds.PLAYER_HUMAN,
 		"contact_id": contact_id,
